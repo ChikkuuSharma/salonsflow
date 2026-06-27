@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SalonFlow Sales Brochure</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+    }
+    
+    .font-display {
+      font-family: 'Outfit', sans-serif;
+    }
+    
+    @page {
+      size: A4;
+      margin: 0mm;
+    }
+    
+    .print-page {
+      width: 210mm;
+      height: 297mm;
+      padding: 20mm;
+      background-color: #ffffff;
+      margin: 0 auto;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      page-break-inside: avoid;
+    }
+
+    @media print {
+      body {
+        background-color: #ffffff;
+      }
+      .print-page {
+        margin: 0;
+        border: none;
+        box-shadow: none;
+        width: 210mm;
+        height: 297mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1: COVER PAGE (HIGH CONVERTING SALES LEAD) -->
+  <div class="print-page bg-gradient-to-br from-slate-950 via-purple-950 to-indigo-950 text-white">
+    <!-- Branding Header -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-6">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 bg-white text-purple-950 rounded-xl flex items-center justify-center font-display font-black text-lg shadow-lg">SF</div>
+        <div>
+          <h1 class="text-xl font-display font-black text-white tracking-tight leading-none">Salon<span class="text-purple-400">Flow</span></h1>
+          <p class="text-[9px] font-bold text-purple-300/70 uppercase tracking-wider mt-1">Next-Gen AI Operating System</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-bold text-white">Sales Brochure & Feature Book</p>
+        <p class="text-[9px] text-purple-300/70 mt-0.5">Freemium SaaS for Indian Salons</p>
+      </div>
+    </div>
+
+    <!-- Main Value Hook -->
+    <div class="my-auto space-y-10 max-w-xl">
+      <div class="space-y-4">
+        <span class="px-3.5 py-1 bg-purple-500/20 text-purple-300 text-[10px] font-extrabold uppercase tracking-widest rounded-full border border-purple-500/30">Grow Your Salon Revenue</span>
+        <h2 class="text-5xl font-display font-black text-white leading-tight">
+          Capture Every Booking. <br />
+          Audit Every Rupee.
+        </h2>
+        <p class="text-slate-300 text-sm leading-relaxed">
+           local salon owners lose 25% of weekend bookings due to missed calls and busy front desks. SalonFlow automates your entire business operation via **WhatsApp AI Receptionists**, **Audited POS Registers**, and **Google Reviews automation**—so you can stop managing and start expanding.
+        </p>
+      </div>
+
+      <!-- Quick Metrics Highlights -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="p-4 bg-white/5 border border-white/10 rounded-2xl">
+          <p class="text-2xl font-black text-purple-400">₹15,000+</p>
+          <p class="text-[10px] text-slate-300 font-bold mt-1">Monthly Receptionist Savings</p>
+        </div>
+        <div class="p-4 bg-white/5 border border-white/10 rounded-2xl">
+          <p class="text-2xl font-black text-emerald-400">+22%</p>
+          <p class="text-[10px] text-slate-300 font-bold mt-1">Customer Repeat Visit Rate</p>
+        </div>
+        <div class="p-4 bg-white/5 border border-white/10 rounded-2xl">
+          <p class="text-2xl font-black text-blue-400">4.8★</p>
+          <p class="text-[10px] text-slate-300 font-bold mt-1">Average Google Business Rating</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cover Footer -->
+    <div class="flex items-center justify-between border-t border-white/10 pt-6 text-[10px] text-purple-300/70 font-bold">
+      <span>info@salonflow.in</span>
+      <span>Page 1 of 5</span>
+    </div>
+  </div>
+
+  <!-- PAGE 2: AI RECEPTIONIST & CONFLICT-FREE BOOKINGS -->
+  <div class="print-page">
+    <!-- Branding Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 pb-5">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 bg-purple-950 text-white rounded-xl flex items-center justify-center font-display font-black text-lg">SF</div>
+        <div>
+          <h1 class="text-xl font-display font-black text-slate-900 tracking-tight leading-none">Salon<span class="text-purple-600">Flow</span></h1>
+          <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">AI Salon Operating System</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-bold text-slate-800">24/7 AI Receptionist</p>
+        <p class="text-[9px] text-slate-400 mt-0.5">Hinglish Voice & Chat Bookings</p>
+      </div>
+    </div>
+
+    <!-- Feature details -->
+    <div class="my-auto space-y-6">
+      <div class="grid grid-cols-12 gap-8 items-center">
+        <div class="col-span-7 space-y-4">
+          <span class="px-3 py-1 bg-purple-50 text-purple-700 text-[10px] font-extrabold uppercase tracking-widest rounded-full border border-purple-100">Automated Front Desk</span>
+          <h3 class="text-3xl font-display font-black text-slate-900 leading-tight">
+            Stop Missing Inbound Booking Inquiries
+          </h3>
+          <p class="text-slate-500 text-xs leading-relaxed">
+            Customers expect instant replies. The SalonFlow AI Receptionist processes chat messages and voice notes in **English, Hindi, or Hinglish** to schedule appointments, offer alternative times during conflicts, and respond instantly 24 hours a day.
+          </p>
+          
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-800">Key Capabilities:</h4>
+            <ul class="space-y-1.5 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><span class="text-purple-600">✔</span> **Voice Note Transcription**: Converts local spoken requests into bookings.</li>
+              <li class="flex items-center gap-2"><span class="text-purple-600">✔</span> **Real-Time Availability**: Syncs with live database stylist calendars.</li>
+              <li class="flex items-center gap-2"><span class="text-purple-600">✔</span> **Conflict Resolution**: Offers slot options if a time is occupied.</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="col-span-5">
+          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+            <p class="text-[10px] font-bold text-slate-400 uppercase">WhatsApp AI Flow</p>
+            <div class="space-y-2.5">
+              <div class="p-2.5 bg-slate-200/60 rounded-xl max-w-[90%] text-[10.5px]">
+                "Bhaiya, kal shaam ko 4 baje haircut aur spa book ho sakta hai kya?"
+              </div>
+              <div class="p-2.5 bg-purple-900 text-white rounded-xl max-w-[90%] ml-auto text-[10.5px]">
+                "Success! I have confirmed your appointment for Premium Haircut & Hair Spa tomorrow at 4:00 PM with stylist Amit. See you soon!"
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real Screenshot -->
+      <div class="space-y-2">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unified Multi-Staff Operations Calendar</p>
+        <div class="rounded-2xl border border-slate-200/60 shadow-md overflow-hidden bg-slate-50">
+          <img src="./new_dashboard_ux.png" class="w-full object-cover" alt="Main UI Calendar Page" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Page Number -->
+    <div class="flex items-center justify-between border-t border-slate-100 pt-6 text-[10px] text-slate-400 font-bold">
+      <span>salonflow.in</span>
+      <span>Page 2 of 5</span>
+    </div>
+  </div>
+
+  <!-- PAGE 3: SMART QR WALK-INS & REVIEW ENGINES -->
+  <div class="print-page">
+    <!-- Branding Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 pb-5">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 bg-purple-950 text-white rounded-xl flex items-center justify-center font-display font-black text-lg">SF</div>
+        <div>
+          <h1 class="text-xl font-display font-black text-slate-900 tracking-tight leading-none">Salon<span class="text-purple-600">Flow</span></h1>
+          <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">AI Salon Operating System</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-bold text-slate-800">Smart QR Conversions</p>
+        <p class="text-[9px] text-slate-400 mt-0.5">Reviews & Reputation Management</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="my-auto space-y-6">
+      <div class="grid grid-cols-12 gap-8 items-center">
+        <div class="col-span-7 space-y-4">
+          <span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold uppercase tracking-widest rounded-full border border-emerald-100">Review Automation</span>
+          <h3 class="text-3xl font-display font-black text-slate-900 leading-tight">
+            Capture Walk-Ins. <br />
+            Explode Your Google Reviews.
+          </h3>
+          <p class="text-slate-500 text-xs leading-relaxed">
+            Walk-in clients leave without sharing profiles or writing reviews. SalonFlow's custom QR codes onboarding system registers walk-ins directly on your WhatsApp CRM. 
+            Once their checkout finishes, a feedback message is dispatched:
+          </p>
+          
+          <ul class="space-y-2 text-xs font-semibold text-slate-700">
+            <li class="flex items-center gap-2"><span class="h-4.5 w-4.5 bg-emerald-50 text-emerald-700 flex items-center justify-center rounded-lg">👍</span> **Ratings 4 & 5**: Automatically routes them to your Google Business page to boost reviews.</li>
+            <li class="flex items-center gap-2"><span class="h-4.5 w-4.5 bg-rose-50 text-rose-700 flex items-center justify-center rounded-lg">⚠️</span> **Ratings 1 to 3**: Requests text explanations privately, keeping complaints off Google and in your dashboard.</li>
+          </ul>
+        </div>
+        
+        <div class="col-span-5">
+          <div class="rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden bg-white">
+            <img src="./qr_walk_in_setup.png" class="w-full object-cover" alt="QR settings page" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Reputation analytics section -->
+      <div class="space-y-2">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reputation Management & Satisfaction Analytics Feed</p>
+        <div class="rounded-2xl border border-slate-200/60 shadow-md overflow-hidden bg-slate-50">
+          <img src="./satisfaction_analytics.png" class="w-full object-cover" alt="Satisfaction dashboard" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Page Number -->
+    <div class="flex items-center justify-between border-t border-slate-100 pt-6 text-[10px] text-slate-400 font-bold">
+      <span>salonflow.in</span>
+      <span>Page 3 of 5</span>
+    </div>
+  </div>
+
+  <!-- PAGE 4: POS BILLING, DRAWER AUDITS & STAFF COMMISSIONS -->
+  <div class="print-page">
+    <!-- Branding Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 pb-5">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 bg-purple-950 text-white rounded-xl flex items-center justify-center font-display font-black text-lg">SF</div>
+        <div>
+          <h1 class="text-xl font-display font-black text-slate-900 tracking-tight leading-none">Salon<span class="text-purple-600">Flow</span></h1>
+          <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">AI Salon Operating System</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-bold text-slate-800">Unified POS & Cash Audits</p>
+        <p class="text-[9px] text-slate-400 mt-0.5">Staff Commissions Ledger</p>
+      </div>
+    </div>
+
+    <!-- Feature details -->
+    <div class="my-auto space-y-6">
+      <div class="grid grid-cols-12 gap-8 items-center">
+        <div class="col-span-7 space-y-4">
+          <span class="px-3 py-1 bg-blue-50 text-blue-700 text-[10px] font-extrabold uppercase tracking-widest rounded-full border border-blue-100">Revenue Security</span>
+          <h3 class="text-3xl font-display font-black text-slate-900 leading-tight">
+            Stop Skimming. <br />
+            Automate Commissions.
+          </h3>
+          <p class="text-slate-500 text-xs leading-relaxed">
+            Local counter operations lose 3-5% of sales to unrecorded cash leakage. SalonFlow POS features an audited cash drawer registry (`OPEN`, `SALE`, `PAYOUT`) to secure your money. Stylists' sales are tracked automatically, compiling their commission payouts instantly and removing spreadsheet headaches.
+          </p>
+          
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-800">Audit Capabilities:</h4>
+            <ul class="space-y-1.5 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><span class="text-blue-600">✔</span> **Anti-theft Drawer Logs**: Tracks drawer actions with clerk tags.</li>
+              <li class="flex items-center gap-2"><span class="text-blue-600">✔</span> **Commission calculation**: Computes tier payouts per stylist automatically.</li>
+              <li class="flex items-center gap-2"><span class="text-blue-600">✔</span> **UPI vs Cash Reconciliation**: Splits card, cash, and UPI payments instantly.</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="col-span-5">
+          <div class="rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden bg-white">
+            <img src="./satisfaction_analytics.png" class="w-full object-cover" alt="Drawer ledger" style="max-height: 220px;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer Reviews / POS Feed Screenshot -->
+      <div class="space-y-2">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Google & In-House Customer Feedback Ledger</p>
+        <div class="rounded-2xl border border-slate-200/60 shadow-md overflow-hidden bg-slate-50">
+          <img src="./customer_reviews.png" class="w-full object-cover" alt="POS feedback logs" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Page Number -->
+    <div class="flex items-center justify-between border-t border-slate-100 pt-6 text-[10px] text-slate-400 font-bold">
+      <span>salonflow.in</span>
+      <span>Page 4 of 5</span>
+    </div>
+  </div>
+
+  <!-- PAGE 5: DAILY REPORTS & PREMIUM PRICING -->
+  <div class="print-page bg-slate-900 text-white">
+    <!-- Branding Header -->
+    <div class="flex items-center justify-between border-b border-white/10 pb-5">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 bg-white text-purple-950 rounded-xl flex items-center justify-center font-display font-black text-lg">SF</div>
+        <div>
+          <h1 class="text-xl font-display font-black text-white tracking-tight leading-none">Salon<span class="text-purple-400">Flow</span></h1>
+          <p class="text-[9px] font-bold text-purple-300/70 uppercase tracking-wider mt-1">AI Salon Operating System</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-bold text-white">Daily WhatsApp Reports</p>
+        <p class="text-[9px] text-purple-300/70 mt-0.5">Plans & Setup Process</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="my-auto space-y-6">
+      <div class="grid grid-cols-12 gap-8 items-center">
+        <div class="col-span-7 space-y-4">
+          <span class="px-3.5 py-1 bg-pink-500/20 text-pink-300 text-[10px] font-extrabold uppercase tracking-widest rounded-full border border-pink-500/30">Owner Dashboard</span>
+          <h3 class="text-3xl font-display font-black text-white leading-tight">
+            Daily WhatsApp Reports & Insights
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            Save hours by skipping dashboard logins. SalonFlow compiles your business analytics (appointments split, total sales, top stylist, reviews, AI reception chats) and sends an evening summary directly to your personal WhatsApp.
+          </p>
+          
+          <!-- Pricing grid -->
+          <div class="space-y-3">
+            <h4 class="text-xs font-bold text-purple-400 uppercase tracking-wider">Premium Pricing Plans</h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-3 bg-white/5 rounded-xl border border-white/10">
+                <h5 class="text-xs font-extrabold text-white">BASIC</h5>
+                <p class="text-lg font-black text-purple-400 mt-1">₹1,499<span class="text-[10px] font-normal text-slate-400">/mo</span></p>
+                <p class="text-[9px] text-slate-400 mt-1">100 bookings limit, POS cash reconciliation, Google review links.</p>
+              </div>
+              <div class="p-3 bg-white/5 rounded-xl border border-purple-500/30 relative">
+                <span class="absolute top-2 right-2 bg-purple-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">PRO</span>
+                <h5 class="text-xs font-extrabold text-white">AI PRO</h5>
+                <p class="text-lg font-black text-purple-400 mt-1">₹3,999<span class="text-[10px] font-normal text-slate-400">/mo</span></p>
+                <p class="text-[9px] text-slate-400 mt-1">Unlimited bookings, 24/7 AI WhatsApp voice receptionist, auto rebookings.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Preview image -->
+        <div class="col-span-5 flex justify-center">
+          <div class="rounded-2xl border border-white/10 shadow-xl overflow-hidden bg-white max-w-[170px]">
+            <img src="./report_whatsapp_preview.png" class="w-full" alt="WhatsApp report logs preview bubble" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Real screenshot -->
+      <div class="space-y-2">
+        <p class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Reports Log History & manual triggers panel</p>
+        <div class="rounded-2xl border border-white/10 shadow-md overflow-hidden bg-slate-950">
+          <img src="./reports_page_dashboard.png" class="w-full object-cover" alt="Reports log history panel" style="max-height: 140px;" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Page Number -->
+    <div class="flex items-center justify-between border-t border-white/10 pt-6 text-[10px] text-purple-300/70 font-bold">
+      <span>salonflow.in</span>
+      <span>Page 5 of 5</span>
+    </div>
+  </div>
+
+</body>
+</html>
