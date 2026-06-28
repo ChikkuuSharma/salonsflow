@@ -14,10 +14,5 @@ bin/
 obj/
 temp/
 tmp/
-*.webp
-*.png
-*.gif
-*.jpg
-*.jpeg
 .DS_Store
 Thumbs.db
