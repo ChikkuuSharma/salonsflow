@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ShieldCheck,
@@ -19,6 +19,20 @@ export default function LoginPage() {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<"admin" | "owner" | "demo">("demo");
   const [formMode, setFormMode] = useState<"login" | "register" | "change-password">("login");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const role = params.get("role");
+      const mode = params.get("mode");
+      if (role === "owner" || role === "admin" || role === "demo") {
+        setSelectedRole(role as any);
+      }
+      if (mode === "login" || mode === "register" || mode === "change-password") {
+        setFormMode(mode as any);
+      }
+    }
+  }, []);
   
   // Admin credentials state
   const [adminId, setAdminId] = useState("");
