@@ -289,9 +289,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src="/logo.png" alt="SalonsFlow Logo" className="h-9.5 w-9.5 object-contain" />
-            <span className="font-bold text-xl tracking-tight text-slate-850 font-display">
-              Salons<span className="text-purple-600 font-black">Flow</span>
-            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-bold text-lg tracking-tight text-slate-850 font-display leading-none">
+                Salons<span className="text-purple-600 font-black">Flow</span>
+              </span>
+              <span className="text-[9px] font-bold text-purple-600 tracking-wider uppercase mt-1">
+                Grow While You Style
+              </span>
+            </div>
           </div>
           
           {/* Desktop Navigation Links */}
