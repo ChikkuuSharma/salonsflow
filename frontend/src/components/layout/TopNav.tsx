@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Bell, AlertTriangle } from "lucide-react";
+import { Search, Bell, AlertTriangle, Menu } from "lucide-react";
 
-export function TopNav() {
+export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isSuspended, setIsSuspended] = useState(false);
   const [salonName, setSalonName] = useState("Elegance Barber & Spa");
   const [ownerName, setOwnerName] = useState("Devender");
@@ -137,7 +137,16 @@ export function TopNav() {
           </div>
         </div>
       )}
-      <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 w-full gap-4 shrink-0">
+      <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 w-full gap-4 shrink-0">
+        {onMenuClick && (
+          <button 
+            onClick={onMenuClick} 
+            className="lg:hidden text-slate-500 hover:text-slate-800 p-2 hover:bg-slate-100 rounded-lg shrink-0 cursor-pointer"
+            title="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
         <div className="hidden md:flex flex-col">
           <h1 className="text-sm lg:text-base font-bold text-slate-800 tracking-tight leading-tight">
             Welcome back, <span className="text-purple-650 font-extrabold">{ownerName}</span>!

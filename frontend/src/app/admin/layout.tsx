@@ -11,7 +11,9 @@ import {
   LogOut,
   Building2,
   Layers,
-  RefreshCw
+  RefreshCw,
+  Menu,
+  X
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -19,6 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [verifying, setVerifying] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -97,69 +100,105 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   ];
 
+  const SidebarContent = (
+    <>
+      {/* Logo Brand */}
+      <div className="p-6 border-b border-purple-950/40 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 bg-gradient-to-tr from-purple-650 to-pink-550 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-purple-900/40">
+            SF
+          </div>
+          <div>
+            <span className="font-extrabold text-base tracking-tight text-white block">
+              Salons<span className="text-purple-400">Flow</span>
+            </span>
+            <span className="text-[10px] font-bold text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-0.5 mt-1 inline-block">
+              SUPER ADMIN
+            </span>
+          </div>
+        </div>
+        <button 
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden text-purple-300 hover:text-white p-1 hover:bg-purple-950/40 rounded-lg cursor-pointer"
+          title="Close menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-6 space-y-1">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                isActive
+                  ? "bg-purple-600/10 text-purple-400 border border-purple-500/20"
+                  : "text-purple-300/60 hover:bg-white/5 hover:text-white border border-transparent"
+              }`}
+            >
+              <item.icon className={`h-4.5 w-4.5 ${isActive ? "text-purple-400" : "text-purple-300/65"}`} />
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Footer info */}
+      <div className="p-4 border-t border-purple-950/40 shrink-0">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3 px-4 py-3 text-purple-300/40 hover:text-white rounded-xl text-xs font-semibold transition-all hover:bg-white/5"
+        >
+          <LogOut className="h-4 w-4" />
+          Exit Platform Admin
+        </Link>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
       {/* Background gradients */}
       <div className="absolute top-0 left-0 w-[40%] h-[40%] bg-purple-500/5 blur-[130px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-0 right-0 w-[40%] h-[40%] bg-pink-500/5 blur-[150px] rounded-full pointer-events-none"></div>
 
-      {/* Admin Sidebar */}
-      <aside className="w-64 border-r border-purple-950/40 bg-[#0c0822] flex flex-col sticky top-0 h-screen z-20">
-        {/* Logo Brand */}
-        <div className="p-6 border-b border-purple-950/40">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 bg-gradient-to-tr from-purple-650 to-pink-550 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-purple-900/40">
-              SF
-            </div>
-            <div>
-              <span className="font-extrabold text-base tracking-tight text-white block">
-                Salons<span className="text-purple-400">Flow</span>
-              </span>
-              <span className="text-[10px] font-bold text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-0.5 mt-1 inline-block">
-                SUPER ADMIN
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                  isActive
-                    ? "bg-purple-600/10 text-purple-400 border border-purple-500/20"
-                    : "text-purple-300/60 hover:bg-white/5 hover:text-white border border-transparent"
-                }`}
-              >
-                <item.icon className={`h-4.5 w-4.5 ${isActive ? "text-purple-400" : "text-purple-300/65"}`} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Footer info */}
-        <div className="p-4 border-t border-purple-950/40">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3 px-4 py-3 text-purple-300/40 hover:text-white rounded-xl text-xs font-semibold transition-all hover:bg-white/5"
-          >
-            <LogOut className="h-4 w-4" />
-            Exit Platform Admin
-          </Link>
-        </div>
+      {/* Desktop Admin Sidebar */}
+      <aside className="hidden lg:flex w-64 border-r border-purple-950/40 bg-[#0c0822] flex flex-col h-screen shrink-0">
+        {SidebarContent}
       </aside>
+
+      {/* Mobile Admin Sidebar Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300" 
+            onClick={() => setMobileOpen(false)} 
+          />
+          {/* Drawer Panel */}
+          <aside className="relative w-64 bg-[#0c0822] border-r border-purple-950/40 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-left duration-250">
+            {SidebarContent}
+          </aside>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-slate-600 text-sm font-medium">
-            <Layers className="h-4 w-4 text-purple-500" />
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-8 bg-white/80 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-2.5 text-slate-600 text-sm font-medium">
+            <button 
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden text-slate-500 hover:text-slate-800 p-2 hover:bg-slate-100 rounded-lg shrink-0 cursor-pointer"
+              title="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <Layers className="h-4 w-4 text-purple-500 hidden sm:block" />
             <span>Platform Operations Center</span>
           </div>
           <div className="flex items-center gap-3">
@@ -168,7 +207,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </span>
           </div>
         </header>
-        <main className="flex-1 p-8 overflow-y-auto relative z-10">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto relative z-10">
           {children}
         </main>
       </div>

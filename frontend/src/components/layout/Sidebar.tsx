@@ -43,13 +43,15 @@ const navItems = [
   { name: "AI Agent Settings", href: "/settings/ai", icon: Settings },
 ];
 
-export function Sidebar() {
+import { X } from "lucide-react";
+
+export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
 
-  return (
-    <aside className="w-64 border-r border-purple-950/40 bg-[#0c0822] h-screen flex flex-col shrink-0">
-      <div className="h-16 flex flex-col justify-center px-6 border-b border-purple-950/40 shrink-0">
-        <div className="flex items-center gap-2.5">
+  const SidebarContent = (
+    <>
+      <div className="h-16 flex items-center justify-between px-6 border-b border-purple-950/40 shrink-0">
+        <div className="flex items-center gap-2.5 text-left">
           <img src="/logo.png" alt="SalonsFlow Logo" className="h-8 w-8 rounded-lg object-contain shadow-md bg-white border border-purple-100 p-0.5" />
           <div className="flex flex-col">
             <span className="font-display font-black text-base tracking-tight text-white leading-none">
@@ -59,8 +61,16 @@ export function Sidebar() {
               AI Salon Management
             </span>
           </div>
-          <span className="h-1.5 w-1.5 rounded-full bg-pink-400 animate-ping ml-auto"></span>
         </div>
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            className="lg:hidden text-purple-300 hover:text-white p-1 hover:bg-purple-950/40 rounded-lg cursor-pointer"
+            title="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
@@ -69,6 +79,7 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => onClose?.()}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 border border-transparent",
                 isActive 
@@ -92,6 +103,30 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 border-r border-purple-950/40 bg-[#0c0822] h-screen flex flex-col shrink-0">
+        {SidebarContent}
+      </aside>
+
+      {/* Mobile Sidebar Drawer */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300" 
+            onClick={onClose} 
+          />
+          {/* Drawer Panel */}
+          <aside className="relative w-64 bg-[#0c0822] border-r border-purple-950/40 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-left duration-250">
+            {SidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
