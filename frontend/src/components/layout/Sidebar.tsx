@@ -58,7 +58,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               Salons<span className="text-purple-400">Flow</span>
             </span>
             <span className="text-[9px] font-bold text-purple-300/70 tracking-wider uppercase mt-1">
-              AI Salon Management
+              Grow While You Style
             </span>
           </div>
         </div>
