@@ -504,19 +504,31 @@ export class WhatsappController {
                 }).join('\n');
 
                 if (language === 'HINDI') {
-                  finalResponseText = `क्षमा करें, वह समय उपलब्ध नहीं है। यहाँ कुछ अन्य विकल्प दिए गए हैं:\n${optionsStr}\n\nयदि आप इनमें से कोई चाहते हैं, तो कृपया समय बताएं, या "वेटिंग लिस्ट" टाइप करके इस समय के खाली होने पर सूचना पा सकते हैं।`;
+                  finalResponseText = `क्षमा करें, वह समय उपलब्ध नहीं है। आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप इनमें से कोई चाहते हैं, तो कृपया संख्या या समय बताएं, या "वेटिंग लिस्ट" लिखकर इस समय के खाली होने पर सूचना पा सकते हैं।`;
                 } else if (language === 'HINGLISH') {
-                  finalResponseText = `Sorry, wo time available nahi hai. Ye kuch options hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Ya phir "waiting list" type karke notifies ho sakte hain.`;
+                  finalResponseText = `Sorry, wo time available nahi hai. Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein, ya phir 'waiting list' join karne ke liye write 'waiting list'.`;
                 } else {
-                  finalResponseText = `Sorry, that time slot is not available. Here are some alternatives:\n${optionsStr}\n\nWould you like to book one of these? Or reply "waiting list" to be notified if your requested slot opens up.`;
+                  finalResponseText = `Sorry, that time slot is not available. Here are today's available slots:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number, or reply 'waiting list' to join the waitlist.`;
                 }
               } else {
-                if (language === 'HINDI') {
-                  finalResponseText = `मुझे पता चला कि आप ${details.date} को ${details.time} बजे "${details.serviceName}" बुक करना चाहते थे, लेकिन स्लॉट उपलब्ध नहीं है और कोई अन्य विकल्प नहीं मिला। क्या आप वेटिंग लिस्ट में जुड़ना चाहते हैं? "वेटिंग लिस्ट" लिखकर भेजें।`;
-                } else if (language === 'HINGLISH') {
-                  finalResponseText = `Aap ${details.date} ko ${details.time} baje "${details.serviceName}" book karna chahte the, par slot occupied hai aur koi alternatives nahi mile. Waiting list join karne ke liye type "waiting list".`;
+                const partners = await this.recoveryService.getPartnerSalons(salon.id);
+                if (partners.length > 0) {
+                  const partnersStr = partners.map(p => p.name).join(', ');
+                  if (language === 'HINDI') {
+                    finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} (जो सैलूनफ्लो द्वारा संचालित हैं) में बुकिंग कर सकते हैं। आप "वेटिंग लिस्ट" लिखकर भी इस समय के खाली होने पर सूचना पा सकते हैं।`;
+                  } else if (language === 'HINGLISH') {
+                    finalResponseText = `Aaj koi slots available nahi hain. Aap another day timing ke liye request kar sakte hain, ya hamare partner salons: ${partnersStr} (powered by SalonsFlow) pe book kar sakte hain. Ya phir 'waiting list' type karke waitlist join kar sakte hain.`;
+                  } else {
+                    finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr} (also powered by SalonsFlow). Alternatively, reply 'waiting list' to join the waitlist.`;
+                  }
                 } else {
-                  finalResponseText = `I identified you wanted to book a "${details.serviceName}" on ${details.date} at ${details.time}, but slot is unavailable and we couldn't find any alternatives. Reply with "waiting list" to join the waitlist.`;
+                  if (language === 'HINDI') {
+                    finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं या "वेटिंग लिस्ट" लिखकर भेज सकते हैं।`;
+                  } else if (language === 'HINGLISH') {
+                    finalResponseText = `Sorry, aaj koi slots available nahi hain. Aap another day timing try kar sakte hain ya waitlist me aane ke liye 'waiting list' write karein.`;
+                  } else {
+                    finalResponseText = `Sorry, no slots are available today. Please ask for another day/time or reply 'waiting list' to join the waitlist.`;
+                  }
                 }
               }
             } else {
@@ -604,19 +616,31 @@ export class WhatsappController {
                 }).join('\n');
 
                 if (language === 'HINDI') {
-                  finalResponseText = `वह समय उपलब्ध नहीं है। यहाँ अन्य विकल्प हैं:\n${optionsStr}\n\nया फिर वेटिंग लिस्ट में जुड़ने के लिए "वेटिंग लिस्ट" लिखें।`;
+                  finalResponseText = `क्षमा करें, वह समय उपलब्ध नहीं है। आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप इनमें से कोई चाहते हैं, तो कृपया संख्या या समय बताएं, या "वेटिंग लिस्ट" लिखकर इस समय के खाली होने पर सूचना पा सकते हैं।`;
                 } else if (language === 'HINGLISH') {
-                  finalResponseText = `Wo slot available nahi hai. Ye options try karein:\n${optionsStr}\n\nYa fir waiting list me aane ke liye "waiting list" type karein.`;
+                  finalResponseText = `Sorry, wo time available nahi hai. Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein, ya phir 'waiting list' join karne ke liye write 'waiting list'.`;
                 } else {
-                  finalResponseText = `That slot is not available. Please try one of these alternatives:\n${optionsStr}\n\nOr reply "waiting list" to be notified if the slot opens up.`;
+                  finalResponseText = `Sorry, that time slot is not available. Here are today's available slots:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number, or reply 'waiting list' to join the waitlist.`;
                 }
               } else {
-                if (language === 'HINDI') {
-                  finalResponseText = `वह समय उपलब्ध नहीं है। क्या आप वेटिंग लिस्ट में जुड़ना चाहते हैं? "वेटिंग लिस्ट" लिखकर भेजें।`;
-                } else if (language === 'HINGLISH') {
-                  finalResponseText = `Wo slot khali nahi hai. Waiting list me aana hai toh type "waiting list".`;
+                const partners = await this.recoveryService.getPartnerSalons(salon.id);
+                if (partners.length > 0) {
+                  const partnersStr = partners.map(p => p.name).join(', ');
+                  if (language === 'HINDI') {
+                    finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} (जो सैलूनफ्लो द्वारा संचालित हैं) में बुकिंग कर सकते हैं। आप "वेटिंग लिस्ट" लिखकर भी इस समय के खाली होने पर सूचना पा सकते हैं।`;
+                  } else if (language === 'HINGLISH') {
+                    finalResponseText = `Aaj koi slots available nahi hain. Aap another day timing ke liye request kar sakte hain, ya hamare partner salons: ${partnersStr} (powered by SalonsFlow) pe book kar sakte hain. Ya phir 'waiting list' type karke waitlist join kar sakte hain.`;
+                  } else {
+                    finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr} (also powered by SalonsFlow). Alternatively, reply 'waiting list' to join the waitlist.`;
+                  }
                 } else {
-                  finalResponseText = `That slot is not available. Would you like to join the waiting list? Reply with "waiting list".`;
+                  if (language === 'HINDI') {
+                    finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं या "वेटिंग लिस्ट" लिखकर भेज सकते हैं।`;
+                  } else if (language === 'HINGLISH') {
+                    finalResponseText = `Sorry, aaj koi slots available nahi hain. Aap another day timing try kar sakte hain ya waitlist me aane ke liye 'waiting list' write karein.`;
+                  } else {
+                    finalResponseText = `Sorry, no slots are available today. Please ask for another day/time or reply 'waiting list' to join the waitlist.`;
+                  }
                 }
               }
             }

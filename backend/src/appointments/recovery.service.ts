@@ -42,15 +42,19 @@ export class RecoveryService {
       // Generate time offsets of 30-min intervals on the same day
       const candidateTimes: Date[] = [];
       const current = new Date(dayStart);
+      const now = new Date();
+      
       while (current.getTime() + duration * 60000 <= dayEnd.getTime()) {
-        candidateTimes.push(new Date(current));
+        const isToday = current.toDateString() === now.toDateString();
+        // Only add future slots if the target day is today
+        if (!isToday || current.getTime() >= now.getTime()) {
+          candidateTimes.push(new Date(current));
+        }
         current.setMinutes(current.getMinutes() + 30);
       }
 
-      // Sort candidate times by absolute difference to requestedTime
-      candidateTimes.sort((a, b) => {
-        return Math.abs(a.getTime() - requestedTime.getTime()) - Math.abs(b.getTime() - requestedTime.getTime());
-      });
+      // Sort candidate times chronologically
+      candidateTimes.sort((a, b) => a.getTime() - b.getTime());
 
       // 1. If a specific staff was requested, find their same-day alternatives first
       if (requestedStaffId) {
@@ -196,16 +200,30 @@ export class RecoveryService {
         }
       }
 
-      // Sort final suggestions by distance to requested time
-      return suggestions.sort((a, b) => {
-        return Math.abs(a.startTime.getTime() - requestedTime.getTime()) - Math.abs(b.startTime.getTime() - requestedTime.getTime());
-      }).slice(0, 4);
+      // Sort final suggestions chronologically
+      return suggestions.sort((a, b) => a.startTime.getTime() - b.startTime.getTime()).slice(0, 4);
 
     } catch (e) {
       this.logger.error(`Error finding alternative slots: ${e.message}`);
       if (e instanceof NotFoundException || e instanceof BadRequestException) {
         throw e;
       }
+      return [];
+    }
+  }
+
+  /**
+   * Fetch sister partner salons registered in the system (excluding current salonId)
+   */
+  async getPartnerSalons(salonId: string): Promise<Array<{ id: string; name: string }>> {
+    try {
+      return await this.prisma.salon.findMany({
+        where: { id: { not: salonId } },
+        take: 2,
+        select: { id: true, name: true },
+      });
+    } catch (e) {
+      this.logger.error(`Error fetching partner salons: ${e.message}`);
       return [];
     }
   }
