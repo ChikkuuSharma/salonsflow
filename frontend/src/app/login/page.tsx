@@ -221,12 +221,15 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center items-center gap-2.5 mb-2">
-            <div className="h-10 w-10 bg-gradient-to-tr from-purple-650 to-pink-555 rounded-xl flex items-center justify-center font-bold text-white shadow-lg">
-              SF
+            <img src="/logo.png" alt="SalonsFlow Logo" className="h-10 w-10 rounded-xl object-contain bg-white border border-purple-100 p-0.5 shadow-md" />
+            <div className="flex flex-col text-left">
+              <span className="font-display font-black text-2xl tracking-tight text-white leading-none">
+                Salons<span className="text-purple-400">Flow</span>
+              </span>
+              <span className="text-[10px] font-bold text-purple-300/70 tracking-wider uppercase mt-1">
+                Grow While You Style
+              </span>
             </div>
-            <span className="font-display font-black text-2xl tracking-tight text-white leading-none">
-              Salons<span className="text-purple-400">Flow</span>
-            </span>
           </div>
           <h2 className="text-lg font-bold text-white tracking-tight pt-2">Unified Access Gateway</h2>
           <p className="text-xs text-purple-200/60 leading-normal font-semibold">Select your account type to enter the SalonsFlow platform console.</p>

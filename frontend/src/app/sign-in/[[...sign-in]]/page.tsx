@@ -54,10 +54,15 @@ export default function SignInPage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center items-center gap-2.5 mb-2">
-            <img src="/logo.png" alt="SalonsFlow Logo" className="h-10 w-10 rounded-xl object-contain bg-white border border-purple-100 p-0.5" />
-            <span className="font-display font-black text-2xl tracking-tight text-white leading-none">
-              Salons<span className="text-purple-400">Flow</span>
-            </span>
+            <img src="/logo.png" alt="SalonsFlow Logo" className="h-10 w-10 rounded-xl object-contain bg-white border border-purple-100 p-0.5 shadow-md" />
+            <div className="flex flex-col text-left">
+              <span className="font-display font-black text-2xl tracking-tight text-white leading-none">
+                Salons<span className="text-purple-400">Flow</span>
+              </span>
+              <span className="text-[10px] font-bold text-purple-300/70 tracking-wider uppercase mt-1">
+                Grow While You Style
+              </span>
+            </div>
           </div>
           <span className="text-[10px] bg-purple-500/15 border border-purple-500/30 text-purple-300 font-extrabold uppercase px-3 py-1 rounded-full tracking-widest inline-flex items-center gap-1">
             <Sparkles className="h-3 w-3" /> Sandbox Environment
