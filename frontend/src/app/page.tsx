@@ -265,7 +265,7 @@ export default function Home() {
 
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!demoFormData.name || !demoFormData.phone || !demoFormData.email) return;
+    if (!demoFormData.name || !demoFormData.phone) return;
     setDemoFormSubmitSuccess(true);
     setTimeout(() => {
       setDemoModalOpen(false);
@@ -854,10 +854,9 @@ export default function Home() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address</label>
+                  <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address (Optional)</label>
                   <input
                     type="email"
-                    required
                     placeholder="e.g. sharma@gmail.com"
                     value={demoFormData.email}
                     onChange={(e) => setDemoFormData({ ...demoFormData, email: e.target.value })}
@@ -1016,10 +1015,9 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address</label>
+                      <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address (Optional)</label>
                       <input
                         type="email"
-                        required
                         placeholder="e.g. sharma@gmail.com"
                         value={demoFormData.email}
                         onChange={(e) => setDemoFormData({ ...demoFormData, email: e.target.value })}
