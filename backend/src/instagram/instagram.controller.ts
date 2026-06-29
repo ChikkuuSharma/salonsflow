@@ -196,8 +196,78 @@ export class InstagramController {
       if (intent === 'BOOKING') {
         const details = await this.aiService.extractBookingDetails(parsed.text, salon.id);
         if (details) {
-          try {
-            const startTime = new Date(`${details.date}T${details.time}:00Z`);
+          if (details.time === 'AVAILABILITY') {
+            const service = await this.prisma.service.findFirst({
+              where: {
+                salonId: salon.id,
+                name: { contains: details.serviceName, mode: 'insensitive' },
+              },
+            });
+
+            if (service) {
+              const requestedTime = new Date(`${details.date}T12:00:00Z`);
+              let staffId: string | undefined = undefined;
+              if (details.staffName) {
+                const staff = await this.prisma.staff.findFirst({
+                  where: { salonId: salon.id, name: { contains: details.staffName, mode: 'insensitive' } }
+                });
+                if (staff) staffId = staff.id;
+              }
+
+              const alternatives = await this.recoveryService.getAlternativeSlots(
+                salon.id,
+                service.id,
+                requestedTime,
+                staffId,
+              );
+
+              if (alternatives.length > 0) {
+                const optionsStr = alternatives.map((alt, idx) => {
+                  const timeString = alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const dateString = alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                  return `${idx + 1}. ${dateString} at ${timeString} with ${alt.staffName}`;
+                }).join('\n');
+
+                if (language === 'HINDI') {
+                  finalResponseText = `आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप बुक करना चाहते हैं, तो कृपया समय या विकल्प संख्या लिखकर भेजें।`;
+                } else if (language === 'HINGLISH') {
+                  finalResponseText = `Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein ya preferred time batayein.`;
+                } else {
+                  finalResponseText = `Here are the available slots for today:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number or specify your preferred time.`;
+                }
+              } else {
+                const partners = await this.recoveryService.getPartnerSalons(salon.id);
+                if (partners.length > 0) {
+                  const partnersStr = partners.map(p => p.name).join(', ');
+                  if (language === 'HINDI') {
+                    finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} पर बुक कर सकते हैं।`;
+                  } else if (language === 'HINGLISH') {
+                    finalResponseText = `Aaj koi slots available nahi hain. Aap another day try kar sakte hain, ya partner salons: ${partnersStr} pe book kar sakte hain.`;
+                  } else {
+                    finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr}.`;
+                  }
+                } else {
+                  if (language === 'HINDI') {
+                    finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। कृपया किसी अन्य दिन या समय के लिए पूछें।`;
+                  } else if (language === 'HINGLISH') {
+                    finalResponseText = `Sorry, aaj koi slots available nahi hain. Please another day ya time batayein.`;
+                  } else {
+                    finalResponseText = `Sorry, no slots are available today. Please ask for another day or time.`;
+                  }
+                }
+              }
+            } else {
+              if (language === 'HINDI') {
+                finalResponseText = `क्षमा करें, मुझे यह सेवा नहीं मिली। कृपया स्पष्ट रूप से सेवा का नाम बताएं।`;
+              } else if (language === 'HINGLISH') {
+                finalResponseText = `Sorry, mujhe wo service nahi mili. Please service specify karein.`;
+              } else {
+                finalResponseText = `Sorry, I couldn't identify the service. Please specify the service name.`;
+              }
+            }
+          } else {
+            try {
+              const startTime = new Date(`${details.date}T${details.time}:00Z`);
 
             let staffId: string | undefined = undefined;
             if (details.staffName) {
@@ -357,6 +427,7 @@ export class InstagramController {
               } else {
                 finalResponseText = `I identified you wanted to book a "${details.serviceName}" on ${details.date} at ${details.time}, but could not complete it: ${err.message}.`;
               }
+            }
             }
           }
         } else {

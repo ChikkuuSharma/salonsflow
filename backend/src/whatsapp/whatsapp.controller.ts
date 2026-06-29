@@ -376,111 +376,16 @@ export class WhatsappController {
       if (intent === 'BOOKING') {
         const details = await this.aiService.extractBookingDetails(parsed.text, salon.id);
         if (details) {
-          try {
-            const startTime = new Date(`${details.date}T${details.time}:00Z`);
-
-            let staffId: string | undefined = undefined;
-            if (details.staffName) {
-              const staff = await this.prisma.staff.findFirst({
-                where: {
-                  salonId: salon.id,
-                  name: {
-                    contains: details.staffName,
-                    mode: 'insensitive',
-                  },
-                },
-              });
-              if (staff) {
-                staffId = staff.id;
-              }
-            }
-
-            const bookingSource = customer.source === 'WALK_IN' ? 'OFFLINE_WALKIN' : 'ONLINE_WHATSAPP';
-            const appointment =
-              await this.appointmentsService.createBookingTransaction({
-                salonId: salon.id,
-                customerId: customer.id,
-                serviceName: details.serviceName,
-                startTime,
-                staffId,
-                bookingSource,
-              });
-
-            const timeString = appointment.startTime.toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            });
-
-            const bookedStaffName = appointment.staff?.name;
-
-            let checkoutLink: string | null = null;
-            try {
-              const stripe = new Stripe(process.env.STRIPE_API_KEY || 'dummy_key', {
-                apiVersion: '2022-11-15' as any,
-              });
-              const session = await stripe.checkout.sessions.create({
-                payment_method_types: ['card'],
-                line_items: [
-                  {
-                    price_data: {
-                      currency: 'inr',
-                      product_data: {
-                        name: appointment.service.name,
-                      },
-                      unit_amount: Math.round(appointment.service.price * 100),
-                    },
-                    quantity: 1,
-                  },
-                ],
-                mode: 'payment',
-                success_url: `https://salonflow.com/booking-success?session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `https://salonflow.com/booking-cancel`,
-                metadata: {
-                  appointmentId: appointment.id,
-                  salonId: salon.id,
-                },
-              });
-              checkoutLink = session.url;
-            } catch (stripeError) {
-              this.logger.error(`Stripe checkout session creation failed: ${stripeError.message}`);
-              await this.prisma.auditLog.create({
-                data: {
-                  salonId: salon.id,
-                  action: 'PAYMENT_LINK_FAILED',
-                  details: {
-                    appointmentId: appointment.id,
-                    serviceName: appointment.service.name,
-                    error: stripeError.message,
-                  },
-                },
-              });
-              await this.prisma.appointment.update({
-                where: { id: appointment.id },
-                data: { notes: (appointment.notes ? appointment.notes + ' | ' : '') + 'Pay at salon confirmed due to Stripe link failure.' },
-              });
-            }
-
-            if (language === 'HINDI') {
-              finalResponseText = `नमस्ते! आपकी "${appointment.service.name}" की बुकिंग ${bookedStaffName ? `${bookedStaffName} के साथ ` : ''}${details.date} को ${timeString} बजे पक्की हो गई है।${checkoutLink ? ` कृपया यहाँ भुगतान करें: ${checkoutLink}` : ' (सैलून पर भुगतान करें)'}`;
-            } else if (language === 'HINGLISH') {
-              finalResponseText = `Success! Aapki appointment "${appointment.service.name}" ${bookedStaffName ? `${bookedStaffName} ke saath ` : ''}ke liye ${details.date} ko ${timeString} baje confirm ho gayi hai!${checkoutLink ? ` Please pay karne ke liye is link par click karein: ${checkoutLink}` : ' (Pay at Salon confirmed)'}`;
-            } else {
-              finalResponseText = `Success! I have confirmed your appointment for "${appointment.service.name}"${bookedStaffName ? ` with ${bookedStaffName}` : ''} on ${details.date} at ${timeString}!${checkoutLink ? ` Please complete your payment here: ${checkoutLink}` : ' (Pay at Salon confirmed)'}`;
-            }
-          } catch (err) {
-            this.logger.warn(`Booking conflict for ${details.serviceName}. Fetching alternative slots: ${err.message}`);
+          if (details.time === 'AVAILABILITY') {
             const service = await this.prisma.service.findFirst({
               where: {
                 salonId: salon.id,
-                name: {
-                  contains: details.serviceName,
-                  mode: 'insensitive',
-                },
+                name: { contains: details.serviceName, mode: 'insensitive' },
               },
             });
 
             if (service) {
-              const requestedTime = new Date(`${details.date}T${details.time}:00Z`);
+              const requestedTime = new Date(`${details.date}T12:00:00Z`);
               let staffId: string | undefined = undefined;
               if (details.staffName) {
                 const staff = await this.prisma.staff.findFirst({
@@ -504,40 +409,206 @@ export class WhatsappController {
                 }).join('\n');
 
                 if (language === 'HINDI') {
-                  finalResponseText = `क्षमा करें, वह समय उपलब्ध नहीं है। आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप इनमें से कोई चाहते हैं, तो कृपया संख्या या समय बताएं, या "वेटिंग लिस्ट" लिखकर इस समय के खाली होने पर सूचना पा सकते हैं।`;
+                  finalResponseText = `आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप बुक करना चाहते हैं, तो कृपया समय या विकल्प संख्या लिखकर भेजें।`;
                 } else if (language === 'HINGLISH') {
-                  finalResponseText = `Sorry, wo time available nahi hai. Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein, ya phir 'waiting list' join karne ke liye write 'waiting list'.`;
+                  finalResponseText = `Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein ya preferred time batayein.`;
                 } else {
-                  finalResponseText = `Sorry, that time slot is not available. Here are today's available slots:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number, or reply 'waiting list' to join the waitlist.`;
+                  finalResponseText = `Here are the available slots for today:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number or specify your preferred time.`;
                 }
               } else {
                 const partners = await this.recoveryService.getPartnerSalons(salon.id);
                 if (partners.length > 0) {
                   const partnersStr = partners.map(p => p.name).join(', ');
                   if (language === 'HINDI') {
-                    finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} (जो सैलूनफ्लो द्वारा संचालित हैं) में बुकिंग कर सकते हैं। आप "वेटिंग लिस्ट" लिखकर भी इस समय के खाली होने पर सूचना पा सकते हैं।`;
+                    finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} पर बुक कर सकते हैं।`;
                   } else if (language === 'HINGLISH') {
-                    finalResponseText = `Aaj koi slots available nahi hain. Aap another day timing ke liye request kar sakte hain, ya hamare partner salons: ${partnersStr} (powered by SalonsFlow) pe book kar sakte hain. Ya phir 'waiting list' type karke waitlist join kar sakte hain.`;
+                    finalResponseText = `Aaj koi slots available nahi hain. Aap another day try kar sakte hain, ya partner salons: ${partnersStr} pe book kar sakte hain.`;
                   } else {
-                    finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr} (also powered by SalonsFlow). Alternatively, reply 'waiting list' to join the waitlist.`;
+                    finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr}.`;
                   }
                 } else {
                   if (language === 'HINDI') {
-                    finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं या "वेटिंग लिस्ट" लिखकर भेज सकते हैं।`;
+                    finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। कृपया किसी अन्य दिन या समय के लिए पूछें।`;
                   } else if (language === 'HINGLISH') {
-                    finalResponseText = `Sorry, aaj koi slots available nahi hain. Aap another day timing try kar sakte hain ya waitlist me aane ke liye 'waiting list' write karein.`;
+                    finalResponseText = `Sorry, aaj koi slots available nahi hain. Please another day ya time batayein.`;
                   } else {
-                    finalResponseText = `Sorry, no slots are available today. Please ask for another day/time or reply 'waiting list' to join the waitlist.`;
+                    finalResponseText = `Sorry, no slots are available today. Please ask for another day or time.`;
                   }
                 }
               }
             } else {
               if (language === 'HINDI') {
-                finalResponseText = `मुझे पता चला कि आप ${details.date} को ${details.time} बजे "${details.serviceName}" बुक करना चाहते थे, लेकिन मैं इसे पूरा नहीं कर सका: ${err.message}।`;
+                finalResponseText = `क्षमा करें, मुझे यह सेवा नहीं मिली। कृपया स्पष्ट रूप से सेवा का नाम बताएं।`;
               } else if (language === 'HINGLISH') {
-                finalResponseText = `Aap ${details.date} ko ${details.time} baje "${details.serviceName}" book karna chahte the, par booking nahi ho payi: ${err.message}.`;
+                finalResponseText = `Sorry, mujhe wo service nahi mili. Please service specify karein.`;
               } else {
-                finalResponseText = `I identified you wanted to book a "${details.serviceName}" on ${details.date} at ${details.time}, but could not complete it: ${err.message}.`;
+                finalResponseText = `Sorry, I couldn't identify the service. Please specify the service name.`;
+              }
+            }
+          } else {
+            try {
+              const startTime = new Date(`${details.date}T${details.time}:00Z`);
+
+              let staffId: string | undefined = undefined;
+              if (details.staffName) {
+                const staff = await this.prisma.staff.findFirst({
+                  where: {
+                    salonId: salon.id,
+                    name: {
+                      contains: details.staffName,
+                      mode: 'insensitive',
+                    },
+                  },
+                });
+                if (staff) {
+                  staffId = staff.id;
+                }
+              }
+
+              const bookingSource = customer.source === 'WALK_IN' ? 'OFFLINE_WALKIN' : 'ONLINE_WHATSAPP';
+              const appointment =
+                await this.appointmentsService.createBookingTransaction({
+                  salonId: salon.id,
+                  customerId: customer.id,
+                  serviceName: details.serviceName,
+                  startTime,
+                  staffId,
+                  bookingSource,
+                });
+
+              const timeString = appointment.startTime.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+
+              const bookedStaffName = appointment.staff?.name;
+
+              let checkoutLink: string | null = null;
+              try {
+                const stripe = new Stripe(process.env.STRIPE_API_KEY || 'dummy_key', {
+                  apiVersion: '2022-11-15' as any,
+                });
+                const session = await stripe.checkout.sessions.create({
+                  payment_method_types: ['card'],
+                  line_items: [
+                    {
+                      price_data: {
+                        currency: 'inr',
+                        product_data: {
+                          name: appointment.service.name,
+                        },
+                        unit_amount: Math.round(appointment.service.price * 100),
+                      },
+                      quantity: 1,
+                    },
+                  ],
+                  mode: 'payment',
+                  success_url: `https://salonflow.com/booking-success?session_id={CHECKOUT_SESSION_ID}`,
+                  cancel_url: `https://salonflow.com/booking-cancel`,
+                  metadata: {
+                    appointmentId: appointment.id,
+                    salonId: salon.id,
+                  },
+                });
+                checkoutLink = session.url;
+              } catch (stripeError) {
+                this.logger.error(`Stripe checkout session creation failed: ${stripeError.message}`);
+                await this.prisma.auditLog.create({
+                  data: {
+                    salonId: salon.id,
+                    action: 'PAYMENT_LINK_FAILED',
+                    details: {
+                      appointmentId: appointment.id,
+                      serviceName: appointment.service.name,
+                      error: stripeError.message,
+                    },
+                  },
+                });
+                await this.prisma.appointment.update({
+                  where: { id: appointment.id },
+                  data: { notes: (appointment.notes ? appointment.notes + ' | ' : '') + 'Pay at salon confirmed due to Stripe link failure.' },
+                });
+              }
+
+              if (language === 'HINDI') {
+                finalResponseText = `नमस्ते! आपकी "${appointment.service.name}" की बुकिंग ${bookedStaffName ? `${bookedStaffName} के साथ ` : ''}${details.date} को ${timeString} बजे पक्की हो गई है।${checkoutLink ? ` कृपया यहाँ भुगतान करें: ${checkoutLink}` : ' (सैलून पर भुगतान करें)'}`;
+              } else if (language === 'HINGLISH') {
+                finalResponseText = `Success! Aapki appointment "${appointment.service.name}" ${bookedStaffName ? `${bookedStaffName} ke saath ` : ''}ke liye ${details.date} ko ${timeString} baje confirm ho gayi hai!${checkoutLink ? ` Please pay karne ke liye is link par click karein: ${checkoutLink}` : ' (Pay at Salon confirmed)'}`;
+              } else {
+                finalResponseText = `Success! I have confirmed your appointment for "${appointment.service.name}"${bookedStaffName ? ` with ${bookedStaffName}` : ''} on ${details.date} at ${timeString}!${checkoutLink ? ` Please complete your payment here: ${checkoutLink}` : ' (Pay at Salon confirmed)'}`;
+              }
+            } catch (err) {
+              this.logger.warn(`Booking conflict for ${details.serviceName}. Fetching alternative slots: ${err.message}`);
+              const service = await this.prisma.service.findFirst({
+                where: {
+                  salonId: salon.id,
+                  name: {
+                    contains: details.serviceName,
+                    mode: 'insensitive',
+                  },
+                },
+              });
+
+              if (service) {
+                const requestedTime = new Date(`${details.date}T${details.time}:00Z`);
+                let staffId: string | undefined = undefined;
+                if (details.staffName) {
+                  const staff = await this.prisma.staff.findFirst({
+                    where: { salonId: salon.id, name: { contains: details.staffName, mode: 'insensitive' } }
+                  });
+                  if (staff) staffId = staff.id;
+                }
+
+                const alternatives = await this.recoveryService.getAlternativeSlots(
+                  salon.id,
+                  service.id,
+                  requestedTime,
+                  staffId,
+                );
+
+                if (alternatives.length > 0) {
+                  const optionsStr = alternatives.map((alt, idx) => {
+                    const timeString = alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateString = alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    return `${idx + 1}. ${dateString} at ${timeString} with ${alt.staffName}`;
+                  }).join('\n');
+
+                  if (language === 'HINDI') {
+                    finalResponseText = `क्षमा करें, वह समय उपलब्ध नहीं है। आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप इनमें से कोई चाहते हैं, तो कृपया संख्या या समय बताएं, या "वेटिंग लिस्ट" लिखकर इस समय के खाली होने पर सूचना पा सकते हैं।`;
+                  } else if (language === 'HINGLISH') {
+                    finalResponseText = `Sorry, wo time available nahi hai. Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein, ya phir 'waiting list' join karne ke liye write 'waiting list'.`;
+                  } else {
+                    finalResponseText = `Sorry, that time slot is not available. Here are today's available slots:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number, or reply 'waiting list' to join the waitlist.`;
+                  }
+                } else {
+                  const partners = await this.recoveryService.getPartnerSalons(salon.id);
+                  if (partners.length > 0) {
+                    const partnersStr = partners.map(p => p.name).join(', ');
+                    if (language === 'HINDI') {
+                      finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} (जो सैलूनफ्लो द्वारा संचालित हैं) में बुकिंग कर सकते हैं। आप "वेटिंग लिस्ट" लिखकर भी इस समय के खाली होने पर सूचना पा सकते हैं।`;
+                    } else if (language === 'HINGLISH') {
+                      finalResponseText = `Aaj koi slots available nahi hain. Aap another day timing ke liye request kar sakte hain, ya hamare partner salons: ${partnersStr} (powered by SalonsFlow) pe book kar sakte hain. Ya phir 'waiting list' type karke waitlist join kar sakte hain.`;
+                    } else {
+                      finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr} (also powered by SalonsFlow). Alternatively, reply 'waiting list' to join the waitlist.`;
+                    }
+                  } else {
+                    if (language === 'HINDI') {
+                      finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं या "वेटिंग लिस्ट" लिखकर भेज सकते हैं।`;
+                    } else if (language === 'HINGLISH') {
+                      finalResponseText = `Sorry, aaj koi slots available nahi hain. Aap another day timing try kar sakte hain ya waitlist me aane ke liye 'waiting list' write karein.`;
+                    } else {
+                      finalResponseText = `Sorry, no slots are available today. Please ask for another day/time or reply 'waiting list' to join the waitlist.`;
+                    }
+                  }
+                }
+              } else {
+                if (language === 'HINDI') {
+                  finalResponseText = `मुझे पता चला कि आप ${details.date} को ${details.time} बजे "${details.serviceName}" बुक करना चाहते थे, लेकिन मैं इसे पूरा नहीं कर सका: ${err.message}।`;
+                } else if (language === 'HINGLISH') {
+                  finalResponseText = `Aap ${details.date} ko ${details.time} baje "${details.serviceName}" book karna chahte the, par booking nahi ho payi: ${err.message}.`;
+                } else {
+                  finalResponseText = `I identified you wanted to book a "${details.serviceName}" on ${details.date} at ${details.time}, but could not complete it: ${err.message}.`;
+                }
               }
             }
           }

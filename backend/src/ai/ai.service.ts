@@ -851,8 +851,15 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       serviceName = 'Manicure';
     }
 
+    const isAvailabilityQuery = msg.includes('slot') || msg.includes('available') || msg.includes('free') || msg.includes('khali') || msg.includes('khaali') || msg.includes('timing') || msg.includes('schedule') || msg.includes('check') || msg.includes('खाली') || msg.includes('समय');
+
     if (!serviceName) {
-      return null;
+      if (isAvailabilityQuery) {
+        // Default to Haircut to allow listing general slots if they just asked for slots availability
+        serviceName = 'Haircut';
+      } else {
+        return null;
+      }
     }
 
     // Extract Staff Name
@@ -1002,7 +1009,11 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     if (!timeStr) {
-      return null;
+      if (isAvailabilityQuery) {
+        timeStr = 'AVAILABILITY';
+      } else {
+        return null;
+      }
     }
 
     return {
