@@ -63,6 +63,7 @@ export default function Home() {
   const [demoFormData, setDemoFormData] = useState({
     name: "",
     phone: "",
+    email: "",
     salonName: "",
     city: "Mumbai",
   });
@@ -264,12 +265,12 @@ export default function Home() {
 
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!demoFormData.name || !demoFormData.phone) return;
+    if (!demoFormData.name || !demoFormData.phone || !demoFormData.email) return;
     setDemoFormSubmitSuccess(true);
     setTimeout(() => {
       setDemoModalOpen(false);
       setDemoFormSubmitSuccess(false);
-      setDemoFormData({ name: "", phone: "", salonName: "", city: "Mumbai" });
+      setDemoFormData({ name: "", phone: "", email: "", salonName: "", city: "Mumbai" });
     }, 2500);
   };
 
@@ -842,13 +843,24 @@ export default function Home() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Phone Number</label>
+                  <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">WhatsApp Number</label>
                   <input
                     type="tel"
                     required
                     placeholder="e.g. +91 9876543210"
                     value={demoFormData.phone}
                     onChange={(e) => setDemoFormData({ ...demoFormData, phone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all font-semibold"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. sharma@gmail.com"
+                    value={demoFormData.email}
+                    onChange={(e) => setDemoFormData({ ...demoFormData, email: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all font-semibold"
                   />
                 </div>
@@ -977,7 +989,7 @@ export default function Home() {
               <form onSubmit={handleDemoSubmit} className="space-y-4 text-left">
                 {demoFormSubmitSuccess ? (
                   <div className="p-4 bg-purple-50 border border-purple-200 text-purple-700 text-xs font-bold rounded-2xl text-center">
-                    [✓] Thank you! We will email you the Google Meet details shortly.
+                    [✓] Thank you! We will WhatsApp and email you the Google Meet details shortly.
                   </div>
                 ) : (
                   <>
@@ -993,13 +1005,24 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Contact Number</label>
+                      <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">WhatsApp Number</label>
                       <input
                         type="tel"
                         required
                         placeholder="e.g. +91 9999988888"
                         value={demoFormData.phone}
                         onChange={(e) => setDemoFormData({ ...demoFormData, phone: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="e.g. sharma@gmail.com"
+                        value={demoFormData.email}
+                        onChange={(e) => setDemoFormData({ ...demoFormData, email: e.target.value })}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all font-semibold"
                       />
                     </div>
