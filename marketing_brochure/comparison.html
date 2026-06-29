@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SalonsFlow — Market Comparison Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b0726;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+    }
+    
+    .font-display {
+      font-family: 'Outfit', sans-serif;
+    }
+    
+    @page {
+      size: A4;
+      margin: 0mm;
+    }
+    
+    .print-page {
+      width: 210mm;
+      height: 297mm;
+      padding: 16mm;
+      background-color: #070519;
+      margin: 0 auto;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      page-break-inside: avoid;
+    }
+
+    @media print {
+      body {
+        background-color: #070519;
+      }
+      .print-page {
+        margin: 0;
+        border: none;
+        box-shadow: none;
+        width: 210mm;
+        height: 297mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1: FEATURE-BASED COMPARISON -->
+  <div class="print-page">
+    <!-- Background glow lines -->
+    <div class="absolute top-0 right-0 w-80 h-80 bg-purple-500/5 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-pink-500/5 blur-[120px] rounded-full"></div>
+
+    <div class="space-y-6 z-10 relative">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-purple-900/30 pb-4">
+        <div class="flex items-center gap-3">
+          <img src="https://salonsflow.in/logo.png" alt="SalonsFlow Logo" class="h-10 w-10 object-contain" onerror="this.src='../logo.png';">
+          <div>
+            <span class="font-display font-black text-xl tracking-tight text-white block">Salons<span class="text-purple-400">Flow</span></span>
+            <span class="text-[9px] font-extrabold uppercase tracking-widest text-purple-400/70 block">Competitive Market Analysis</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Release Version 2.4</span>
+          <span class="text-[9px] font-bold text-slate-500 block">Report Classification: CONFIDENTIAL</span>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="space-y-1.5 text-left">
+        <h2 class="font-display text-2xl font-black tracking-tight text-white uppercase">Feature-Based Matrix</h2>
+        <p class="text-[11px] text-slate-450 leading-relaxed font-semibold">
+          An objective, non-biased breakdown comparing core product functionalities across international and domestic software suites.
+        </p>
+      </div>
+
+      <!-- Feature Table -->
+      <div class="border border-purple-900/40 rounded-2xl overflow-hidden bg-purple-950/10 shadow-xl">
+        <table class="w-full text-left text-[10px] border-collapse">
+          <thead>
+            <tr class="bg-purple-950/40 text-purple-300 font-bold uppercase tracking-wider border-b border-purple-900/30">
+              <th class="p-3">Core Capability</th>
+              <th class="p-3 text-center">Fresha</th>
+              <th class="p-3 text-center">Zenoti</th>
+              <th class="p-3 text-center">Vagaro</th>
+              <th class="p-3 text-center">ReSpark</th>
+              <th class="p-3 text-center bg-purple-900/20 text-emerald-400">SalonsFlow</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-purple-900/20 text-slate-300 font-semibold">
+            <tr>
+              <td class="p-3 text-white font-bold">Hinglish / Hindi NLP Dialogue Classifier</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">⚠️ Basic</td>
+              <td class="p-3 text-center bg-purple-900/10 text-emerald-400 font-extrabold">✅ Native</td>
+            </tr>
+            <tr>
+              <td class="p-3 text-white font-bold">Whisper Voice Note Parser Sync</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center bg-purple-900/10 text-emerald-400 font-extrabold">✅ Native</td>
+            </tr>
+            <tr>
+              <td class="p-3 text-white font-bold">Missed Call Webhook Automation</td>
+              <td class="p-3 text-center text-slate-500">⚠️ Call-Concierge</td>
+              <td class="p-3 text-center text-slate-500">⚠️ Call-Concierge</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center bg-purple-900/10 text-emerald-400 font-extrabold">✅ Native</td>
+            </tr>
+            <tr>
+              <td class="p-3 text-white font-bold">WhatsApp WABA Autopilot Flows</td>
+              <td class="p-3 text-center text-slate-500">⚠️ Paid Add-on</td>
+              <td class="p-3 text-center text-slate-500">⚠️ Paid Add-on</td>
+              <td class="p-3 text-center text-slate-500">❌ No</td>
+              <td class="p-3 text-center text-slate-500">⚠️ Broadcast only</td>
+              <td class="p-3 text-center bg-purple-900/10 text-emerald-400 font-extrabold">✅ Native</td>
+            </tr>
+            <tr>
+              <td class="p-3 text-white font-bold">Pricing Commission Model</td>
+              <td class="p-3 text-center text-pink-400">⚠️ Up to 20%</td>
+              <td class="p-3 text-center text-slate-400">⚠️ Enterprise Custom</td>
+              <td class="p-3 text-center text-slate-400">⚠️ Scaled Calendars</td>
+              <td class="p-3 text-center text-slate-400">⚠️ Annual Quote</td>
+              <td class="p-3 text-center bg-purple-900/10 text-emerald-400 font-extrabold">✅ 0% Commission</td>
+            </tr>
+            <tr>
+              <td class="p-3 text-white font-bold">Post-Billing Google Review Cards</td>
+              <td class="p-3 text-center text-slate-500">⚠️ SMS/Email</td>
+              <td class="p-3 text-center text-slate-500">⚠️ SMS/Email</td>
+              <td class="p-3 text-center text-slate-500">⚠️ SMS/Email</td>
+              <td class="p-3 text-center text-slate-500">⚠️ Broadcast only</td>
+              <td class="p-3 text-center bg-purple-900/10 text-emerald-400 font-extrabold">✅ Native WhatsApp</td>
+            </tr>
+            <tr>
+              <td class="p-3 text-white font-bold">Offline POS Split & Stylist Payroll Ledger</td>
+              <td class="p-3 text-center text-slate-400">⚠️ Basic</td>
+              <td class="p-3 text-center text-emerald-400">✅ Advanced</td>
+              <td class="p-3 text-center text-slate-400">⚠️ Basic</td>
+              <td class="p-3 text-center text-slate-450">⚠️ Standard</td>
+              <td class="p-3 text-center bg-purple-900/10 text-emerald-400 font-extrabold">✅ Advanced Split</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Working-Based Comparison -->
+      <div class="space-y-3">
+        <h3 class="font-display text-sm font-bold tracking-wider text-purple-400 uppercase text-left">Operational Workflows Compared</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Traditional Softwares -->
+          <div class="bg-purple-950/20 border border-purple-900/35 p-4 rounded-2xl space-y-2 text-left">
+            <span class="text-[9px] font-extrabold uppercase tracking-widest text-pink-400 block font-mono">Traditional Workflow (Fresha/Vagaro)</span>
+            <ul class="list-disc pl-4 text-[10px] text-slate-400 space-y-1.5 font-semibold">
+              <li>Clients must install app or browse directories.</li>
+              <li>Voice systems forward calls to third-party telephonic call centers.</li>
+              <li>Billing invoices are sent via email, resulting in low read rates.</li>
+              <li>New client bookings incur a 15%-20% marketplace deduction.</li>
+            </ul>
+          </div>
+          <!-- SalonsFlow -->
+          <div class="bg-emerald-950/15 border border-emerald-900/30 p-4 rounded-2xl space-y-2 text-left">
+            <span class="text-[9px] font-extrabold uppercase tracking-widest text-emerald-400 block font-mono">SalonsFlow Autonomous Workflow</span>
+            <ul class="list-disc pl-4 text-[10px] text-emerald-350/90 space-y-1.5 font-semibold">
+              <li>Autopilot schedules appointments natively on WhatsApp without requiring app downloads.</li>
+              <li>Missed call webhook greets callers automatically on WhatsApp.</li>
+              <li>Invoices and automated feedback prompts are sent directly to customer messaging handles.</li>
+              <li>SaaS model retains 100% of profit.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-between items-center border-t border-purple-900/30 pt-4 text-[9px] text-slate-500 font-semibold">
+      <span>Page 1 of 2 — SalonsFlow Competitive Intelligence</span>
+      <span>Confidential business analysis document. Do not distribute.</span>
+    </div>
+  </div>
+
+  <!-- PAGE 2: WHY CHOOSE SALONSFLOW & CONCLUSION -->
+  <div class="print-page">
+    <div class="absolute top-0 left-0 w-80 h-80 bg-emerald-500/5 blur-[120px] rounded-full"></div>
+
+    <div class="space-y-6 z-10 relative">
+      <!-- Header Page 2 -->
+      <div class="flex items-center justify-between border-b border-purple-900/30 pb-4">
+        <div class="flex items-center gap-3">
+          <img src="https://salonsflow.in/logo.png" alt="SalonsFlow Logo" class="h-10 w-10 object-contain" onerror="this.src='../logo.png';">
+          <div>
+            <span class="font-display font-black text-xl tracking-tight text-white block">Salons<span class="text-purple-400">Flow</span></span>
+            <span class="text-[9px] font-extrabold uppercase tracking-widest text-purple-400/70 block">Strategic Value Proposition</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Onboarding Guide</span>
+        </div>
+      </div>
+
+      <!-- Why to Use Our Software Section -->
+      <div class="space-y-4">
+        <div class="space-y-1 text-left">
+          <h2 class="font-display text-2xl font-black tracking-tight text-white uppercase">Why Choose SalonsFlow?</h2>
+          <p class="text-[11px] text-slate-450 leading-relaxed font-semibold">
+            A specialized product value framework tailored for regional beauty & grooming networks.
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Advantage 1 -->
+          <div class="bg-purple-950/20 border border-purple-900/40 p-4.5 rounded-2xl flex gap-4 text-left">
+            <div class="w-10 h-10 bg-emerald-950/50 border border-emerald-900/50 rounded-xl flex items-center justify-center flex-shrink-0 text-emerald-400 text-sm font-black font-display shadow-inner">01</div>
+            <div class="space-y-1">
+              <h4 class="text-xs font-black text-white uppercase tracking-wider font-display">Maximize Margin & 0% Bookings Deduction</h4>
+              <p class="text-[10.5px] text-slate-400 leading-relaxed font-semibold">
+                Major platforms like Fresha extract 20% of invoice revenues for bookings routed through their marketplaces. SalonsFlow operates as a pure SaaS, charging a simple flat subscription fee. You keep 100% of your customer billing returns.
+              </p>
+            </div>
+          </div>
+
+          <!-- Advantage 2 -->
+          <div class="bg-purple-950/20 border border-purple-900/40 p-4.5 rounded-2xl flex gap-4 text-left">
+            <div class="w-10 h-10 bg-emerald-950/50 border border-emerald-900/50 rounded-xl flex items-center justify-center flex-shrink-0 text-emerald-400 text-sm font-black font-display shadow-inner">02</div>
+            <div class="space-y-1">
+              <h4 class="text-xs font-black text-white uppercase tracking-wider font-display">Frictionless Hinglish Dialogue NLP Processing</h4>
+              <p class="text-[10.5px] text-slate-400 leading-relaxed font-semibold">
+                Unlike international products restricted to standard English inputs, SalonsFlow processes mixed regional Hinglish voice note clips and text phrases natively. Customers book instantly on WhatsApp using their natural speaking style.
+              </p>
+            </div>
+          </div>
+
+          <!-- Advantage 3 -->
+          <div class="bg-purple-950/20 border border-purple-900/40 p-4.5 rounded-2xl flex gap-4 text-left">
+            <div class="w-10 h-10 bg-emerald-950/50 border border-emerald-900/50 rounded-xl flex items-center justify-center flex-shrink-0 text-emerald-400 text-sm font-black font-display shadow-inner">03</div>
+            <div class="space-y-1">
+              <h4 class="text-xs font-black text-white uppercase tracking-wider font-display">Immediate Missed Call Revenue Capture</h4>
+              <p class="text-[10.5px] text-slate-400 leading-relaxed font-semibold">
+                Up to 30% of incoming salon booking calls are missed during busy weekend rushes. SalonsFlow's native call webhook captures missed rings and automatically sends a WhatsApp greeting with the scheduling menu, ensuring no customer walks away.
+              </p>
+            </div>
+          </div>
+
+          <!-- Advantage 4 -->
+          <div class="bg-purple-950/20 border border-purple-900/40 p-4.5 rounded-2xl flex gap-4 text-left">
+            <div class="w-10 h-10 bg-emerald-950/50 border border-emerald-900/50 rounded-xl flex items-center justify-center flex-shrink-0 text-emerald-400 text-sm font-black font-display shadow-inner">04</div>
+            <div class="space-y-1">
+              <h4 class="text-xs font-black text-white uppercase tracking-wider font-display">Google SEO post-visit WhatsApp rating Cards</h4>
+              <p class="text-[10.5px] text-slate-400 leading-relaxed font-semibold">
+                Boost your local search maps ranking. SalonsFlow dispatches feedback prompts directly to customer messaging handles 60 minutes after POS checkout, driving positive reviews and organic client leads.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conclusion block -->
+      <div class="bg-purple-950/40 border border-purple-900/50 p-4.5 rounded-2xl space-y-2 text-left">
+        <h4 class="text-xs font-bold text-purple-300 uppercase tracking-widest font-display">Summary Evaluation</h4>
+        <p class="text-[10.5px] text-slate-400 leading-relaxed font-semibold">
+          While Vagaro and Fresha are ideal for Western markets, they introduce high billing commission friction and lack local conversational AI interfaces. ReSpark provides basic billing templates but lacks advanced webhook intelligence. 
+          <strong>SalonsFlow bridges these gaps by providing localized, commission-free booking automation built for Indian salon workflows.</strong>
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer Page 2 -->
+    <div class="flex justify-between items-center border-t border-purple-900/30 pt-4 text-[9px] text-slate-500 font-semibold">
+      <span>Page 2 of 2 — SalonsFlow Competitive Intelligence</span>
+      <span>Confidential business analysis document. Do not distribute.</span>
+    </div>
+  </div>
+
+</body>
+</html>
