@@ -57,7 +57,7 @@ export default function ConversationsPage() {
     }
   }, [channel]);
 
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   // Pre-configured test prompts for easy clicking
@@ -127,7 +127,12 @@ export default function ConversationsPage() {
   }, [selectedCustomerId]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [messages]);
 
   const handleSelectCustomer = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -390,7 +395,7 @@ export default function ConversationsPage() {
           </div>
 
           {/* Messages Log area */}
-          <div className={`flex-1 ${channel === "instagram" ? "bg-[#121212]/30" : "bg-[#0b141a]/40"} p-5 overflow-y-auto space-y-4 font-sans relative custom-scrollbar`}>
+          <div ref={messagesContainerRef} className={`flex-1 ${channel === "instagram" ? "bg-[#121212]/30" : "bg-[#0b141a]/40"} p-5 overflow-y-auto space-y-4 font-sans relative custom-scrollbar`}>
             {/* Background design matrix */}
             <div className={`absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(${channel === "instagram" ? "#ec4899" : "#10b981"}_1px,transparent_1px)] [background-size:16px_16px]`}></div>
 
@@ -444,7 +449,7 @@ export default function ConversationsPage() {
               </div>
             )}
 
-            <div ref={chatEndRef} />
+            {/* End of Chat */}
           </div>
 
           {/* Input Panel */}
