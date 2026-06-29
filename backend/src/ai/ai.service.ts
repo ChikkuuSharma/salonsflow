@@ -793,7 +793,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     const msg = message.toLowerCase();
 
     // Extract service & Vocabulary Normalizer
-    let serviceName = 'Haircut';
+    let serviceName: string | null = null;
     if (
       msg.includes('facial') ||
       msg.includes('cleanup') ||
@@ -851,6 +851,10 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       serviceName = 'Manicure';
     }
 
+    if (!serviceName) {
+      return null;
+    }
+
     // Extract Staff Name
     let staffName: string | undefined = undefined;
     if (salonId) {
@@ -869,7 +873,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     // Default dates
     const today = new Date();
     let dateStr = today.toISOString().split('T')[0];
-    let timeStr = '12:00';
+    let timeStr: string | null = null;
 
     // 1. Date extraction
     if (msg.includes('today') || msg.includes('aaj') || msg.includes('आज')) {
@@ -995,6 +999,10 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         timeStr = `${hour.toString().padStart(2, '0')}:${minStr.padStart(2, '0')}`;
         break;
       }
+    }
+
+    if (!timeStr) {
+      return null;
     }
 
     return {
