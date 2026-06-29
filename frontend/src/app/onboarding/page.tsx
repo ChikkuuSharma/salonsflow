@@ -11,7 +11,7 @@ import {
   ArrowLeft, 
   Loader2, 
   Sparkles, 
-  DollarSign, 
+  IndianRupee, 
   Clock, 
   Check,
   AlertCircle,
@@ -485,7 +485,7 @@ export default function OnboardingPage() {
                       {svc.selected ? (
                         <div className="flex items-center gap-2">
                           <div className="relative w-24">
-                            <DollarSign className="absolute left-2 top-2 h-3.5 w-3.5 text-emerald-500" />
+                            <IndianRupee className="absolute left-2 top-2 h-3.5 w-3.5 text-emerald-500" />
                             <input
                               type="number"
                               value={svc.price}
