@@ -139,8 +139,10 @@ export default function HaircutAdvisorPage() {
           name: leadFormData.name,
           phone: leadFormData.phone,
           email: leadFormData.email,
-          salonName: leadFormData.salonName,
-          city: leadFormData.city
+          salonName: "AI Style Lab Portal",
+          city: leadFormData.city,
+          demoStatus: "AI_STYLE_LAB",
+          notes: `[AI Style Lab] Shape: ${detectedShape.toUpperCase()}. Recommended Haircut: ${selectedHaircut || "None"}, Beard: ${selectedBeard || "None"}, Color: ${selectedColor || "None"}.`
         })
       });
     } catch (err) {
@@ -454,18 +456,35 @@ export default function HaircutAdvisorPage() {
 
                 {/* Left side: Uploaded photo vs AI Mock suggestion */}
                 <div className="md:col-span-5 space-y-6 flex flex-col items-center">
-                  <div className="space-y-2 text-center w-full">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">AI Matching Preview</span>
+                  <div className="space-y-3 text-center w-full">
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Style Analysis Preview</span>
                     
-                    {/* Image comparison container */}
-                    <div className="relative w-full aspect-square max-w-[280px] rounded-2xl overflow-hidden border border-zinc-800 shadow-xl bg-zinc-950">
-                      <img
-                        src={shapeData[detectedShape].imageUrl}
-                        alt="AI lookbook preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-3 left-3 bg-zinc-950/80 border border-zinc-800/60 px-3 py-1 rounded-lg text-[9px] font-bold text-emerald-400 uppercase tracking-widest backdrop-blur-sm">
-                        Style Model Match
+                    {/* Side by side user photo and reference model */}
+                    <div className="grid grid-cols-2 gap-3 w-full max-w-[320px] md:max-w-none">
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Your Photo</span>
+                        <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-md">
+                          {imagePreview ? (
+                            <img
+                              src={imagePreview}
+                              alt="Your uploaded portrait"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-[10px] text-zinc-650">No Image</div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Reference Style</span>
+                        <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-md">
+                          <img
+                            src={shapeData[detectedShape].imageUrl}
+                            alt="Reference style model"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

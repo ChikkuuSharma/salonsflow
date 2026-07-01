@@ -40,6 +40,7 @@ export default function AdminLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"demo" | "advisor">("demo");
 
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -232,10 +233,15 @@ export default function AdminLeadsPage() {
   };
 
   const filteredLeads = leads.filter(
-    (lead) =>
-      lead.leadName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (lead.salonName && lead.salonName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      lead.phone.includes(searchQuery)
+    (lead) => {
+      const isAdvisor = lead.demoStatus === "AI_STYLE_LAB";
+      const matchesTab = activeTab === "advisor" ? isAdvisor : !isAdvisor;
+      const matchesSearch =
+        lead.leadName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (lead.salonName && lead.salonName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        lead.phone.includes(searchQuery);
+      return matchesTab && matchesSearch;
+    }
   );
 
   const getStatusBadgeColor = (status: Lead["status"]) => {
@@ -338,7 +344,35 @@ export default function AdminLeadsPage() {
       {/* Main Leads Board */}
       <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
         <CardHeader className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50">
-          <CardTitle className="text-sm font-bold text-slate-800">Outreach Pipelines</CardTitle>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <CardTitle className="text-sm font-bold text-slate-800 mr-2">Outreach Pipelines</CardTitle>
+            
+            {/* Tabs for Demo Leads vs AI Style Lab Leads */}
+            <div className="bg-slate-100 p-0.5 rounded-xl inline-flex items-center border border-slate-200">
+              <button
+                onClick={() => setActiveTab("demo")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === "demo"
+                    ? "bg-white text-purple-650 shadow-sm"
+                    : "text-slate-500 hover:text-slate-850"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5 inline mr-1" />
+                Software Demo Leads
+              </button>
+              <button
+                onClick={() => setActiveTab("advisor")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === "advisor"
+                    ? "bg-white text-purple-650 shadow-sm"
+                    : "text-slate-500 hover:text-slate-855"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 inline mr-1 text-purple-600 animate-pulse" />
+                AI Haircut Advisor Leads
+              </button>
+            </div>
+          </div>
           <div className="relative max-w-sm w-full">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input

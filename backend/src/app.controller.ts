@@ -24,6 +24,8 @@ export class AppController {
       email?: string;
       salonName?: string;
       city?: string;
+      demoStatus?: string;
+      notes?: string;
     },
   ) {
     if (!body.name || !body.phone) {
@@ -37,9 +39,9 @@ export class AppController {
         phone: body.phone,
         city: body.city || null,
         interestedPlan: SubscriptionPlan.FREE,
-        demoStatus: 'NONE',
+        demoStatus: body.demoStatus || 'NONE',
         status: LeadStatus.NEW,
-        notes: body.email ? `Public signup email: ${body.email}` : 'Public signup lead.',
+        notes: body.notes || (body.email ? `Public signup email: ${body.email}` : 'Public signup lead.'),
       },
     });
   }
