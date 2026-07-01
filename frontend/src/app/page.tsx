@@ -315,9 +315,10 @@ export default function Home() {
           </div>
           
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-bold text-slate-500 uppercase tracking-wider">
             <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
             <Link href="/pricing" className="hover:text-slate-900 transition-colors">Pricing</Link>
+            <Link href="/haircut-advisor" className="hover:text-purple-600 text-purple-600 transition-colors flex items-center gap-1"><Sparkles className="w-3 h-3 text-purple-600 animate-pulse" /> AI Style Lab</Link>
             <a href="#solutions" className="hover:text-slate-900 transition-colors">Solutions</a>
             <a href="#roi" className="hover:text-slate-900 transition-colors">ROI Calculator</a>
             <a href="#faq" className="hover:text-slate-900 transition-colors">FAQs</a>
@@ -353,6 +354,7 @@ export default function Home() {
           <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 p-6 flex flex-col gap-4 text-sm font-bold text-slate-600 animate-in slide-in-from-top-4 duration-200 shadow-lg">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Features</a>
             <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Pricing</Link>
+            <Link href="/haircut-advisor" onClick={() => setMobileMenuOpen(false)} className="hover:text-purple-650 text-purple-650 transition-colors py-1 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" /> AI Style Lab</Link>
             <a href="#solutions" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Solutions</a>
             <a href="#roi" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">ROI Calculator</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">FAQs</a>
@@ -412,6 +414,22 @@ export default function Home() {
               >
                 <Sparkles className="h-3.5 w-3.5 text-purple-650 animate-pulse" />
                 Explore Demo Mode
+              </Link>
+            </div>
+
+            {/* AI Lookbook Highlight Box */}
+            <div className="bg-purple-50/50 border border-purple-100 p-4 rounded-2xl flex items-center justify-between gap-4 mt-6 max-w-lg text-left shadow-sm">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest block font-mono">🔥 Free AI Feature Added</span>
+                <span className="text-xs font-black text-slate-800 uppercase block">AI Haircut & Style Advisor</span>
+                <p className="text-[10.5px] text-slate-500 leading-relaxed font-semibold">Upload your photo, analyze your face shape, and get custom recommendations.</p>
+              </div>
+              <Link
+                href="/haircut-advisor"
+                className="flex-shrink-0 bg-purple-650 hover:bg-purple-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 hover:-translate-y-0.5 active:scale-95 transition-all shadow shadow-purple-500/10"
+              >
+                <span>Try AI Lab</span>
+                <ArrowRight className="w-3 h-3 text-white" />
               </Link>
             </div>
 
