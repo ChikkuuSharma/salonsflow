@@ -84,23 +84,55 @@ export default function HaircutAdvisorPage() {
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-      
-      // Determine a pseudo-random shape based on filename hash to keep it consistent
-      const nameHash = file.name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const shapes: Array<"oval" | "round" | "square" | "heart"> = ["oval", "round", "square", "heart"];
-      const chosenShape = shapes[nameHash % shapes.length];
-      setDetectedShape(chosenShape);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Downscale image on canvas to avoid mobile memory limits / crash bugs
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
 
-      // Reset style selections to defaults for that shape
-      const defaults = shapeData[chosenShape];
-      setSelectedHaircut(defaults.haircuts[0]);
-      setSelectedBeard(defaults.beards[0]);
-      setSelectedColor(defaults.colors[0]);
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
 
-      // Move to scanning animation
-      startScanning();
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          setImagePreview(compressedDataUrl);
+        } else {
+          setImagePreview(event.target?.result as string);
+        }
+
+        // Determine a pseudo-random shape based on filename hash to keep it consistent
+        const nameHash = file.name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const shapes: Array<"oval" | "round" | "square" | "heart"> = ["oval", "round", "square", "heart"];
+        const chosenShape = shapes[nameHash % shapes.length];
+        setDetectedShape(chosenShape);
+
+        // Reset style selections to defaults for that shape
+        const defaults = shapeData[chosenShape];
+        setSelectedHaircut(defaults.haircuts[0]);
+        setSelectedBeard(defaults.beards[0]);
+        setSelectedColor(defaults.colors[0]);
+
+        // Move to scanning animation
+        startScanning();
+      };
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -216,35 +248,35 @@ export default function HaircutAdvisorPage() {
 
   const shapeData = {
     oval: {
-      name: "Oval Face Shape",
-      desc: "Your forehead is slightly wider than your jawline, and the length of your face is longer than the width of your cheekbones. This is the most versatile face shape for hairstyles.",
-      haircuts: ["Pompadour Fade", "Classic Taper Fade", "Slicked Back Undercut", "Side Part Quiff"],
-      beards: ["Clean Shaven", "Light Stubble", "Short Boxed Beard"],
+      name: "Oval (Perfect Balanced Face)",
+      desc: "Bhai, your face has the perfect balance! Length is slightly more than width. Almost every haircut and beard looks super cool on you. You can pull off a neat slick back or a classic taper fade easily.",
+      haircuts: ["Pompadour Fade (High Volume)", "Classic Taper (Medium Length)", "Slick Back (Classy Look)", "Side Part Quiff (Cool Style)"],
+      beards: ["Clean Shaven (Gentleman look)", "Light Stubble (Classy 2-day look)", "Short Boxed Beard"],
       colors: ["Ash Brown Highlights", "Natural Black", "Copper Bronze"],
       imageUrl: "/looks/oval.png"
     },
     round: {
-      name: "Round Face Shape",
-      desc: "Your face length and width are approximately equal, with soft features and a less defined jawline. Hairstyle goals should add height and volume to elongate the face shape.",
-      haircuts: ["Textured Quiff Fade", "Spiky High Fade", "Faux Hawk Crop", "High & Tight Undercut"],
-      beards: ["Full Beard with Sharp Angles", "Goatee with Stubble", "Garibaldi Beard"],
-      colors: ["Dark Platinum Silver", "Deep Mahogany", "Jet Black Highlights"],
+      name: "Round (Gol Face Shape)",
+      desc: "Bhai, your face shape is round/circular (Gol). To make your face look sharper and longer, choose cuts that have volume/height on top and are short on the sides. Avoid round cuts.",
+      haircuts: ["Textured Quiff Fade (Top Volume)", "Spiky High Fade (Sharp look)", "Faux Hawk Crop", "High & Tight Undercut"],
+      beards: ["Sharp Angled Beard (Makes jaw look sharp)", "Goatee with Stubble", "Garibaldi Beard"],
+      colors: ["Dark Platinum Silver", "Deep Mahogany", "Jet Black (Natural Indian Look)"],
       imageUrl: "/looks/round.png"
     },
     square: {
-      name: "Square Face Shape",
-      desc: "Your face is characterized by a strong, prominent jawline, straight sides, and a broad forehead. Hairstyles should either emphasize your sharp features or soften them.",
-      haircuts: ["Buzz Cut Fade", "Textured Slick Back", "Modern French Crop", "Ivy League Crew Cut"],
-      beards: ["Heavy 10-Day Stubble", "Balbo Beard", "Circle Beard"],
+      name: "Square (Jawline Hero / Chowkor)",
+      desc: "Bhai, you have a strong square jawline (Chowkor). You look masculine! Highlight your sharp jaw with very close side fades, short spikes, or a textured slick back.",
+      haircuts: ["Buzz Cut (Army look)", "Textured Slick Back (Hero style)", "Modern French Crop", "Ivy League Crew Cut"],
+      beards: ["Heavy Stubble (10-day raw look)", "Balbo Beard Style", "Circle Beard"],
       colors: ["Honey Gold Highlights", "Natural Brown", "Golden Blonde Strands"],
       imageUrl: "/looks/square.png"
     },
     heart: {
-      name: "Heart Face Shape",
-      desc: "Your face shape features a wider forehead that tapers down to a sharp, pointed chin. Hairstyles should balance the narrow chin by adding weight/fullness around the lower face.",
-      haircuts: ["Messy Textured Fringe", "Medium Length Layered Waves", "Side Swept Fringe", "Classic Side Part"],
-      beards: ["Full Corporate Beard", "Thick Beard with Mustache", "Hollywoodian Beard"],
-      colors: ["Chestnut Red", "Natural Ash Blonde", "Caramel Highlights"],
+      name: "Heart ( Tapered Chin Face)",
+      desc: "Bhai, your forehead is wider and chin is narrow (Heart shape). To balance this, keep longer messy hair on top to cover the forehead and a full corporate beard to add weight around the chin.",
+      haircuts: ["Messy Fringe (Forehead cover)", "Classic Side Part", "Medium Waves"],
+      beards: ["Full Corporate Beard (Fills chin gap)", "Thick Beard + Mustache", "Heavy Stubble"],
+      colors: ["Chestnut Red Highlights", "Caramel Highlights", "Natural Black"],
       imageUrl: "/looks/heart.png"
     }
   };
