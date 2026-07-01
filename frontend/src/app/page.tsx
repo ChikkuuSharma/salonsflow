@@ -263,9 +263,23 @@ export default function Home() {
     }, 450);
   };
 
-  const handleDemoSubmit = (e: React.FormEvent) => {
+  const handleDemoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!demoFormData.name || !demoFormData.phone) return;
+    
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    try {
+      await fetch(`${apiUrl}/api/v1/public/leads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(demoFormData),
+      });
+    } catch (err) {
+      console.error("Failed to submit lead request to backend:", err);
+    }
+
     setDemoFormSubmitSuccess(true);
     setTimeout(() => {
       setDemoModalOpen(false);
