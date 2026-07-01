@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowLeft,
-  Crown
+  Crown,
+  X
 } from "lucide-react";
 
 interface LeadData {
@@ -42,6 +43,14 @@ export default function HaircutAdvisorPage() {
   const [selectedHaircut, setSelectedHaircut] = useState("");
   const [selectedBeard, setSelectedBeard] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
+
+  // Booking Modal States
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("12:00");
+  const [bookingNotes, setBookingNotes] = useState("");
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
 
   // Lead Data
   const [leadFormData, setLeadFormData] = useState<LeadData>({
@@ -165,6 +174,39 @@ export default function HaircutAdvisorPage() {
   const handleReset = () => {
     setImagePreview(null);
     setStep("UPLOAD");
+  };
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingDate || !bookingTime) return;
+
+    setBookingLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/public/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: leadFormData.name,
+          phone: leadFormData.phone,
+          date: bookingDate,
+          time: bookingTime,
+          haircut: selectedHaircut || shapeData[detectedShape].haircuts[0],
+          notes: bookingNotes || `AI Style Lab Booking. Haircut: ${selectedHaircut || shapeData[detectedShape].haircuts[0]}. Beard: ${selectedBeard}, Color: ${selectedColor}.`
+        })
+      });
+      if (response.ok) {
+        setBookingSuccess(true);
+      } else {
+        alert("Failed to register appointment booking.");
+      }
+    } catch (err) {
+      console.error("Public booking error:", err);
+      alert("Error booking appointment.");
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   // Helper to trigger print view of the style card
@@ -435,6 +477,17 @@ export default function HaircutAdvisorPage() {
                     <span>Scan New Photo</span>
                   </button>
                   <button
+                    onClick={() => {
+                      setBookingDate(new Date().toISOString().split("T")[0]);
+                      setBookingSuccess(false);
+                      setShowBookingModal(true);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-white bg-indigo-650 hover:bg-indigo-700 px-5 py-2.5 rounded-full transition-all shadow shadow-indigo-500/10 cursor-pointer"
+                  >
+                    <Scissors className="w-3.5 h-3.5" />
+                    <span>Book Appointment</span>
+                  </button>
+                  <button
                     onClick={handlePrint}
                     className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-zinc-950 bg-emerald-400 hover:bg-emerald-500 px-5 py-2.5 rounded-full transition-all shadow shadow-emerald-500/10"
                   >
@@ -693,6 +746,102 @@ export default function HaircutAdvisorPage() {
           </div>
         </div>
       </footer>
+
+      {/* BOOKING MODAL */}
+      {showBookingModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 relative shadow-2xl text-zinc-100 animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowBookingModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {bookingSuccess ? (
+              <div className="text-center py-8 space-y-4">
+                <div className="w-16 h-16 bg-emerald-950/50 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400 mx-auto shadow-inner">
+                  <Check className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-display font-black text-xl text-white uppercase tracking-tight">Appointment Requested!</h3>
+                  <p className="text-xs text-zinc-400 font-semibold leading-relaxed max-w-xs mx-auto">
+                    Your appointment request for a <strong className="text-emerald-400">{selectedHaircut || shapeData[detectedShape].haircuts[0]}</strong> has been logged in the booking manager list.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBookingModal(false)}
+                  className="bg-zinc-950 border border-zinc-850 hover:bg-zinc-850 text-zinc-400 hover:text-white text-xs font-bold px-6 py-2.5 rounded-xl uppercase tracking-wider transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleBookingSubmit} className="space-y-5 text-left">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block font-mono">STEP 4: SCHEDULE APPOINTMENT</span>
+                  <h3 className="font-display font-black text-lg text-white uppercase tracking-tight">Reserve Style Session</h3>
+                  <p className="text-[11px] text-zinc-500 font-semibold leading-relaxed">
+                    Book your recommended look <strong className="text-white">{selectedHaircut || shapeData[detectedShape].haircuts[0]}</strong> at our partner salon.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Preferred Date</label>
+                  <input
+                    type="date"
+                    required
+                    min={new Date().toISOString().split("T")[0]}
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500/50 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Preferred Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={bookingTime}
+                    onChange={(e) => setBookingTime(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500/50 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Styling Notes / Requests (Optional)</label>
+                  <textarea
+                    rows={2}
+                    value={bookingNotes}
+                    onChange={(e) => setBookingNotes(e.target.value)}
+                    placeholder="E.g., prefer low fade, beard trim details, color preference..."
+                    className="w-full bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-emerald-500/50 font-semibold resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={bookingLoading}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 text-xs font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all"
+                >
+                  {bookingLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-zinc-950" />
+                      <span>Scheduling session...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Confirm Appointment Request</span>
+                      <Scissors className="w-3.5 h-3.5 text-zinc-950" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Tailwind Print support styles */}
       <style jsx global>{`
