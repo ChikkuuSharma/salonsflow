@@ -282,31 +282,32 @@ export default function HaircutAdvisorPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800 font-sans relative selection:bg-purple-500 selection:text-white overflow-x-hidden">
       
-      {/* Background decorations */}
+      {/* Background decorations matching the landing page */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.4] pointer-events-none"></div>
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
       {/* Navigation Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-gradient-to-tr from-emerald-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg transition-transform group-hover:scale-105">
-              S
-            </div>
-            <div>
-              <span className="font-display font-black text-lg tracking-tight text-white block">Salons<span className="text-emerald-400">Flow</span></span>
-              <span className="text-[9px] font-extrabold uppercase tracking-widest text-emerald-400/85 block">AI Style Lab</span>
+            <img src="/logo.png" alt="SalonsFlow Logo" className="h-9.5 w-9.5 object-contain" />
+            <div className="flex flex-col text-left">
+              <span className="font-display font-black text-lg tracking-tight text-slate-800 leading-none">
+                Salons<span className="text-purple-600">Flow</span>
+              </span>
+              <span className="text-[9px] font-bold tracking-wider text-purple-600 uppercase mt-0.5">AI Style Lab</span>
             </div>
           </Link>
           
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-3.5 py-1.5 text-xs text-zinc-400 font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Free usage remaining: <strong className="text-emerald-400">{Math.max(0, 2 - scanCount)}/2 scans</strong></span>
+            <div className="hidden md:flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-full px-3.5 py-1.5 text-xs text-purple-700 font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" />
+              <span>Free usage remaining: <strong className="text-purple-700">{Math.max(0, 2 - scanCount)}/2 scans</strong></span>
             </div>
-            <Link href="/" className="flex items-center gap-1.5 text-xs font-bold text-zinc-450 hover:text-white transition-colors bg-zinc-900/50 hover:bg-zinc-900 border border-zinc-850 px-4.5 py-2.5 rounded-full">
+            <Link href="/" className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-white hover:bg-slate-55 border border-slate-200 px-4.5 py-2.5 rounded-xl shadow-xs">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to home</span>
             </Link>
@@ -315,37 +316,37 @@ export default function HaircutAdvisorPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-grow flex items-center justify-center py-10 px-6">
+      <main className="flex-grow flex items-center justify-center py-10 px-6 relative z-10">
         <div className="w-full max-w-4xl mx-auto">
 
           {/* STEP 1: UPLOAD PORTAL */}
           {step === "UPLOAD" && (
             <div className="space-y-8 text-center">
               <div className="space-y-3 max-w-2xl mx-auto">
-                <span className="bg-emerald-950/60 border border-emerald-900/50 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full inline-block">
+                <span className="bg-purple-50 text-purple-700 border border-purple-100 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full inline-block">
                   💡 100% Free Smart Portrait Analyzer
                 </span>
-                <h1 className="font-display text-4xl md:text-5xl font-black tracking-tight text-white uppercase">
-                  Discover Your Perfect <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400">AI Look</span>
+                <h1 className="font-display text-4xl md:text-5xl font-black tracking-tight text-slate-800 uppercase">
+                  Discover Your Perfect <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-500 to-pink-500">AI Look</span>
                 </h1>
-                <p className="text-sm text-zinc-400 leading-relaxed font-semibold">
+                <p className="text-sm text-slate-500 leading-relaxed font-semibold">
                   Upload your photo. Our facial geometry analyzer maps your exact facecut to recommend the haircuts, beard stylings, and hair colors that suit you best.
                 </p>
               </div>
 
               {/* Drag and Drop Card */}
-              <div className="bg-zinc-900/60 border border-zinc-800/80 p-12 rounded-3xl backdrop-blur-md max-w-xl mx-auto shadow-2xl relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="bg-white border border-slate-200 p-12 rounded-3xl max-w-xl mx-auto shadow-xl relative group overflow-hidden transition-all hover:scale-[1.01]">
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 
                 <label className="flex flex-col items-center justify-center cursor-pointer space-y-5 py-4 z-10 relative">
-                  <div className="w-16 h-16 bg-zinc-950/80 border border-zinc-850 rounded-2xl flex items-center justify-center text-emerald-400 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                  <div className="w-16 h-16 bg-purple-50 border border-purple-100 rounded-2xl flex items-center justify-center text-purple-600 shadow-sm group-hover:scale-105 transition-transform duration-300">
                     <Camera className="w-8 h-8" />
                   </div>
                   <div className="space-y-1">
-                    <span className="text-sm font-black text-white block uppercase tracking-wider">Upload your Portrait</span>
-                    <span className="text-[11px] text-zinc-500 font-semibold block">Supports PNG, JPG, or JPEG</span>
+                    <span className="text-sm font-black text-slate-800 block uppercase tracking-wider">Upload your Portrait</span>
+                    <span className="text-[11px] text-slate-400 font-semibold block">Supports PNG, JPG, or JPEG</span>
                   </div>
-                  <div className="bg-zinc-950 border border-zinc-850 text-[10px] font-bold text-zinc-400 px-5 py-2.5 rounded-full uppercase tracking-wider group-hover:border-emerald-500/30 group-hover:text-emerald-400 transition-all shadow">
+                  <div className="bg-white border border-slate-200 text-[10px] font-bold text-slate-600 px-5 py-2.5 rounded-xl uppercase tracking-wider group-hover:border-purple-300 group-hover:text-purple-600 transition-all shadow-xs">
                     Select Image File
                   </div>
                   <input
@@ -359,17 +360,17 @@ export default function HaircutAdvisorPage() {
 
               {/* Value Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 max-w-3xl mx-auto">
-                <div className="bg-zinc-900/20 border border-zinc-900/40 p-5 rounded-2xl text-left space-y-1">
-                  <span className="text-emerald-400 text-xs font-black block uppercase tracking-widest font-mono">01. Geometry Scan</span>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed font-semibold">Maps jaw lines, height, and bone structural widths dynamically.</p>
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl text-left space-y-1 shadow-sm">
+                  <span className="text-purple-600 text-xs font-black block uppercase tracking-widest font-mono">01. Geometry Scan</span>
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">Maps jaw lines, height, and bone structural widths dynamically.</p>
                 </div>
-                <div className="bg-zinc-900/20 border border-zinc-900/40 p-5 rounded-2xl text-left space-y-1">
-                  <span className="text-emerald-400 text-xs font-black block uppercase tracking-widest font-mono">02. Tailored Grooming</span>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed font-semibold">Suggests visual hair cuts and beard alignments matching your structure.</p>
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl text-left space-y-1 shadow-sm">
+                  <span className="text-purple-600 text-xs font-black block uppercase tracking-widest font-mono">02. Tailored Grooming</span>
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">Suggests visual hair cuts and beard alignments matching your structure.</p>
                 </div>
-                <div className="bg-zinc-900/20 border border-zinc-900/40 p-5 rounded-2xl text-left space-y-1">
-                  <span className="text-emerald-400 text-xs font-black block uppercase tracking-widest font-mono">03. High-Density Download</span>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed font-semibold">Export your lookbook card and present it at your next salon visit.</p>
+                <div className="bg-white border border-slate-200 p-5 rounded-2xl text-left space-y-1 shadow-sm">
+                  <span className="text-purple-600 text-xs font-black block uppercase tracking-widest font-mono">03. High-Density Download</span>
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">Export your lookbook card and present it at your next salon visit.</p>
                 </div>
               </div>
             </div>
@@ -378,113 +379,113 @@ export default function HaircutAdvisorPage() {
           {/* STEP 2: SCANNING SCREEN */}
           {step === "SCANNING" && (
             <div className="flex flex-col items-center justify-center space-y-8 py-10 max-w-md mx-auto text-center">
-              <div className="relative w-64 h-64 rounded-3xl overflow-hidden border border-emerald-500/35 bg-zinc-950 shadow-2xl flex items-center justify-center">
+              <div className="relative w-64 h-64 rounded-3xl overflow-hidden border border-purple-500/30 bg-white shadow-2xl flex items-center justify-center">
                 {imagePreview ? (
                   <img src={imagePreview} alt="Scanning preview" className="w-full h-full object-cover opacity-60" />
                 ) : (
-                  <div className="w-full h-full bg-zinc-900"></div>
+                  <div className="w-full h-full bg-slate-100"></div>
                 )}
                 
                 {/* Sci-fi Scanning animation laser line */}
-                <div className="absolute left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981] animate-[bounce_2s_infinite]"></div>
+                <div className="absolute left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_15px_#9333ea] animate-[bounce_2s_infinite]"></div>
                 
                 {/* Target reticle overlay */}
-                <div className="absolute inset-4 border border-emerald-500/10 rounded-2xl pointer-events-none"></div>
-                <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-emerald-400"></div>
-                <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-emerald-400"></div>
-                <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-emerald-400"></div>
-                <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-emerald-400"></div>
+                <div className="absolute inset-4 border border-purple-500/10 rounded-2xl pointer-events-none"></div>
+                <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-purple-500"></div>
+                <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-purple-500"></div>
+                <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-purple-500"></div>
+                <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-purple-500"></div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-center gap-2.5">
-                  <RefreshCw className="w-4.5 h-4.5 text-emerald-400 animate-spin" />
-                  <span className="font-display font-black text-lg text-white uppercase tracking-wider">AI Analysis in Progress</span>
+                  <RefreshCw className="w-4.5 h-4.5 text-purple-600 animate-spin" />
+                  <span className="font-display font-black text-lg text-slate-800 uppercase tracking-wider">AI Analysis in Progress</span>
                 </div>
-                <p className="text-xs text-emerald-400 font-mono tracking-widest uppercase">{scanStatusText}</p>
+                <p className="text-xs text-purple-600 font-mono tracking-widest uppercase">{scanStatusText}</p>
               </div>
             </div>
           )}
 
           {/* STEP 3: LEAD CAPTURE GATE */}
           {step === "LEAD_GATE" && (
-            <div className="max-w-md mx-auto bg-zinc-900 border border-zinc-800 p-8 rounded-3xl backdrop-blur-md shadow-2xl space-y-6 text-center">
+            <div className="max-w-md mx-auto bg-white border border-slate-200 p-8 rounded-3xl shadow-2xl space-y-6 text-center">
               <div className="space-y-2">
-                <div className="w-12 h-12 bg-emerald-950/60 border border-emerald-900/50 rounded-xl flex items-center justify-center text-emerald-400 mx-auto">
-                  <Sparkles className="w-6 h-6" />
+                <div className="w-12 h-12 bg-purple-50 border border-purple-100 rounded-xl flex items-center justify-center text-purple-600 mx-auto">
+                  <Sparkles className="w-6 h-6 animate-pulse" />
                 </div>
-                <h3 className="font-display font-black text-xl text-white uppercase">Your Analysis is Ready!</h3>
-                <p className="text-xs text-zinc-450 font-semibold leading-relaxed">
+                <h3 className="font-display font-black text-xl text-slate-800 uppercase">Your Analysis is Ready!</h3>
+                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
                   Enter your contact details to save and unlock your personalized style sheet and haircut recommendations card.
                 </p>
               </div>
 
               <form onSubmit={handleLeadSubmit} className="space-y-4 text-left">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Full Name</label>
+                  <label className="text-[10px] font-black text-slate-505 uppercase tracking-wider block">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3 w-4 h-4 text-zinc-550" />
+                    <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       required
                       value={leadFormData.name}
                       onChange={(e) => setLeadFormData({ ...leadFormData, name: e.target.value })}
                       placeholder="Enter your name"
-                      className="w-full bg-zinc-950 border border-zinc-850 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 font-semibold"
+                      className="w-full bg-slate-55 border border-slate-200 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">WhatsApp Number (Mandatory)</label>
+                  <label className="text-[10px] font-black text-slate-505 uppercase tracking-wider block">WhatsApp Number (Mandatory)</label>
                   <div className="relative">
-                    <Phone className="absolute left-3.5 top-3 w-4 h-4 text-zinc-550" />
+                    <Phone className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                     <input
                       type="tel"
                       required
                       value={leadFormData.phone}
                       onChange={(e) => setLeadFormData({ ...leadFormData, phone: e.target.value })}
                       placeholder="+91 XXXXX XXXXX"
-                      className="w-full bg-zinc-950 border border-zinc-850 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 font-semibold"
+                      className="w-full bg-slate-55 border border-slate-200 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Email Address (Optional)</label>
+                  <label className="text-[10px] font-black text-slate-505 uppercase tracking-wider block">Email Address (Optional)</label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3 w-4 h-4 text-zinc-550" />
+                    <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                     <input
                       type="email"
                       value={leadFormData.email}
                       onChange={(e) => setLeadFormData({ ...leadFormData, email: e.target.value })}
                       placeholder="name@example.com"
-                      className="w-full bg-zinc-950 border border-zinc-850 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 font-semibold"
+                      className="w-full bg-slate-55 border border-slate-200 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Your City</label>
+                  <label className="text-[10px] font-black text-slate-505 uppercase tracking-wider block">Your City</label>
                   <div className="relative">
-                    <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-zinc-550" />
+                    <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       required
                       value={leadFormData.city}
                       onChange={(e) => setLeadFormData({ ...leadFormData, city: e.target.value })}
                       placeholder="Mumbai"
-                      className="w-full bg-zinc-950 border border-zinc-850 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 font-semibold"
+                      className="w-full bg-slate-55 border border-slate-200 rounded-xl pl-10.5 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
                     />
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 text-xs font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 mt-6 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white text-xs font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 mt-6 shadow-lg shadow-purple-500/15 active:scale-95 transition-all"
                 >
                   <span>Reveal AI Lookbook Results</span>
-                  <ArrowRight className="w-4 h-4 text-zinc-950" />
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </button>
               </form>
             </div>
@@ -495,15 +496,15 @@ export default function HaircutAdvisorPage() {
             <div className="space-y-8">
               
               {/* Top Banner Controls */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-zinc-900 pb-5 no-print">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-5 no-print">
                 <div className="text-left">
-                  <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest font-mono">Analysis Report ID #LOOK-AI-{scanCount}</span>
-                  <h2 className="font-display text-2xl font-black text-white uppercase tracking-tight">Your Face Cut Design Card</h2>
+                  <span className="text-purple-600 text-[10px] font-black uppercase tracking-widest font-mono">Analysis Report ID #LOOK-AI-{scanCount}</span>
+                  <h2 className="font-display text-2xl font-black text-slate-800 uppercase tracking-tight">Your Face Cut Design Card</h2>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleReset}
-                    className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 px-4.5 py-2.5 rounded-full transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 px-4.5 py-2.5 rounded-full shadow-xs transition-colors cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Scan New Photo</span>
@@ -514,14 +515,14 @@ export default function HaircutAdvisorPage() {
                       setBookingSuccess(false);
                       setShowBookingModal(true);
                     }}
-                    className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-white bg-indigo-650 hover:bg-indigo-700 px-5 py-2.5 rounded-full transition-all shadow shadow-indigo-500/10 cursor-pointer"
+                    className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-white bg-indigo-650 hover:bg-indigo-700 px-5 py-2.5 rounded-full transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
                   >
                     <Scissors className="w-3.5 h-3.5" />
                     <span>Book Appointment</span>
                   </button>
                   <button
                     onClick={handlePrint}
-                    className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-zinc-950 bg-emerald-400 hover:bg-emerald-500 px-5 py-2.5 rounded-full transition-all shadow shadow-emerald-500/10"
+                    className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 px-5 py-2.5 rounded-full transition-all shadow-md shadow-purple-500/10 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download Style Sheet</span>
@@ -530,25 +531,25 @@ export default function HaircutAdvisorPage() {
               </div>
 
               {/* Analysis Result Card layout */}
-              <div id="print-sheet" className="grid grid-cols-1 md:grid-cols-12 gap-8 bg-zinc-900/40 border border-zinc-850 p-6 md:p-8 rounded-3xl backdrop-blur-md shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[90px] rounded-full pointer-events-none"></div>
+              <div id="print-sheet" className="grid grid-cols-1 md:grid-cols-12 gap-8 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-[90px] rounded-full pointer-events-none"></div>
                 
                 {/* Print view watermark */}
-                <div className="hidden print:flex justify-between items-center w-full border-b border-zinc-800 pb-4 mb-6 col-span-12">
-                  <span className="font-display font-black text-lg text-white">SalonsFlow <span className="text-emerald-400">AI Lookbook</span></span>
-                  <span className="text-[10px] font-mono text-zinc-500">Owner: {leadFormData.name} ({leadFormData.phone})</span>
+                <div className="hidden print:flex justify-between items-center w-full border-b border-slate-200 pb-4 mb-6 col-span-12">
+                  <span className="font-display font-black text-lg text-slate-800">SalonsFlow <span className="text-purple-600">AI Lookbook</span></span>
+                  <span className="text-[10px] font-mono text-slate-500">Owner: {leadFormData.name} ({leadFormData.phone})</span>
                 </div>
 
                 {/* Left side: Uploaded photo vs AI Mock suggestion */}
                 <div className="md:col-span-5 space-y-6 flex flex-col items-center">
                   <div className="space-y-3 text-center w-full">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Style Analysis Preview</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Style Analysis Preview</span>
                     
                     {/* Side by side user photo and reference model */}
                     <div className="grid grid-cols-2 gap-3 w-full max-w-[320px] md:max-w-none">
                       <div className="space-y-1">
-                        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Your Photo</span>
-                        <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-md">
+                        <span className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block font-semibold">Your Photo</span>
+                        <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-md">
                           {imagePreview ? (
                             <img
                               src={imagePreview}
@@ -556,14 +557,14 @@ export default function HaircutAdvisorPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-[10px] text-zinc-650">No Image</div>
+                            <div className="w-full h-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-400">No Image</div>
                           )}
                         </div>
                       </div>
                       
                       <div className="space-y-1">
-                        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Reference Style</span>
-                        <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-md">
+                        <span className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block font-semibold">Reference Style</span>
+                        <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-md">
                           <img
                             src={shapeData[detectedShape].imageUrl}
                             alt="Reference style model"
@@ -575,34 +576,34 @@ export default function HaircutAdvisorPage() {
                   </div>
 
                   {/* Face shape tag */}
-                  <div className="bg-zinc-950/80 border border-zinc-850 px-5 py-3 rounded-2xl text-center w-full max-w-[280px]">
-                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block">Primary Classification</span>
-                    <span className="font-display font-black text-lg text-white uppercase tracking-tight block">{shapeData[detectedShape].name}</span>
+                  <div className="bg-purple-50/80 border border-purple-100 px-5 py-3 rounded-2xl text-center w-full max-w-[280px]">
+                    <span className="text-[9px] font-black text-purple-750 uppercase tracking-widest block">Primary Classification</span>
+                    <span className="font-display font-black text-lg text-purple-700 uppercase tracking-tight block">{shapeData[detectedShape].name}</span>
                   </div>
                 </div>
 
                 {/* Right side: Detailed Recommendations */}
                 <div className="md:col-span-7 space-y-6 text-left">
                   <div className="space-y-1.5">
-                    <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest font-mono">Morphological Evaluation</span>
-                    <p className="text-[11.5px] text-zinc-450 leading-relaxed font-semibold">{shapeData[detectedShape].desc}</p>
+                    <span className="text-purple-600 text-[10px] font-black uppercase tracking-widest font-mono">Morphological Evaluation</span>
+                    <p className="text-[12px] text-slate-650 leading-relaxed font-semibold">{shapeData[detectedShape].desc}</p>
                   </div>
 
                   {/* Selection options matrix */}
-                  <div className="space-y-4 border-t border-zinc-850 pt-5">
+                  <div className="space-y-4 border-t border-slate-200 pt-5">
                     
                     {/* haircuts */}
                     <div className="space-y-2 no-print">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Recommended Haircuts (Pick one)</label>
+                      <label className="text-[10px] font-black text-slate-505 uppercase tracking-wider block">Recommended Haircuts (Pick one)</label>
                       <div className="flex flex-wrap gap-2">
                         {shapeData[detectedShape].haircuts.map((haircut) => (
                           <button
                             key={haircut}
                             onClick={() => setSelectedHaircut(haircut)}
-                            className={`text-[10.5px] font-bold px-4 py-2 rounded-xl border transition-all ${
+                            className={`text-[10.5px] font-bold px-4 py-2 rounded-xl border transition-all cursor-pointer ${
                               selectedHaircut === haircut
-                                ? "bg-emerald-950/50 border-emerald-500/50 text-emerald-400 font-extrabold"
-                                : "bg-zinc-950 border-zinc-850 text-zinc-400 hover:text-white"
+                                ? "bg-purple-50 border-purple-300 text-purple-700 font-extrabold"
+                                : "bg-slate-50 border-slate-200 text-slate-650 hover:bg-slate-100 hover:text-slate-800"
                             }`}
                           >
                             {haircut}
@@ -612,22 +613,22 @@ export default function HaircutAdvisorPage() {
                     </div>
                     {/* Print Static Haircut view */}
                     <div className="hidden print:block">
-                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Selected Haircut Recommendation</span>
-                      <span className="text-sm font-black text-white">{selectedHaircut}</span>
+                      <span className="text-[10px] font-black text-slate-405 uppercase tracking-wider block">Selected Haircut Recommendation</span>
+                      <span className="text-sm font-black text-slate-800">{selectedHaircut}</span>
                     </div>
 
                     {/* beards */}
                     <div className="space-y-2 no-print">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Suggested Beard Alignment</label>
+                      <label className="text-[10px] font-black text-slate-505 uppercase tracking-wider block">Suggested Beard Alignment</label>
                       <div className="flex flex-wrap gap-2">
                         {shapeData[detectedShape].beards.map((beard) => (
                           <button
                             key={beard}
                             onClick={() => setSelectedBeard(beard)}
-                            className={`text-[10.5px] font-bold px-4 py-2 rounded-xl border transition-all ${
+                            className={`text-[10.5px] font-bold px-4 py-2 rounded-xl border transition-all cursor-pointer ${
                               selectedBeard === beard
-                                ? "bg-emerald-950/50 border-emerald-500/50 text-emerald-400 font-extrabold"
-                                : "bg-zinc-950 border-zinc-850 text-zinc-400 hover:text-white"
+                                ? "bg-purple-50 border-purple-300 text-purple-700 font-extrabold"
+                                : "bg-slate-50 border-slate-200 text-slate-650 hover:bg-slate-100 hover:text-slate-800"
                             }`}
                           >
                             {beard}
@@ -637,22 +638,22 @@ export default function HaircutAdvisorPage() {
                     </div>
                     {/* Print Static Beard view */}
                     <div className="hidden print:block mt-3">
-                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Selected Beard Style</span>
-                      <span className="text-sm font-black text-white">{selectedBeard}</span>
+                      <span className="text-[10px] font-black text-slate-405 uppercase tracking-wider block">Selected Beard Style</span>
+                      <span className="text-sm font-black text-slate-800">{selectedBeard}</span>
                     </div>
 
                     {/* hair color */}
                     <div className="space-y-2 no-print">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Suggested Hair Tone</label>
+                      <label className="text-[10px] font-black text-slate-505 uppercase tracking-wider block">Suggested Hair Tone</label>
                       <div className="flex flex-wrap gap-2">
                         {shapeData[detectedShape].colors.map((color) => (
                           <button
                             key={color}
                             onClick={() => setSelectedColor(color)}
-                            className={`text-[10.5px] font-bold px-4 py-2 rounded-xl border transition-all ${
+                            className={`text-[10.5px] font-bold px-4 py-2 rounded-xl border transition-all cursor-pointer ${
                               selectedColor === color
-                                ? "bg-emerald-950/50 border-emerald-500/50 text-emerald-400 font-extrabold"
-                                : "bg-zinc-950 border-zinc-850 text-zinc-400 hover:text-white"
+                                ? "bg-purple-50 border-purple-300 text-purple-700 font-extrabold"
+                                : "bg-slate-50 border-slate-200 text-slate-650 hover:bg-slate-100 hover:text-slate-800"
                             }`}
                           >
                             {color}
@@ -662,30 +663,30 @@ export default function HaircutAdvisorPage() {
                     </div>
                     {/* Print Static Color view */}
                     <div className="hidden print:block mt-3">
-                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Selected Hair Color Tone</span>
-                      <span className="text-sm font-black text-white">{selectedColor}</span>
+                      <span className="text-[10px] font-black text-slate-405 uppercase tracking-wider block">Selected Hair Color Tone</span>
+                      <span className="text-sm font-black text-slate-800">{selectedColor}</span>
                     </div>
 
                   </div>
 
                   {/* Booking CTA */}
-                  <div className="bg-zinc-950 border border-zinc-850 p-4.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 no-print">
+                  <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 no-print">
                     <div className="text-left space-y-0.5">
-                      <span className="text-[10.5px] font-black text-white uppercase block">Get this look near you</span>
-                      <p className="text-[9.5px] text-zinc-550 leading-relaxed font-semibold">Book an appointment at a SalonsFlow-powered salon nearby.</p>
+                      <span className="text-[10.5px] font-black text-slate-800 uppercase block">Get this look near you</span>
+                      <p className="text-[9.5px] text-slate-405 leading-relaxed font-semibold">Book an appointment at a SalonsFlow-powered salon nearby.</p>
                     </div>
                     <Link
                       href="/onboarding"
-                      className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1.5 active:scale-95 transition-all shadow"
+                      className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1.5 active:scale-95 transition-all shadow-sm cursor-pointer"
                     >
                       <span>Book Look Now</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3.5 h-3.5 text-white" />
                     </Link>
                   </div>
                 </div>
                 
                 {/* Print view footer */}
-                <div className="hidden print:block w-full border-t border-zinc-800 pt-4 mt-8 col-span-12 text-center text-[9px] text-zinc-550">
+                <div className="hidden print:block w-full border-t border-slate-200 pt-4 mt-8 col-span-12 text-center text-[9px] text-slate-450">
                   © 2026 SalonsFlow AI Grooming Lab. All rights reserved. Powered by salonsflow.in
                 </div>
               </div>
@@ -694,42 +695,42 @@ export default function HaircutAdvisorPage() {
 
           {/* STEP 5: PAYWALL BLOCK */}
           {step === "PAYWALL" && (
-            <div className="max-w-md mx-auto bg-zinc-900 border border-zinc-800 p-8 rounded-3xl backdrop-blur-md shadow-2xl text-center space-y-6">
+            <div className="max-w-md mx-auto bg-white border border-slate-200 p-8 rounded-3xl shadow-2xl text-center space-y-6">
               <div className="space-y-2">
-                <div className="w-14 h-14 bg-amber-950/60 border border-amber-900/50 rounded-2xl flex items-center justify-center text-amber-400 mx-auto shadow-inner">
+                <div className="w-14 h-14 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-center text-amber-500 mx-auto shadow-sm">
                   <Crown className="w-7 h-7" />
                 </div>
-                <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest block font-mono">Premium Access Lock</span>
-                <h3 className="font-display font-black text-2xl text-white uppercase tracking-tight">AI Scan Limit Reached</h3>
-                <p className="text-xs text-zinc-450 leading-relaxed font-semibold">
+                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest block font-mono">Premium Access Lock</span>
+                <h3 className="font-display font-black text-2xl text-slate-800 uppercase tracking-tight">AI Scan Limit Reached</h3>
+                <p className="text-xs text-slate-550 leading-relaxed font-semibold">
                   You have used your **2/2 free facial scans** for this session. Upgrade to our Premium Style Lab tier for unlimited geometry analyses.
                 </p>
               </div>
 
               {/* Checkout pricing box */}
-              <div className="bg-zinc-950 border border-zinc-850 p-5 rounded-2xl text-left space-y-4">
-                <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+              <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl text-left space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <div>
-                    <span className="text-xs font-black text-white uppercase block">Style Lab Unlimited Pass</span>
-                    <span className="text-[10px] font-bold text-zinc-500">Lifetime access & downloads</span>
+                    <span className="text-xs font-black text-slate-800 uppercase block">Style Lab Unlimited Pass</span>
+                    <span className="text-[10px] font-bold text-slate-450">Lifetime access & downloads</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-display font-black text-xl text-emerald-400 block">₹99</span>
-                    <span className="text-[9px] font-semibold text-zinc-550 block">One-time payment</span>
+                    <span className="font-display font-black text-xl text-purple-650 block">₹99</span>
+                    <span className="text-[9px] font-semibold text-slate-500 block font-mono">One-time payment</span>
                   </div>
                 </div>
 
-                <div className="space-y-2 text-[10px] text-zinc-400 font-semibold">
+                <div className="space-y-2 text-[10px] text-slate-600 font-semibold">
                   <div className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <Check className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
                     <span>Unlimited portrait uploads & geometry scans</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <Check className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
                     <span>Detailed face morph details & structure notes</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <Check className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
                     <span>High-resolution style card sheets downloads</span>
                   </div>
                 </div>
@@ -739,24 +740,24 @@ export default function HaircutAdvisorPage() {
                 <button
                   onClick={handlePaymentSimulate}
                   disabled={checkoutSimulated}
-                  className="w-full bg-gradient-to-r from-emerald-400 to-indigo-500 hover:from-emerald-500 hover:to-indigo-600 text-zinc-950 text-xs font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/5 active:scale-95 transition-all"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-550 hover:to-pink-400 text-white text-xs font-black uppercase tracking-wider py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10 active:scale-95 transition-all cursor-pointer"
                 >
                   {checkoutSimulated ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-zinc-950" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
                       <span>Processing simulated payment...</span>
                     </>
                   ) : (
                     <>
                       <span>Pay ₹99 & Unlock Now</span>
-                      <ArrowRight className="w-4 h-4 text-zinc-950" />
+                      <ArrowRight className="w-4 h-4 text-white" />
                     </>
                   )}
                 </button>
                 
                 <button
                   onClick={() => setStep("UPLOAD")}
-                  className="w-full bg-zinc-900 border border-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold py-3 rounded-xl transition-all"
+                  className="w-full bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 text-xs font-bold py-3 rounded-xl transition-all cursor-pointer"
                 >
                   Go Back
                 </button>
@@ -768,42 +769,42 @@ export default function HaircutAdvisorPage() {
       </main>
 
       {/* Styled Footer */}
-      <footer className="border-t border-zinc-900 py-6 px-6 no-print bg-zinc-950/40">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-zinc-550 font-semibold">
+      <footer className="border-t border-slate-200 py-6 px-6 no-print bg-white">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-slate-450 font-semibold font-mono">
           <span>© 2026 SalonsFlow AI Lab. All rights reserved.</span>
           <div className="flex items-center gap-4">
-            <Link href="/" className="hover:text-zinc-300">Privacy Policy</Link>
+            <Link href="/" className="hover:text-slate-650">Privacy Policy</Link>
             <span>•</span>
-            <Link href="/" className="hover:text-zinc-300">Terms of Use</Link>
+            <Link href="/" className="hover:text-slate-650">Terms of Use</Link>
           </div>
         </div>
       </footer>
 
       {/* BOOKING MODAL */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 relative shadow-2xl text-zinc-100 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 no-print">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md p-6 relative shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowBookingModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
 
             {bookingSuccess ? (
               <div className="text-center py-8 space-y-4">
-                <div className="w-16 h-16 bg-emerald-950/50 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400 mx-auto shadow-inner">
+                <div className="w-16 h-16 bg-purple-50 border border-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mx-auto shadow-sm">
                   <Check className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-display font-black text-xl text-white uppercase tracking-tight">Appointment Requested!</h3>
-                  <p className="text-xs text-zinc-400 font-semibold leading-relaxed max-w-xs mx-auto">
-                    Your appointment request for a <strong className="text-emerald-400">{selectedHaircut || shapeData[detectedShape].haircuts[0]}</strong> has been logged in the booking manager list.
+                  <h3 className="font-display font-black text-xl text-slate-800 uppercase tracking-tight">Appointment Requested!</h3>
+                  <p className="text-xs text-slate-500 font-semibold leading-relaxed max-w-xs mx-auto">
+                    Your appointment request for a <strong className="text-purple-600">{selectedHaircut || shapeData[detectedShape].haircuts[0]}</strong> has been logged in the booking manager list.
                   </p>
                 </div>
                 <button
                   onClick={() => setShowBookingModal(false)}
-                  className="bg-zinc-950 border border-zinc-850 hover:bg-zinc-850 text-zinc-400 hover:text-white text-xs font-bold px-6 py-2.5 rounded-xl uppercase tracking-wider transition-all"
+                  className="bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 text-xs font-bold px-6 py-2.5 rounded-xl uppercase tracking-wider transition-all"
                 >
                   Close
                 </button>
@@ -811,61 +812,61 @@ export default function HaircutAdvisorPage() {
             ) : (
               <form onSubmit={handleBookingSubmit} className="space-y-5 text-left">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block font-mono">STEP 4: SCHEDULE APPOINTMENT</span>
-                  <h3 className="font-display font-black text-lg text-white uppercase tracking-tight">Reserve Style Session</h3>
-                  <p className="text-[11px] text-zinc-500 font-semibold leading-relaxed">
-                    Book your recommended look <strong className="text-white">{selectedHaircut || shapeData[detectedShape].haircuts[0]}</strong> at our partner salon.
+                  <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest block font-mono">STEP 4: SCHEDULE APPOINTMENT</span>
+                  <h3 className="font-display font-black text-lg text-slate-800 uppercase tracking-tight">Reserve Style Session</h3>
+                  <p className="text-[11px] text-slate-450 font-semibold leading-relaxed">
+                    Book your recommended look <strong className="text-slate-700">{selectedHaircut || shapeData[detectedShape].haircuts[0]}</strong> at our partner salon.
                   </p>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Preferred Date</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Preferred Date</label>
                   <input
                     type="date"
                     required
                     min={new Date().toISOString().split("T")[0]}
                     value={bookingDate}
                     onChange={(e) => setBookingDate(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500/50 font-semibold"
+                    className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Preferred Time</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Preferred Time</label>
                   <input
                     type="time"
                     required
                     value={bookingTime}
                     onChange={(e) => setBookingTime(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500/50 font-semibold"
+                    className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-wider block">Styling Notes / Requests (Optional)</label>
+                  <label className="text-[10px] font-black text-slate-555 uppercase tracking-wider block">Styling Notes / Requests (Optional)</label>
                   <textarea
                     rows={2}
                     value={bookingNotes}
                     onChange={(e) => setBookingNotes(e.target.value)}
                     placeholder="E.g., prefer low fade, beard trim details, color preference..."
-                    className="w-full bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-650 focus:outline-none focus:border-emerald-500/50 font-semibold resize-none"
+                    className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-450 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={bookingLoading}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 text-xs font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-95 transition-all"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-550 hover:to-pink-400 text-white text-xs font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10 active:scale-95 transition-all cursor-pointer"
                 >
                   {bookingLoading ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-zinc-950" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
                       <span>Scheduling session...</span>
                     </>
                   ) : (
                     <>
                       <span>Confirm Appointment Request</span>
-                      <Scissors className="w-3.5 h-3.5 text-zinc-950" />
+                      <Scissors className="w-3.5 h-3.5 text-white" />
                     </>
                   )}
                 </button>
@@ -879,8 +880,8 @@ export default function HaircutAdvisorPage() {
       <style jsx global>{`
         @media print {
           body {
-            background-color: #000000 !important;
-            color: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #000000 !important;
           }
           .no-print {
             display: none !important;
