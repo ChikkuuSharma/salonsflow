@@ -105,7 +105,7 @@ export default function AdminVendorsPage() {
   const [profileSubmitting, setProfileSubmitting] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
 
-  const token = "dev-bypass-token";
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const loadSalons = async () => {

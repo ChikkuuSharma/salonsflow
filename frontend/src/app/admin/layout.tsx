@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
         const response = await fetch(`${apiUrl}/api/v1/salons/me/user`, {
-          headers: { Authorization: `Bearer dev-bypass-token` }
+          headers: { Authorization: `Bearer ${storedToken}` }
         });
 
         if (response.ok) {

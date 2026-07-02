@@ -124,17 +124,25 @@ export class ClerkAuthGuard implements CanActivate {
               });
             }
 
+            let uniqueEmail = email;
+            const existingEmailUser = await this.prisma.user.findUnique({
+              where: { email },
+            });
+            if (existingEmailUser) {
+              uniqueEmail = `${clerkId}@salonsflow.com`;
+            }
+
             dbUser = await this.prisma.user.create({
               data: {
                 clerkId,
                 name,
-                email,
+                email: uniqueEmail,
                 role: targetRole,
                 salonId: targetSalonId || defaultSalon.id,
               },
             });
             this.logger.log(
-              `Created ${targetRole} User for development bypass`,
+              `Created ${targetRole} User for development bypass with email ${uniqueEmail}`,
             );
           } catch (createErr: any) {
             if (createErr.code === 'P2002') {
