@@ -63,8 +63,8 @@ export default function AdminLeadsPage() {
   const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-  const loadLeads = async () => {
-    setLoading(true);
+  const loadLeads = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${apiUrl}/api/v1/admin/leads`, {
@@ -74,14 +74,21 @@ export default function AdminLeadsPage() {
       setLeads(await res.json());
     } catch (err: any) {
       console.error(err);
-      setError("Error accessing leads logs. Verify that the backend server is running.");
+      if (!silent) setError("Error accessing leads logs. Verify that the backend server is running.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadLeads();
+
+    // Set up a 10-second real-time polling sync interval
+    const interval = setInterval(() => {
+      loadLeads(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [apiUrl]);
 
   const handleOpenCreateModal = () => {
@@ -289,7 +296,7 @@ export default function AdminLeadsPage() {
             Add Prospect Lead
           </button>
           <button
-            onClick={loadLeads}
+            onClick={() => loadLeads()}
             className="flex items-center gap-2 px-4.5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all font-semibold text-xs text-slate-700 shadow-sm"
           >
             <RefreshCw className="h-3.5 w-3.5" />
