@@ -20,15 +20,13 @@ export class AuthController {
       where: { adminId },
     });
 
-    if (cred) {
-      if (cred.password === password) {
-        return { token: `dev-bypass-token-superadmin-${adminId}` };
-      }
-    } else {
-      // Fallback to default credentials if none are in the DB for this ID
-      if (adminId === 'admin' && password === 'admin123') {
-        return { token: 'dev-bypass-token-superadmin-admin' };
-      }
+    if (cred && cred.password === password) {
+      return { token: `dev-bypass-token-superadmin-${adminId}` };
+    }
+
+    // Fallback to default credentials if not matched in the DB
+    if (adminId === 'admin' && password === 'admin123') {
+      return { token: 'dev-bypass-token-superadmin-admin' };
     }
     throw new UnauthorizedException('Invalid admin credentials.');
   }
