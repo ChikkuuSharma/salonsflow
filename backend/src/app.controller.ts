@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, BadRequestException, Param } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
 import { SubscriptionPlan, LeadStatus } from '@prisma/client';
@@ -46,6 +46,88 @@ export class AppController {
     });
   }
 
+  @Get('api/v1/public/salons')
+  async getPublicSalons() {
+    let salons = await this.prisma.salon.findMany({
+      select: {
+        id: true,
+        name: true,
+        whatsappNumber: true,
+        address: true,
+        ownerCity: true,
+        businessCategory: true,
+        homeBookingFee: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasDemo = salons.some(
+      (s) =>
+        s.name === 'Demo Styling Studio' ||
+        s.whatsappNumber === '+91 99999 88888',
+    );
+
+    if (!hasDemo) {
+      try {
+        const created = await this.prisma.salon.create({
+          data: {
+            name: 'Demo Styling Studio',
+            whatsappNumber: '+91 99999 88888',
+            address: '101, Luxury Arcade, Bandra West, Mumbai',
+            ownerCity: 'Mumbai',
+            businessCategory: 'UNISEX_SALON',
+            homeBookingFee: 150.00,
+            isProfileComplete: true,
+          },
+        });
+
+        await this.prisma.staff.createMany({
+          data: [
+            {
+              salonId: created.id,
+              name: 'Rahul (Master Stylist)',
+              isAvailable: true,
+            },
+            {
+              salonId: created.id,
+              name: 'Priya (Nail & Skin Expert)',
+              isAvailable: true,
+            },
+          ],
+        });
+
+        salons = await this.prisma.salon.findMany({
+          select: {
+            id: true,
+            name: true,
+            whatsappNumber: true,
+            address: true,
+            ownerCity: true,
+            businessCategory: true,
+            homeBookingFee: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+      } catch (err) {
+        // Fallback gracefully
+      }
+    }
+
+    return salons;
+  }
+
+  @Get('api/v1/public/salons/:salonId/staff')
+  async getPublicSalonStaff(@Param('salonId') salonId: string) {
+    return this.prisma.staff.findMany({
+      where: { salonId, isAvailable: true },
+      select: {
+        id: true,
+        name: true,
+        isAvailable: true,
+      },
+    });
+  }
+
   @Post('api/v1/public/bookings')
   async createPublicBooking(
     @Body()
@@ -55,6 +137,8 @@ export class AppController {
       date: string;
       time: string;
       haircut: string;
+      salonId?: string;
+      staffId?: string;
       notes?: string;
     },
   ) {
@@ -62,11 +146,33 @@ export class AppController {
       throw new BadRequestException('name, phone, date, time, and haircut are required.');
     }
 
-    const salon = await this.prisma.salon.findFirst();
-    if (!salon) {
-      throw new BadRequestException('No salon is registered in the system.');
+    let salonId: string | undefined;
+    if (body.salonId) {
+      const targetSalon = await this.prisma.salon.findUnique({
+        where: { id: body.salonId },
+      });
+      if (targetSalon) {
+        salonId = targetSalon.id;
+      }
     }
-    const salonId = salon.id;
+
+    if (!salonId) {
+      const defaultSalon = await this.prisma.salon.findFirst();
+      if (!defaultSalon) {
+        throw new BadRequestException('No salon is registered in the system.');
+      }
+      salonId = defaultSalon.id;
+    }
+
+    let staffId: string | null = null;
+    if (body.staffId) {
+      const targetStaff = await this.prisma.staff.findUnique({
+        where: { id: body.staffId },
+      });
+      if (targetStaff && targetStaff.salonId === salonId) {
+        staffId = targetStaff.id;
+      }
+    }
 
     let customer = await this.prisma.customer.findFirst({
       where: { salonId, phone: body.phone },
@@ -109,6 +215,7 @@ export class AppController {
         salonId,
         customerId: customer.id,
         serviceId: service.id,
+        staffId,
         startTime,
         endTime,
         status: 'PENDING',

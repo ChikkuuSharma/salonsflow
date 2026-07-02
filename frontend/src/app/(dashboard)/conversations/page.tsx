@@ -244,36 +244,36 @@ export default function ConversationsPage() {
   };
 
   return (
-    <div className="space-y-6 h-[calc(100vh-120px)] flex flex-col text-zinc-150">
+    <div className="space-y-6 h-[calc(100vh-120px)] flex flex-col">
       {/* Page Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4 p-5 bg-gradient-to-r from-emerald-950/20 via-zinc-900/30 to-transparent rounded-3xl border border-emerald-900/30 shadow-md backdrop-blur-sm">
+      <div className="flex items-center justify-between flex-wrap gap-4 p-5 bg-white rounded-3xl border border-slate-200 shadow-sm text-slate-800">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           <div>
-            <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-indigo-405 bg-clip-text text-transparent font-display flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-emerald-400 animate-pulse" />
+            <h2 className="text-2xl font-black tracking-tight text-slate-800 font-display flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-emerald-600" />
               AI Chatbot Simulator & Tester
             </h2>
-            <p className="text-xs text-zinc-400 mt-1">Test intent classification and dynamic database scheduling in real-time.</p>
+            <p className="text-xs text-slate-550 font-semibold mt-1">Test intent classification and dynamic database scheduling in real-time.</p>
           </div>
 
           {/* Channel Segmented Switcher */}
-          <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-850 p-1.5 rounded-2xl shadow-inner">
+          <div className="flex items-center gap-2 bg-slate-55 border border-slate-200 p-1.5 rounded-2xl">
             <button
               onClick={() => setChannel("whatsapp")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border-0 ${
                 channel === "whatsapp"
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-950/20"
-                  : "text-zinc-400 hover:text-zinc-200 bg-transparent"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800 bg-transparent"
               }`}
             >
               <MessageSquare className="h-4 w-4" /> WhatsApp
             </button>
             <button
               onClick={() => setChannel("instagram")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border-0 ${
                 channel === "instagram"
-                  ? "bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white shadow-md"
-                  : "text-zinc-400 hover:text-zinc-200 bg-transparent"
+                  ? "bg-gradient-to-r from-purple-600 via-pink-655 to-orange-500 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800 bg-transparent"
               }`}
             >
               <Instagram className="h-4 w-4" /> Instagram
@@ -282,10 +282,10 @@ export default function ConversationsPage() {
         </div>
 
         {/* Customer Selector / Creator */}
-        <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 px-4 py-2.5 rounded-2xl shadow-sm">
-          <label className="text-[10px] font-bold text-zinc-450 uppercase tracking-widest pl-1">Active Customer:</label>
+        <div className="flex items-center gap-3 bg-slate-55 border border-slate-200 px-4 py-2.5 rounded-2xl shadow-xs">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Active Customer:</label>
           <select 
-            className="text-xs bg-zinc-950 border border-zinc-800 text-zinc-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold cursor-pointer"
+            className="text-xs bg-white border border-slate-250 text-slate-800 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-bold cursor-pointer"
             value={selectedCustomerId}
             onChange={handleSelectCustomer}
             disabled={customers.length === 0}
@@ -304,37 +304,37 @@ export default function ConversationsPage() {
         
         {/* Left Side: Simulator Controls & Prompts */}
         <div className="space-y-6 flex flex-col justify-between h-full">
-          {/* Identity Card */}
-          <Card className="bg-zinc-900/40 border border-zinc-850 backdrop-blur-md rounded-3xl shadow-lg overflow-hidden flex flex-col">
-            <CardHeader className="bg-zinc-900/40 border-b border-zinc-850 py-3.5 px-5 flex-shrink-0">
-              <CardTitle className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
-                <User className="h-4 w-4 text-emerald-400" />
+          {/* Ide          {/* Identity Card */}
+          <Card className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 py-3.5 px-5 flex-shrink-0 text-slate-800">
+              <CardTitle className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <User className="h-4 w-4 text-emerald-600" />
                 Simulated Sender Identity
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-5 px-5 pb-5">
+            <CardContent className="space-y-4 pt-5 px-5 pb-5 text-slate-800">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Customer Display Name</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Customer Display Name</label>
                 <input 
                   type="text" 
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full text-xs bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold shadow-inner"
+                  className="w-full text-xs bg-white border border-slate-250 rounded-xl px-3.5 py-2.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold shadow-inner"
                   placeholder="E.g. Anjali Sharma"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                   {channel === "whatsapp" ? "Simulated Phone Number" : "Simulated Instagram ID / Username"}
                 </label>
                 <input 
                   type="text" 
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full text-xs bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold font-mono shadow-inner"
+                  className="w-full text-xs bg-white border border-slate-250 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold font-mono shadow-inner"
                   placeholder={channel === "whatsapp" ? "E.g. 919876543210" : "E.g. anjali_sharma_ig"}
                 />
-                <span className="text-[9px] text-zinc-500 block leading-normal pt-1 font-medium">
+                <span className="text-[9px] text-slate-500 block leading-normal pt-1 font-semibold">
                   {channel === "whatsapp" 
                     ? "Changing display name or phone number simulates a new customer webhook event!"
                     : "Changing display name or Instagram ID simulates a new customer webhook event!"}
@@ -344,24 +344,24 @@ export default function ConversationsPage() {
           </Card>
 
           {/* Quick Test Templates Card */}
-          <Card className="bg-zinc-900/40 border border-zinc-850 backdrop-blur-md rounded-3xl shadow-lg flex-1 mt-4 overflow-hidden flex flex-col">
-            <CardHeader className="bg-zinc-900/40 border-b border-zinc-850 py-3.5 px-5 flex-shrink-0">
-              <CardTitle className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-2 font-display">
-                <HelpCircle className="h-4 w-4 text-emerald-450" />
+          <Card className="bg-white border border-slate-200 rounded-3xl shadow-sm flex-1 mt-4 overflow-hidden flex flex-col">
+            <CardHeader className="bg-slate-50 border-b border-slate-200 py-3.5 px-5 flex-shrink-0 text-slate-800">
+              <CardTitle className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 font-display">
+                <HelpCircle className="h-4 w-4 text-slate-655" />
                 Quick Test Templates
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-2.5 overflow-y-auto flex-1 custom-scrollbar">
-              <p className="text-[11px] text-zinc-450 pb-1.5 font-light">Click a test prompt below to instantly simulate the client intent:</p>
+            <CardContent className="p-4 space-y-2.5 overflow-y-auto flex-1 custom-scrollbar text-slate-800">
+              <p className="text-[11px] text-slate-500 pb-1.5 font-semibold">Click a test prompt below to instantly simulate the client intent:</p>
               {testPrompts.map((p, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(p.text)}
                   disabled={sending}
-                  className="w-full text-left text-xs bg-zinc-950 hover:bg-emerald-950/20 hover:border-emerald-500/30 border border-zinc-800/80 rounded-2xl p-3.5 transition-all duration-200 flex justify-between items-center group cursor-pointer text-zinc-300 hover:text-zinc-100 shadow-sm"
+                  className="w-full text-left text-xs bg-white hover:bg-slate-50 hover:border-slate-350 border border-slate-200 rounded-2xl p-3.5 transition-all duration-200 flex justify-between items-center group cursor-pointer text-slate-650 hover:text-slate-900 shadow-xs"
                 >
-                  <span className="font-semibold">{p.label}</span>
-                  <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl px-2.5 py-1 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-500 transition-all font-bold">
+                  <span className="font-bold">{p.label}</span>
+                  <span className="text-[9px] bg-slate-50 border border-slate-200 text-slate-500 rounded-xl px-2.5 py-1 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-500 transition-all font-bold">
                     Send
                   </span>
                 </button>

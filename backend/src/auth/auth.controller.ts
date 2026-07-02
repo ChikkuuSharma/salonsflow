@@ -16,18 +16,18 @@ export class AuthController {
       throw new UnauthorizedException('Admin ID and Password are required.');
     }
 
-    const credentialsCount = await this.prisma.adminCredential.count();
-    if (credentialsCount === 0) {
-      // Fallback to default credentials if none are created yet
-      if (adminId === 'admin' && password === 'admin123') {
-        return { token: 'dev-bypass-token-superadmin-admin' };
+    const cred = await this.prisma.adminCredential.findUnique({
+      where: { adminId },
+    });
+
+    if (cred) {
+      if (cred.password === password) {
+        return { token: `dev-bypass-token-superadmin-${adminId}` };
       }
     } else {
-      const cred = await this.prisma.adminCredential.findUnique({
-        where: { adminId },
-      });
-      if (cred && cred.password === password) {
-        return { token: `dev-bypass-token-superadmin-${adminId}` };
+      // Fallback to default credentials if none are in the DB for this ID
+      if (adminId === 'admin' && password === 'admin123') {
+        return { token: 'dev-bypass-token-superadmin-admin' };
       }
     }
     throw new UnauthorizedException('Invalid admin credentials.');
@@ -60,22 +60,22 @@ export class AuthController {
       throw new UnauthorizedException('Admin ID, Old Password, and New Password are required.');
     }
 
-    const credentialsCount = await this.prisma.adminCredential.count();
-    if (credentialsCount === 0) {
-      if (adminId === 'admin' && oldPassword === 'admin123') {
-        await this.prisma.adminCredential.create({
-          data: { adminId, password: newPassword },
+    const cred = await this.prisma.adminCredential.findUnique({
+      where: { adminId },
+    });
+
+    if (cred) {
+      if (cred.password === oldPassword) {
+        await this.prisma.adminCredential.update({
+          where: { adminId },
+          data: { password: newPassword },
         });
         return { success: true };
       }
     } else {
-      const cred = await this.prisma.adminCredential.findUnique({
-        where: { adminId },
-      });
-      if (cred && cred.password === oldPassword) {
-        await this.prisma.adminCredential.update({
-          where: { adminId },
-          data: { password: newPassword },
+      if (adminId === 'admin' && oldPassword === 'admin123') {
+        await this.prisma.adminCredential.create({
+          data: { adminId, password: newPassword },
         });
         return { success: true };
       }

@@ -56,6 +56,9 @@ export default function Home() {
 
   // Active feature tab state
   const [activeTab, setActiveTab] = useState<"receptionist" | "multilingual" | "rebooking">("receptionist");
+  
+  // Billing cycle state for homepage pricing block
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
 
   // Book Demo Popup Modal State
   const [demoModalOpen, setDemoModalOpen] = useState(false);
@@ -67,6 +70,129 @@ export default function Home() {
     salonName: "",
     city: "Mumbai",
   });
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+  // Public Direct Booking Modal States
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("12:00");
+  const [bookingNotes, setBookingNotes] = useState("");
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  
+  // Salon/Vendor Selection States
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [selectedVendor, setSelectedVendor] = useState<any | null>(null);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [vendorSearch, setVendorSearch] = useState("");
+  const [bookingStep, setBookingStep] = useState<"GUEST_INFO" | "SELECT_VENDOR" | "SCHEDULE">("GUEST_INFO");
+  const [bookingType, setBookingType] = useState<"SALON" | "HOME">("SALON");
+  const [homeAddress, setHomeAddress] = useState("");
+  const [salonStaff, setSalonStaff] = useState<any[]>([]);
+  const [selectedStaffId, setSelectedStaffId] = useState("");
+  const [staffLoading, setStaffLoading] = useState(false);
+
+  // Guest customer states
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+
+  const loadVendorsList = async () => {
+    try {
+      setVendorsLoading(true);
+      const response = await fetch(`${apiUrl}/api/v1/public/salons`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const mapped = data.map((v: any, index: number) => ({
+            id: v.id,
+            name: v.name,
+            whatsappNumber: v.whatsappNumber,
+            address: v.address || "Main Street Road",
+            ownerCity: v.ownerCity || "Mumbai",
+            businessCategory: v.businessCategory || "HAIR_SALON",
+            homeBookingFee: v.homeBookingFee !== null && v.homeBookingFee !== undefined ? v.homeBookingFee : 0,
+            rating: (4.5 + (index % 5) * 0.1).toFixed(1),
+            reviewsCount: (80 + (index % 10) * 15).toString()
+          }));
+          setVendors(mapped);
+          setVendorsLoading(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Error loading vendors:", err);
+    }
+    setVendors([]);
+    setVendorsLoading(false);
+  };
+
+  const loadSalonStaff = async (salonId: string) => {
+    try {
+      setStaffLoading(true);
+      const response = await fetch(`${apiUrl}/api/v1/public/salons/${salonId}/staff`);
+      if (response.ok) {
+        const data = await response.json();
+        setSalonStaff(data || []);
+      } else {
+        setSalonStaff([]);
+      }
+    } catch (err) {
+      console.error("Error loading staff:", err);
+      setSalonStaff([]);
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingDate || !bookingTime || !selectedVendor || !guestName || !guestPhone) return;
+    if (bookingType === "HOME" && !homeAddress.trim()) {
+      alert("Please enter your home address for doorstep service.");
+      return;
+    }
+
+    setBookingLoading(true);
+    try {
+      const typeLabel = bookingType === "HOME" ? "🏠 Home Service (Doorstep)" : "🏪 Salon Visit (Store)";
+      const addressNotes = bookingType === "HOME" ? `\nHome Address: ${homeAddress}` : "";
+      
+      const chosenStaff = salonStaff.find((s) => s.id === selectedStaffId);
+      const staffNotes = chosenStaff ? `\nStylist/Specialist: ${chosenStaff.name}` : "\nStylist/Specialist: Any Available Stylist";
+
+      const response = await fetch(`${apiUrl}/api/v1/public/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: guestName,
+          phone: guestPhone,
+          date: bookingDate,
+          time: bookingTime,
+          haircut: "Regular Cut / Styling",
+          salonId: selectedVendor.id,
+          staffId: selectedStaffId || undefined,
+          notes: `[Direct Client Booking] Type: ${typeLabel}.${addressNotes}${staffNotes}\nPartner Salon: ${selectedVendor.name}.\nCustomer Notes: ${bookingNotes}`
+        })
+      });
+      if (response.ok) {
+        setBookingSuccess(true);
+      } else {
+        alert("Failed to register appointment booking.");
+      }
+    } catch (err) {
+      console.error("Public booking error:", err);
+      alert("Error booking appointment.");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadVendorsList();
+  }, []);
 
   // ROI Calculator States
   const [dailyBookingsLost, setDailyBookingsLost] = useState(3);
@@ -318,7 +444,22 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-bold text-slate-500 uppercase tracking-wider">
             <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
             <Link href="/pricing" className="hover:text-slate-900 transition-colors">Pricing</Link>
-            <Link href="/haircut-advisor" className="hover:text-purple-600 text-purple-600 transition-colors flex items-center gap-1"><Sparkles className="w-3 h-3 text-purple-600 animate-pulse" /> AI Style Lab</Link>
+            <Link href="/haircut-advisor" className="hover:text-purple-600 text-purple-600 transition-colors flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" /> AI Style Lab</Link>
+            <button
+              onClick={() => {
+                setBookingDate(new Date().toISOString().split("T")[0]);
+                setBookingSuccess(false);
+                setBookingStep("GUEST_INFO");
+                setSelectedVendor(null);
+                setBookingType("SALON");
+                setHomeAddress("");
+                setSelectedStaffId("");
+                setShowBookingModal(true);
+              }}
+              className="hover:text-emerald-700 text-emerald-600 transition-colors flex items-center gap-1 uppercase tracking-wider border-0 bg-transparent cursor-pointer font-bold font-sans text-xs"
+            >
+              <Calendar className="w-3 h-3 text-emerald-600" /> Book Visit
+            </button>
             <a href="#solutions" className="hover:text-slate-900 transition-colors">Solutions</a>
             <a href="#roi" className="hover:text-slate-900 transition-colors">ROI Calculator</a>
             <a href="#faq" className="hover:text-slate-900 transition-colors">FAQs</a>
@@ -354,7 +495,23 @@ export default function Home() {
           <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 p-6 flex flex-col gap-4 text-sm font-bold text-slate-600 animate-in slide-in-from-top-4 duration-200 shadow-lg">
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Features</a>
             <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Pricing</Link>
-            <Link href="/haircut-advisor" onClick={() => setMobileMenuOpen(false)} className="hover:text-purple-650 text-purple-650 transition-colors py-1 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" /> AI Style Lab</Link>
+            <Link href="/haircut-advisor" onClick={() => setMobileMenuOpen(false)} className="hover:text-purple-700 text-purple-600 transition-colors py-1 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-650 animate-pulse" /> AI Style Lab</Link>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setBookingDate(new Date().toISOString().split("T")[0]);
+                setBookingSuccess(false);
+                setBookingStep("GUEST_INFO");
+                setSelectedVendor(null);
+                setBookingType("SALON");
+                setHomeAddress("");
+                setSelectedStaffId("");
+                setShowBookingModal(true);
+              }}
+              className="hover:text-emerald-700 text-emerald-600 transition-colors py-1 flex items-center gap-1 uppercase tracking-wider border-0 bg-transparent cursor-pointer font-bold font-sans text-sm text-left"
+            >
+              <Calendar className="w-3.5 h-3.5 text-emerald-600" /> Book Visit
+            </button>
             <a href="#solutions" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Solutions</a>
             <a href="#roi" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">ROI Calculator</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">FAQs</a>
@@ -403,7 +560,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md pt-4">
               <Link
                 href="/sign-up"
-                className="group flex items-center justify-center gap-2 h-13 px-8 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold tracking-wide transition-all shadow-md active:scale-95 duration-200 hover:-translate-y-0.5 text-xs uppercase rounded-xl"
+                className="group flex items-center justify-center gap-2 h-13 px-8 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-550 hover:to-pink-400 text-white font-bold tracking-wide transition-all shadow-md active:scale-95 duration-200 hover:-translate-y-0.5 text-xs uppercase rounded-xl border-0"
               >
                 Start Free Trial
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -412,7 +569,7 @@ export default function Home() {
                 href="/demo"
                 className="flex items-center justify-center gap-2.5 h-13 px-8 bg-white hover:bg-slate-50 border border-slate-200 active:bg-slate-100 rounded-xl text-slate-700 hover:text-slate-900 font-bold tracking-wide transition-all duration-200 active:scale-95 hover:-translate-y-0.5 text-xs uppercase shadow-xs cursor-pointer"
               >
-                <Sparkles className="h-3.5 w-3.5 text-purple-650 animate-pulse" />
+                <Sparkles className="h-3.5 w-3.5 text-purple-600 animate-pulse" />
                 Explore Demo Mode
               </Link>
             </div>
@@ -426,11 +583,36 @@ export default function Home() {
               </div>
               <Link
                 href="/haircut-advisor"
-                className="flex-shrink-0 bg-purple-650 hover:bg-purple-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 hover:-translate-y-0.5 active:scale-95 transition-all shadow shadow-purple-500/10"
+                className="flex-shrink-0 bg-purple-600 hover:bg-purple-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 hover:-translate-y-0.5 active:scale-95 transition-all shadow shadow-purple-500/10"
               >
                 <span>Try AI Lab</span>
                 <ArrowRight className="w-3 h-3 text-white" />
               </Link>
+            </div>
+
+            {/* Direct Booking Highlight Box */}
+            <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl flex items-center justify-between gap-4 mt-4 max-w-lg text-left shadow-sm">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block font-mono">⚡ Direct Client Booking</span>
+                <span className="text-xs font-black text-slate-800 uppercase block">Book Partner Salon or Home Visit</span>
+                <p className="text-[10.5px] text-slate-500 leading-relaxed font-semibold">Instantly reserve a slot at any nearby vendor salon or get doorstep services.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setBookingDate(new Date().toISOString().split("T")[0]);
+                  setBookingSuccess(false);
+                  setBookingStep("GUEST_INFO");
+                  setSelectedVendor(null);
+                  setBookingType("SALON");
+                  setHomeAddress("");
+                  setSelectedStaffId("");
+                  setShowBookingModal(true);
+                }}
+                className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 hover:-translate-y-0.5 active:scale-95 transition-all shadow border-0 cursor-pointer"
+              >
+                <span>Book Appointment</span>
+                <Calendar className="w-3 h-3 text-white" />
+              </button>
             </div>
 
             {/* Quick trust metrics */}
@@ -652,17 +834,20 @@ export default function Home() {
           {[
             { num: "01", title: "AI Receptionist Autopilot", desc: "Processes inbound WhatsApp messages using custom prompts, qualifying slots, and upselling services autonomously." },
             { num: "02", title: "Smart Client Database", desc: "Unified CRM console mapping past visit histories, preferred stylists, and automatic WhatsApp loyalty tags." },
-            { num: "03", title: "WhatsApp API Link", desc: "Binds your official WABA number to dispatch automated appointment alerts, invoices, and review cards." },
-            { num: "04", title: "Missed Call Greetings", desc: "Intercepts missed client calls instantly, triggering automated WhatsApp booking menus to convert callers." },
-            { num: "05", title: "Whisper Voice Booking", desc: "Transcribes customer Hinglish voice notes atomically into date, time, and service slot coordinates." },
-            { num: "06", title: "POS Digital Billing", desc: "Tracks cash drawers, splits card/cash invoices, prints GST receipts, and auto-calculates commissions." },
-            { num: "07", title: "Stylist Commission Ledger", desc: "Supports tier-based slabs, custom stylist split ratios, and automatic payroll calculation." },
-            { num: "08", title: "Google Review Campaigns", desc: "Dispatches review prompt cards 60 minutes post-billing to elevate local SEO search rankings." },
-            { num: "09", title: "Sandbox Mock Lines", desc: "Enables instant simulator testing of Hinglish dialogues without setting up Meta developer credentials." }
+            { num: "03", title: "WhatsApp Meta API Link", desc: "Binds your official WABA number to dispatch automated appointment alerts, invoices, and review cards." },
+            { num: "04", title: "AI Haircut & Style Advisor", desc: "Analyzes client selfies using face shape detection (oval, round, square, heart) to recommend matching cuts." },
+            { num: "05", title: "Home & Doorstep Services", desc: "Allows clients to book doorstep appointments. Salons can fix custom home service convenience fees dynamically." },
+            { num: "06", title: "Inbound Missed Call Automation", desc: "Intercepts missed client calls instantly, triggering automated WhatsApp booking menus to convert callers." },
+            { num: "07", title: "Hinglish Voice Note Parsing", desc: "Transcribes customer Hinglish/Hindi audio notes atomically into date, time, and service slot coordinates." },
+            { num: "08", title: "Partner Salon Overflow Routing", desc: "Automatically suggests near-by partner salons in your network if your primary calendar is fully booked." },
+            { num: "09", title: "POS Digital Billing Console", desc: "Tracks cash drawers, splits card/cash invoices, prints GST receipts, and auto-calculates commissions." },
+            { num: "10", title: "Stylist Commission Ledger", desc: "Supports tier-based slabs, custom stylist split ratios, and automatic payroll calculation." },
+            { num: "11", title: "Google Reviews Collection", desc: "Dispatches review prompt cards 60 minutes post-billing to elevate local SEO search rankings." },
+            { num: "12", title: "Instant Sandbox Simulator", desc: "Enables instant simulator testing of Hinglish dialogues without setting up Meta developer credentials." }
           ].map((item, idx) => (
-            <div key={idx} className="bg-white border border-slate-205 p-8 rounded-3xl hover:border-purple-300 hover:bg-slate-50/50 transition-all duration-300 text-left group relative shadow-xs">
+            <div key={idx} className="bg-white/70 border border-slate-200/80 backdrop-blur-xs p-8 rounded-3xl hover:border-purple-300 hover:bg-slate-50/50 hover:-translate-y-1 transition-all duration-300 text-left group relative shadow-xs">
               <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/5 blur-xl rounded-full group-hover:bg-purple-500/10 pointer-events-none"></div>
-              <span className="text-[9px] font-mono text-purple-400 font-bold block mb-1">MODULE {item.num}</span>
+              <span className="text-[9px] font-mono text-purple-600 font-bold block mb-1">MODULE {item.num}</span>
               <h4 className="font-bold text-sm text-slate-800 mb-2 uppercase tracking-wide font-display">{item.title}</h4>
               <p className="text-slate-500 text-[11px] leading-relaxed font-semibold">{item.desc}</p>
             </div>
@@ -747,6 +932,140 @@ export default function Home() {
                 </span>
                 <span className="text-4xl font-black text-slate-800 font-display">₹{calculatedYearlySavings.toLocaleString()}</span>
                 <p className="text-[9px] text-slate-400 leading-relaxed mt-1 font-semibold">Includes recovered booking leakages and saved receptionist salary, minus flat sub fee.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Pricing Section on Homepage */}
+      <section id="pricing" className="py-24 border-t border-slate-200 bg-white relative z-10">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center space-y-4 mb-16">
+            <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">
+              Subscription Pricing
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800 tracking-tight font-display">Simple, Predictable Plans</h2>
+            <p className="text-slate-500 text-xs font-semibold leading-relaxed max-w-md mx-auto">
+              Automate your reception desk, coordinate styling appointments, and recover lost revenues with zero transaction commissions.
+            </p>
+
+            {/* Toggle switch */}
+            <div className="pt-4 flex items-center justify-center gap-3">
+              <span className={`text-[10px] font-bold uppercase tracking-wider transition-all ${billingCycle === "monthly" ? "text-purple-650" : "text-slate-400"}`}>Monthly Billing</span>
+              <button
+                onClick={() => setBillingCycle(billingCycle === "monthly" ? "annual" : "monthly")}
+                className="w-12 h-6.5 bg-slate-200 border border-slate-300 rounded-full relative p-0.5 transition-colors cursor-pointer flex items-center"
+              >
+                <span className={`h-5 w-5 bg-purple-600 rounded-full shadow-md transform transition-transform duration-200 ${billingCycle === "annual" ? "translate-x-5.5" : "translate-x-0"}`}></span>
+              </button>
+              <span className={`text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${billingCycle === "annual" ? "text-purple-650" : "text-slate-400"}`}>
+                Annual Billing
+                <span className="bg-purple-100 border border-purple-200 text-purple-700 text-[8px] font-extrabold px-2 py-0.5 rounded-full">Save 20%</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+            {/* Basic Plan Card */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-8 text-left relative flex flex-col justify-between hover:border-purple-300 hover:shadow-lg transition-all duration-300">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest block font-mono text-purple-600">Basic Plan</h4>
+                  <p className="text-slate-450 text-[10px] font-semibold mt-1">Core AI receptionist and local billing registers.</p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-slate-800">₹{billingCycle === "annual" ? "2,399" : "2,999"}</span>
+                  <span className="text-slate-400 text-xs font-bold font-sans">/ month</span>
+                </div>
+
+                <ul className="space-y-3.5 text-xs text-slate-600 font-semibold border-t border-slate-100 pt-6">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-purple-600 shrink-0" />
+                    <span>24/7 AI WhatsApp Receptionist (Hinglish/Hindi)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-purple-600 shrink-0" />
+                    <span>Offline POS Digital Billing Terminal</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-purple-600 shrink-0" />
+                    <span>Inbound Missed Call Welcome Menus</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-purple-600 shrink-0" />
+                    <span>Basic Partner Calendar & Roster Setup</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-purple-600 shrink-0" />
+                    <span>Stylist Tier Commission Ledgers</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-8 border-t border-slate-100/50 mt-8 space-y-3">
+                <Link
+                  href="/sign-up"
+                  className="w-full h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wide rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95"
+                >
+                  Start Free Trial
+                </Link>
+              </div>
+            </div>
+
+            {/* Pro Autopilot Card */}
+            <div className="bg-slate-950 text-white rounded-3xl p-8 text-left relative flex flex-col justify-between border-2 border-purple-500 shadow-xl shadow-purple-500/5 hover:-translate-y-1 transition-all duration-300">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 border border-purple-400 text-white font-extrabold text-[8px] uppercase tracking-widest px-3 py-1 rounded-full shadow-md animate-pulse">
+                Most Popular
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-black text-purple-400 uppercase tracking-widest block font-mono">Pro Autopilot</h4>
+                  <p className="text-slate-400 text-[10px] font-semibold mt-1">Complete autonomous marketing & customer loops.</p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-white">₹{billingCycle === "annual" ? "3,999" : "4,999"}</span>
+                  <span className="text-purple-400 text-xs font-bold font-sans">/ month</span>
+                </div>
+
+                <ul className="space-y-3.5 text-xs text-slate-350 font-semibold border-t border-zinc-800 pt-6">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-pink-500 shrink-0" />
+                    <span className="text-white">Everything in Basic Plan</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-pink-500 shrink-0" />
+                    <span>Whisper Voice Note Transcription Booking</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-pink-500 shrink-0" />
+                    <span>AI Haircut & Style Analysis (AI Lab)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-pink-500 shrink-0" />
+                    <span>Home & Doorstep Booking with Custom Fees</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-pink-500 shrink-0" />
+                    <span>Google Review Auto-Collection Campaigns</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-pink-500 shrink-0" />
+                    <span>Partner Salon Routing (Overflow Engine)</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-8 border-t border-zinc-800/80 mt-8 space-y-3">
+                <Link
+                  href="/sign-up"
+                  className="w-full h-11 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs uppercase tracking-wide rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 shadow-md shadow-purple-900/10"
+                >
+                  Go Autopilot Free
+                </Link>
               </div>
             </div>
           </div>
@@ -935,11 +1254,16 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-200 py-12 bg-white px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-slate-450 text-xs">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <img src="/logo.png" alt="SalonsFlow Logo" className="h-8 w-8 object-contain" />
-            <span className="font-extrabold text-sm tracking-tight text-slate-700 font-display">
-              Salons<span className="text-purple-600">Flow</span>
-            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-extrabold text-sm tracking-tight text-slate-700 font-display leading-none">
+                Salons<span className="text-purple-600 font-black">Flow</span>
+              </span>
+              <span className="text-[8px] font-bold text-purple-600 tracking-wider uppercase mt-1">
+                Grow While You Style
+              </span>
+            </div>
           </div>
           
           <p>© 2026 SalonsFlow Platform Operating System. Built for Indian Salons.</p>
@@ -960,9 +1284,14 @@ export default function Home() {
           <div className="w-full max-w-lg space-y-8 relative z-10">
             <div className="flex items-center justify-center gap-3">
               <img src="/logo.png" alt="SalonsFlow Logo" className="h-12 w-12 object-contain animate-pulse" />
-              <span className="font-black text-2xl tracking-tight text-white font-display">
-                Salons<span className="text-purple-400 font-bold">Flow</span>
-              </span>
+              <div className="flex flex-col text-left">
+                <span className="font-black text-2xl tracking-tight text-white font-display leading-none">
+                  Salons<span className="text-purple-400 font-bold">Flow</span>
+                </span>
+                <span className="text-[10px] font-bold text-purple-400 tracking-wider uppercase mt-1.5">
+                  Grow While You Style
+                </span>
+              </div>
             </div>
 
             <div className="bg-purple-950/20 border border-purple-900/40 rounded-2xl p-5 font-mono text-[11px] text-purple-200 min-h-[180px] shadow-2xl flex flex-col justify-between backdrop-blur-md">
@@ -1076,6 +1405,341 @@ export default function Home() {
                   </>
                 )}
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Public Client Booking Modal */}
+      {showBookingModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto font-sans text-left">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200 text-slate-850">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowBookingModal(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 bg-transparent border-0 cursor-pointer p-1.5 rounded-full hover:bg-slate-100 transition-all z-20"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="p-6 sm:p-8">
+              {bookingSuccess ? (
+                <div className="text-center py-8 space-y-4">
+                  <div className="h-16 w-16 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                    <Check className="h-8 w-8 text-emerald-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-display font-black text-xl text-slate-855 uppercase tracking-tight">Appointment Requested!</h3>
+                    <p className="text-[11.5px] text-slate-500 leading-relaxed font-semibold">
+                      Bhai, your styling appointment slot is successfully scheduled. The salon partner has received your booking and will confirm/whatsapp details soon.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowBookingModal(false)}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider py-3.5 rounded-xl transition-all cursor-pointer border-0 mt-4"
+                  >
+                    Close Window
+                  </button>
+                </div>
+              ) : bookingStep === "GUEST_INFO" ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (guestName && guestPhone) {
+                      setBookingStep("SELECT_VENDOR");
+                    }
+                  }}
+                  className="space-y-5 text-left"
+                >
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block font-mono">STEP 1: YOUR DETAILS</span>
+                    <h3 className="font-display font-black text-lg text-slate-800 uppercase tracking-tight">Guest Information</h3>
+                    <p className="text-[11px] text-slate-450 font-semibold leading-relaxed">
+                      Enter your name and WhatsApp number to check nearby partner salons and book.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Piyush Sharma"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Phone Number</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. 9876543210"
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-550 hover:to-pink-400 text-white text-xs font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10 active:scale-95 transition-all cursor-pointer border-0 mt-4 font-sans"
+                  >
+                    <span>Proceed to Salons</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-white" />
+                  </button>
+                </form>
+              ) : bookingStep === "SELECT_VENDOR" ? (
+                <div className="space-y-4 text-left font-sans">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block font-mono">STEP 2: CHOOSE SALON</span>
+                    <h3 className="font-display font-black text-lg text-slate-800 uppercase tracking-tight">Select Partner Salon</h3>
+                    <p className="text-[11px] text-slate-450 font-semibold leading-relaxed">
+                      Select a SalonsFlow partner vendor near your location.
+                    </p>
+                  </div>
+
+                  {/* Search Vendor */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Filter by city or salon name..."
+                      value={vendorSearch}
+                      onChange={(e) => setVendorSearch(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
+                    />
+                  </div>
+
+                  {/* Vendors Scroll Container */}
+                  <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1 mt-2 custom-scrollbar">
+                    {vendors.length === 0 ? (
+                      <div className="text-center py-10 px-4 bg-slate-50 border border-dashed border-slate-250 rounded-2xl">
+                        <span className="text-2xl mb-1.5 block">🏪</span>
+                        <p className="text-xs font-black text-slate-800 uppercase tracking-tight">No Partner Salons Found</p>
+                        <p className="text-[10px] text-slate-500 font-semibold mt-1 leading-relaxed">
+                          Currently, there are no vendors onboarded in the database. If you are a client salon, sign up / onboarding from the dashboard to display here!
+                        </p>
+                      </div>
+                    ) : (
+                      vendors.filter(v =>
+                        v.name.toLowerCase().includes(vendorSearch.toLowerCase()) ||
+                        (v.ownerCity && v.ownerCity.toLowerCase().includes(vendorSearch.toLowerCase()))
+                      ).map(v => (
+                        <div key={v.id} className="border border-slate-200 rounded-2xl p-4 hover:border-purple-300 hover:bg-purple-50/10 transition-all flex flex-col justify-between gap-3 text-left">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="bg-purple-50 text-purple-650 border border-purple-100 text-[8.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md inline-block">
+                                {v.businessCategory === "UNISEX_SALON" ? "Unisex" : v.businessCategory === "BARBER_SHOP" ? "Barber" : "Hair Salon"}
+                              </span>
+                              <h4 className="font-display font-black text-sm text-slate-800 uppercase tracking-tight mt-1">{v.name}</h4>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-amber-500 text-xs">★</span>
+                                <span className="text-[10.5px] font-black text-slate-755">{v.rating}</span>
+                                <span className="text-[9.5px] font-semibold text-slate-400 font-sans">({v.reviewsCount} reviews)</span>
+                              </div>
+                            </div>
+                            <span className="text-[9.5px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">{v.ownerCity || "Mumbai"}</span>
+                          </div>
+
+                          <div className="text-[10.5px] text-slate-500 font-semibold space-y-1">
+                            <p className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-slate-400" /> {v.address}</p>
+                            <p className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg w-max font-bold border border-emerald-100/60 mt-1">
+                              <span>🏠 Doorstep Service Fee:</span>
+                              <span className="font-extrabold">{v.homeBookingFee > 0 ? `₹${v.homeBookingFee}` : "Free"}</span>
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setSelectedVendor(v);
+                              setSelectedStaffId("");
+                              loadSalonStaff(v.id);
+                              setBookingStep("SCHEDULE");
+                            }}
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold uppercase tracking-wider py-2 rounded-xl transition-all cursor-pointer text-center border-0 font-sans"
+                          >
+                            Select Salon
+                          </button>
+                        </div>
+                      ))
+                    )}
+                    {vendors.length > 0 && vendors.filter(v =>
+                      v.name.toLowerCase().includes(vendorSearch.toLowerCase()) ||
+                      (v.ownerCity && v.ownerCity.toLowerCase().includes(vendorSearch.toLowerCase()))
+                    ).length === 0 && (
+                      <p className="text-xs text-slate-450 py-10 text-center font-medium">No partner salons matching your search.</p>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => setBookingStep("GUEST_INFO")}
+                    className="w-full bg-slate-150 text-slate-750 hover:bg-slate-200 text-xs font-black uppercase tracking-wider py-2.5 rounded-xl transition-all cursor-pointer border-0 mt-2 text-center font-bold"
+                  >
+                    Back
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleBookingSubmit} className="space-y-4 text-left font-sans">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block font-mono">STEP 3: SCHEDULE VISIT</span>
+                    <h3 className="font-display font-black text-lg text-slate-800 uppercase tracking-tight">Reserve Appointment</h3>
+                  </div>
+
+                  {/* Selected Salon Summary Box */}
+                  {selectedVendor && (
+                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-left">
+                      <div>
+                        <h4 className="font-display font-black text-xs text-slate-800 uppercase tracking-tight">{selectedVendor.name}</h4>
+                        <span className="text-[9.5px] text-slate-500 font-semibold flex items-center gap-1 mt-0.5">
+                          {selectedVendor.address}
+                        </span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setBookingStep("SELECT_VENDOR")}
+                        className="text-[9.5px] font-black text-purple-600 hover:text-purple-755 hover:underline cursor-pointer border-0 bg-transparent"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Booking Mode Selector Tabs */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Service Location</label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-50 border border-slate-200 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setBookingType("SALON")}
+                        className={`py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer border-0 ${
+                          bookingType === "SALON"
+                            ? "bg-white text-purple-700 shadow-sm font-extrabold"
+                            : "text-slate-500 hover:text-slate-800 bg-transparent"
+                        }`}
+                      >
+                        🏪 Salon Visit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBookingType("HOME")}
+                        className={`py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer border-0 ${
+                          bookingType === "HOME"
+                            ? "bg-white text-purple-700 shadow-sm font-extrabold"
+                            : "text-slate-500 hover:text-slate-800 bg-transparent"
+                        }`}
+                      >
+                        🏠 Home Service
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Conditional Home Address Field */}
+                  {bookingType === "HOME" && (
+                    <div className="space-y-3 animate-in fade-in duration-300">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Home Delivery Address *</label>
+                        <textarea
+                          required
+                          rows={2}
+                          value={homeAddress}
+                          onChange={(e) => setHomeAddress(e.target.value)}
+                          placeholder="Enter house number, street address, area name..."
+                          className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold resize-none"
+                        />
+                      </div>
+
+                      {selectedVendor && selectedVendor.homeBookingFee > 0 && (
+                        <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl flex items-center gap-2">
+                          <span className="text-base">✨</span>
+                          <div className="text-left">
+                            <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block">Convenience Fee Added</span>
+                            <span className="text-[10.5px] font-bold text-slate-650 block">
+                              An additional home service charge of <strong className="text-emerald-700 font-extrabold font-sans">₹{selectedVendor.homeBookingFee}</strong> will be added to your total bill by {selectedVendor.name}.
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Choose Stylist / Specialist */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Choose Stylist / Specialist</label>
+                    {staffLoading ? (
+                      <div className="flex items-center gap-2 py-2 px-4 bg-slate-50 border border-slate-200 rounded-xl">
+                        <RefreshCw className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                        <span className="text-[10px] text-slate-455 font-bold uppercase tracking-wider">Loading stylists...</span>
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedStaffId}
+                        onChange={(e) => setSelectedStaffId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold cursor-pointer"
+                      >
+                        <option value="">Any Available Stylist (Recommended)</option>
+                        {salonStaff.map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Preferred Date</label>
+                    <input
+                      type="date"
+                      required
+                      min={new Date().toISOString().split("T")[0]}
+                      value={bookingDate}
+                      onChange={(e) => setBookingDate(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">Preferred Time</label>
+                    <input
+                      type="time"
+                      required
+                      value={bookingTime}
+                      onChange={(e) => setBookingTime(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-555 tracking-wider block">Styling Notes / Requests (Optional)</label>
+                    <textarea
+                      rows={1.5}
+                      value={bookingNotes}
+                      onChange={(e) => setBookingNotes(e.target.value)}
+                      placeholder="E.g. haircut preferences, color, beard styling requests..."
+                      className="w-full bg-slate-50 border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-455 focus:outline-none focus:border-purple-500/50 focus:bg-white font-semibold resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={bookingLoading}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-555 hover:to-pink-400 text-white text-xs font-black uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10 active:scale-95 transition-all cursor-pointer border-0 mt-2 font-sans"
+                  >
+                    {bookingLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                        <span>Scheduling visit...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Confirm Appointment Request</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

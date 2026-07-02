@@ -71,11 +71,16 @@ export default function PricingPage() {
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <ArrowLeft className="h-4 w-4 text-slate-400 group-hover:text-purple-650 transition-colors" />
+            <ArrowLeft className="h-4 w-4 text-slate-400 group-hover:text-purple-600 transition-colors" />
             <img src="/logo.png" alt="SalonsFlow Logo" className="h-9 w-9 rounded-xl object-contain shadow-md bg-white border border-purple-100 p-0.5" />
-            <span className="font-bold text-xl tracking-tight text-slate-800 font-display">
-              Salons<span className="text-purple-650 font-black">Flow</span>
-            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-bold text-lg tracking-tight text-slate-800 font-display leading-none">
+                Salons<span className="text-purple-600 font-black">Flow</span>
+              </span>
+              <span className="text-[9px] font-bold text-purple-600 tracking-wider uppercase mt-1">
+                Grow While You Style
+              </span>
+            </div>
           </Link>
           <div className="flex items-center gap-4 font-bold">
             <Link href="/" className="text-xs text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-wider">

@@ -50,6 +50,7 @@ model Salon {
   name                       String
   whatsappNumber             String         @unique
   address                    String?
+  homeBookingFee             Float          @default(0.0)
   aiPrompt                   String?        // Custom instructions for the AI Receptionist
   whatsappPhoneNumberId      String?        @unique
   whatsappAccessToken        String?
