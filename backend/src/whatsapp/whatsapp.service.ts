@@ -1,5 +1,6 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { WhatsappGatewayService } from './whatsapp-gateway.service';
 
 @Injectable()
 export class WhatsappService {
@@ -8,7 +9,11 @@ export class WhatsappService {
   private readonly token = process.env.WHATSAPP_TOKEN;
   private readonly phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => WhatsappGatewayService))
+    private readonly gatewayService: WhatsappGatewayService,
+  ) {}
 
   /**
    * Parse incoming webhook payload to extract relevant message data
@@ -161,6 +166,24 @@ export class WhatsappService {
     let activePhoneNumberId = this.phoneNumberId;
 
     if (targetSalonId) {
+      const session = await this.gatewayService.getSessionStatus(targetSalonId);
+      if (session.status === 'CONNECTED') {
+        const cleanPhone = toPhone.replace('+', '') + '@s.whatsapp.net';
+        const sent = await this.gatewayService.sendDirectMessage(targetSalonId, cleanPhone, text);
+        if (sent) {
+          if (conversationId) {
+            await this.prisma.message.create({
+              data: {
+                conversationId,
+                content: text,
+                direction: 'OUTBOUND',
+              },
+            });
+          }
+          return;
+        }
+      }
+
       const salon = await this.prisma.salon.findUnique({
         where: { id: targetSalonId },
         select: { whatsappAccessToken: true, whatsappPhoneNumberId: true },

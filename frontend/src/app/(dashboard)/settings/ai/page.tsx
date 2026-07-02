@@ -16,9 +16,8 @@ export default function AISettingsPage() {
   const [homeBookingFee, setHomeBookingFee] = useState<number | string>(0);
   const [aiPrompt, setAiPrompt] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
-  const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState("");
-  const [whatsappBusinessAccountId, setWhatsappBusinessAccountId] = useState("");
-  const [whatsappAccessToken, setWhatsappAccessToken] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [qrStatus, setQrStatus] = useState<"QR" | "CONNECTED" | "DISCONNECTED" | "LOADING">("DISCONNECTED");
   const [subscription, setSubscription] = useState<any>(null);
 
   // Chat simulator state
@@ -57,9 +56,6 @@ export default function AISettingsPage() {
         setHomeBookingFee(data.homeBookingFee ?? 0);
         setAiPrompt(data.aiPrompt || "");
         setWhatsappNumber(data.whatsappNumber || "");
-        setWhatsappPhoneNumberId(data.whatsappPhoneNumberId || "");
-        setWhatsappBusinessAccountId(data.whatsappBusinessAccountId || "");
-        setWhatsappAccessToken(data.whatsappAccessToken || "");
         setSubscription(data.subscription || { plan: "FREE", status: "ACTIVE" });
       } catch (err: any) {
         console.error(err);
@@ -82,10 +78,6 @@ export default function AISettingsPage() {
         name,
         address,
         homeBookingFee: Number(homeBookingFee) || 0,
-        whatsappNumber,
-        whatsappPhoneNumberId,
-        whatsappBusinessAccountId,
-        whatsappAccessToken
       };
       // Include aiPrompt if editable (not on FREE plan)
       const isPremium = subscription?.plan === "BASIC" || subscription?.plan === "PRO";
@@ -113,9 +105,6 @@ export default function AISettingsPage() {
       setAddress(updatedSalon.address || "");
       setHomeBookingFee(updatedSalon.homeBookingFee ?? 0);
       setWhatsappNumber(updatedSalon.whatsappNumber || "");
-      setWhatsappPhoneNumberId(updatedSalon.whatsappPhoneNumberId || "");
-      setWhatsappBusinessAccountId(updatedSalon.whatsappBusinessAccountId || "");
-      setWhatsappAccessToken(updatedSalon.whatsappAccessToken || "");
       if (updatedSalon.aiPrompt) setAiPrompt(updatedSalon.aiPrompt);
 
       setSuccess("Configuration saved successfully!");
@@ -127,6 +116,84 @@ export default function AISettingsPage() {
       setSaving(false);
     }
   };
+
+  const checkQrStatus = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setQrStatus(data.status);
+        if (data.status === 'CONNECTED') {
+          setQrCode("");
+          // Re-fetch configurations to get updated whatsappNumber
+          const confRes = await fetch(`${apiUrl}/api/v1/salons/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (confRes.ok) {
+            const confData = await confRes.json();
+            setWhatsappNumber(confData.whatsappNumber || "");
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to check QR status:", err);
+    }
+  };
+
+  const loadQrCode = async () => {
+    setQrStatus('LOADING');
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setQrStatus(data.status);
+        if (data.qr) {
+          setQrCode(data.qr);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load QR code:", err);
+      setQrStatus('DISCONNECTED');
+    }
+  };
+
+  const disconnectWhatsapp = async () => {
+    if (!confirm("Are you sure you want to disconnect your linked WhatsApp number?")) return;
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/disconnect`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setQrStatus('DISCONNECTED');
+        setQrCode("");
+        setWhatsappNumber("");
+        alert("WhatsApp disconnected successfully.");
+      }
+    } catch (err) {
+      console.error("Failed to disconnect WhatsApp:", err);
+    }
+  };
+
+  useEffect(() => {
+    checkQrStatus();
+  }, []);
+
+  useEffect(() => {
+    let interval: any;
+    if (qrStatus === 'QR' || qrStatus === 'LOADING') {
+      interval = setInterval(() => {
+        checkQrStatus();
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [qrStatus]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,53 +339,87 @@ export default function AISettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm rounded-3xl">
+          <Card className="bg-white border-slate-200 shadow-sm rounded-3xl overflow-hidden">
             <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/20">
-              <CardTitle className="text-lg font-bold text-slate-800 font-display">WhatsApp Channel Connection</CardTitle>
+              <CardTitle className="text-lg font-bold text-slate-800 font-display">WhatsApp Web Connection</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Business Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. +919896644735"
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
-                  required
-                />
-                <span className="text-[9px] text-zinc-550 block font-semibold">Your primary WhatsApp account telephone number (with country code).</span>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Phone Number ID</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 104845582739345"
-                  value={whatsappPhoneNumberId}
-                  onChange={(e) => setWhatsappPhoneNumberId(e.target.value)}
-                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Business Account ID</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 10928475938495"
-                  value={whatsappBusinessAccountId}
-                  onChange={(e) => setWhatsappBusinessAccountId(e.target.value)}
-                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Access Token</label>
-                <input
-                  type="password"
-                  placeholder="Meta permanent access token"
-                  value={whatsappAccessToken}
-                  onChange={(e) => setWhatsappAccessToken(e.target.value)}
-                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
-                />
-              </div>
+            <CardContent className="space-y-6 pt-5 pb-6 text-center">
+              {qrStatus === 'CONNECTED' && (
+                <div className="space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="mx-auto h-16 w-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center border border-emerald-100 shadow-sm">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 font-display">WhatsApp Linked & Live</h4>
+                    <p className="text-xs font-semibold text-emerald-650 mt-1">Connected Number: <span className="font-mono font-bold bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded text-emerald-700">{whatsappNumber || "Loading..."}</span></p>
+                    <p className="text-[11px] text-zinc-400 mt-2 font-medium max-w-xs mx-auto leading-relaxed">
+                      Your custom WhatsApp business number is active. All inbound booking messages will receive instant AI replies.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={disconnectWhatsapp}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 text-rose-700 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 duration-200"
+                  >
+                    Disconnect Channel
+                  </button>
+                </div>
+              )}
+
+              {qrStatus === 'QR' && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div>
+                    <span className="text-[10px] font-bold tracking-wider text-purple-650 uppercase block mb-1">Scan QR Code</span>
+                    <h4 className="text-sm font-bold text-slate-800 leading-normal max-w-xs mx-auto font-sans">
+                      Open WhatsApp on your phone, go to <strong className="text-purple-650">Linked Devices &rarr; Link a Device</strong>, and scan the code below.
+                    </h4>
+                  </div>
+                  {qrCode ? (
+                    <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-inner inline-block mx-auto">
+                      <img src={qrCode} alt="WhatsApp Web QR Code" className="w-48 h-48 rounded-xl object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-48 h-48 mx-auto flex items-center justify-center border border-dashed rounded-2xl bg-slate-50/50">
+                      <RefreshCw className="h-6 w-6 animate-spin text-slate-450" />
+                    </div>
+                  )}
+                  <p className="text-[10px] text-zinc-550 font-semibold max-w-xs mx-auto leading-normal">
+                    This screen will automatically refresh and connect as soon as you scan the QR code.
+                  </p>
+                </div>
+              )}
+
+              {qrStatus === 'LOADING' && (
+                <div className="space-y-4 py-8 animate-pulse">
+                  <RefreshCw className="h-8 w-8 animate-spin text-purple-650 mx-auto" />
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700">Connecting to WhatsApp gateway...</h4>
+                    <p className="text-[10px] text-slate-400 mt-1 font-semibold">Generating your secure encryption QR scan code...</p>
+                  </div>
+                </div>
+              )}
+
+              {qrStatus === 'DISCONNECTED' && (
+                <div className="space-y-4 py-4 animate-in fade-in duration-200">
+                  <div className="mx-auto h-12 w-12 bg-purple-50 text-purple-650 rounded-full flex items-center justify-center border border-purple-100 shadow-sm">
+                    <Bot className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">Connect Custom WhatsApp Line</h4>
+                    <p className="text-xs text-zinc-450 max-w-xs mx-auto mt-1 leading-normal font-semibold">
+                      Automate booking scheduling, review collection, and rebooking reminders using your own local WhatsApp phone number.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadQrCode}
+                    className="inline-flex items-center gap-1.5 px-6 py-3 bg-purple-600 hover:bg-purple-550 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-200/50 cursor-pointer active:scale-95 duration-200"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Link via QR Code
+                  </button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
