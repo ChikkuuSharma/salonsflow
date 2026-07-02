@@ -63,6 +63,7 @@ export class SalonsController {
     @Req() req: any,
     @Body('name') name?: string,
     @Body('address') address?: string,
+    @Body('whatsappNumber') whatsappNumber?: string,
     @Body('homeBookingFee') homeBookingFee?: number,
     @Body('aiPrompt') aiPrompt?: string,
     @Body('googleReviewLink') googleReviewLink?: string,
@@ -100,6 +101,7 @@ export class SalonsController {
     return this.salonsService.updateSalon(salonId, {
       name,
       address,
+      whatsappNumber,
       homeBookingFee,
       aiPrompt,
       googleReviewLink,

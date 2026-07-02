@@ -15,6 +15,10 @@ export default function AISettingsPage() {
   const [address, setAddress] = useState("");
   const [homeBookingFee, setHomeBookingFee] = useState<number | string>(0);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState("");
+  const [whatsappBusinessAccountId, setWhatsappBusinessAccountId] = useState("");
+  const [whatsappAccessToken, setWhatsappAccessToken] = useState("");
   const [subscription, setSubscription] = useState<any>(null);
 
   // Chat simulator state
@@ -33,7 +37,7 @@ export default function AISettingsPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-  const token = "dev-bypass-token";
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   // Load configuration on mount
@@ -52,6 +56,10 @@ export default function AISettingsPage() {
         setAddress(data.address || "");
         setHomeBookingFee(data.homeBookingFee ?? 0);
         setAiPrompt(data.aiPrompt || "");
+        setWhatsappNumber(data.whatsappNumber || "");
+        setWhatsappPhoneNumberId(data.whatsappPhoneNumberId || "");
+        setWhatsappBusinessAccountId(data.whatsappBusinessAccountId || "");
+        setWhatsappAccessToken(data.whatsappAccessToken || "");
         setSubscription(data.subscription || { plan: "FREE", status: "ACTIVE" });
       } catch (err: any) {
         console.error(err);
@@ -70,7 +78,15 @@ export default function AISettingsPage() {
     setError(null);
 
     try {
-      const payload: any = { name, address, homeBookingFee: Number(homeBookingFee) || 0 };
+      const payload: any = {
+        name,
+        address,
+        homeBookingFee: Number(homeBookingFee) || 0,
+        whatsappNumber,
+        whatsappPhoneNumberId,
+        whatsappBusinessAccountId,
+        whatsappAccessToken
+      };
       // Include aiPrompt if editable (not on FREE plan)
       const isPremium = subscription?.plan === "BASIC" || subscription?.plan === "PRO";
       const isActive = subscription?.status === "ACTIVE";
@@ -96,6 +112,10 @@ export default function AISettingsPage() {
       setName(updatedSalon.name || "");
       setAddress(updatedSalon.address || "");
       setHomeBookingFee(updatedSalon.homeBookingFee ?? 0);
+      setWhatsappNumber(updatedSalon.whatsappNumber || "");
+      setWhatsappPhoneNumberId(updatedSalon.whatsappPhoneNumberId || "");
+      setWhatsappBusinessAccountId(updatedSalon.whatsappBusinessAccountId || "");
+      setWhatsappAccessToken(updatedSalon.whatsappAccessToken || "");
       if (updatedSalon.aiPrompt) setAiPrompt(updatedSalon.aiPrompt);
 
       setSuccess("Configuration saved successfully!");
@@ -248,6 +268,56 @@ export default function AISettingsPage() {
                 <span className="text-[10px] text-zinc-550 font-semibold block leading-normal">
                   Set the additional convenience fee charged to clients choosing home booking services. Leave 0 for free.
                 </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-slate-200 shadow-sm rounded-3xl">
+            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/20">
+              <CardTitle className="text-lg font-bold text-slate-800 font-display">WhatsApp Channel Connection</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Business Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. +919896644735"
+                  value={whatsappNumber}
+                  onChange={(e) => setWhatsappNumber(e.target.value)}
+                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
+                  required
+                />
+                <span className="text-[9px] text-zinc-550 block font-semibold">Your primary WhatsApp account telephone number (with country code).</span>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Phone Number ID</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 104845582739345"
+                  value={whatsappPhoneNumberId}
+                  onChange={(e) => setWhatsappPhoneNumberId(e.target.value)}
+                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Business Account ID</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 10928475938495"
+                  value={whatsappBusinessAccountId}
+                  onChange={(e) => setWhatsappBusinessAccountId(e.target.value)}
+                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">WhatsApp Access Token</label>
+                <input
+                  type="password"
+                  placeholder="Meta permanent access token"
+                  value={whatsappAccessToken}
+                  onChange={(e) => setWhatsappAccessToken(e.target.value)}
+                  className="w-full bg-white border border-slate-250 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 focus:outline-none font-semibold"
+                />
               </div>
             </CardContent>
           </Card>

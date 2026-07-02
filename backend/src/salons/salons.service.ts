@@ -44,6 +44,7 @@ export class SalonsService {
     data: {
       name?: string;
       address?: string;
+      whatsappNumber?: string;
       homeBookingFee?: number;
       aiPrompt?: string;
       googleReviewLink?: string;
