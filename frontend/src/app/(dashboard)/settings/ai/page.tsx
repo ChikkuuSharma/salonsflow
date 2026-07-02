@@ -125,6 +125,9 @@ export default function AISettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setQrStatus(data.status);
+        if (data.qr) {
+          setQrCode(data.qr);
+        }
         if (data.status === 'CONNECTED') {
           setQrCode("");
           // Re-fetch configurations to get updated whatsappNumber
