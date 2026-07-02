@@ -170,7 +170,7 @@ export class ClerkAuthGuard implements CanActivate {
           `Failed to handle development bypass database check: ${err.message}`,
         );
         throw new UnauthorizedException(
-          `Development authentication bypass failed: ${err.message}`,
+          'Development authentication bypass failed',
         );
       }
     }
