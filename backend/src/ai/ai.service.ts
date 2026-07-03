@@ -16,6 +16,7 @@ export class AiService implements OnModuleInit {
   private readonly logger = new Logger(AiService.name);
   private openai: OpenAI | null = null;
   private gemini: GoogleGenerativeAI | null = null;
+  private readonly geminiModelName = 'gemini-2.5-flash';
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -152,7 +153,7 @@ MULTILINGUAL / INDIAN MARKET RULES:
     if (this.gemini) {
       try {
         const model = this.gemini.getGenerativeModel({
-          model: 'gemini-1.5-flash',
+          model: this.geminiModelName,
           systemInstruction: this.generateSystemPrompt(salon, services),
         });
 
@@ -226,7 +227,7 @@ MULTILINGUAL / INDIAN MARKET RULES:
 
     if (this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = this.gemini.getGenerativeModel({ model: this.geminiModelName });
         const prompt = `Generate a warm, professional, highly personalized Google Review request message for a client who just completed an appointment.
         Client Name: ${clientName}
         Service Received: ${serviceName}
@@ -295,7 +296,7 @@ MULTILINGUAL / INDIAN MARKET RULES:
 
     if (this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = this.gemini.getGenerativeModel({ model: this.geminiModelName });
         const prompt = `Generate a warm, friendly, highly personalized WhatsApp rebooking invitation message in Hinglish or English for a customer.
         Customer Name: ${clientName}
         Service Name: ${serviceName}
@@ -363,7 +364,7 @@ Output ONLY the label. Do not include markdown or punctuation.`;
 
     if (this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = this.gemini.getGenerativeModel({ model: this.geminiModelName });
 
         const result = await model.generateContent({
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -566,7 +567,7 @@ Output ONLY the label. Do not include markdown or punctuation.`;
 
     if (this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = this.gemini.getGenerativeModel({ model: this.geminiModelName });
         const prompt = `Classify the intent of the following user message into exactly one of these categories:
         - BOOKING (if scheduling a new appointment)
         - FAQ (general questions about the salon)
@@ -677,7 +678,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
 
         const model = this.gemini.getGenerativeModel({
-          model: 'gemini-1.5-flash',
+          model: this.geminiModelName,
           generationConfig: {
             responseMimeType: 'application/json',
           },
@@ -1569,7 +1570,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       if (this.gemini) {
         try {
           const fileBuffer = fs.readFileSync(tempFilePath);
-          const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          const model = this.gemini.getGenerativeModel({ model: this.geminiModelName });
           const result = await model.generateContent([
             {
               inlineData: {
@@ -1637,7 +1638,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
 
     if (this.gemini) {
       try {
-        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = this.gemini.getGenerativeModel({ model: this.geminiModelName });
         const prompt = `You are the Business Intelligence AI for SalonFlow, a premium CRM and operations software for Indian Salons.
         Write a single, short, action-oriented, friendly growth recommendation (max 2 sentences) for the salon owner based on these metrics:
         ${metricsSummary}
