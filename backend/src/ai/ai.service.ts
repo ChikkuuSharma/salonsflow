@@ -1105,7 +1105,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       textLower.includes('आज');
 
     if (lang === 'HINDI') {
-      if (textLower.includes('walk-in') || textLower.includes('walkin') || textLower.includes('at the salon')) {
+      if (textLower.includes('walk-in') || textLower.includes('walkin') || textLower.includes('at the salon') || textLower.includes('queue')) {
         return `सैलून में आपका स्वागत है! चूंकि आप सैलून में ही हैं, हम आपकी तत्काल बुकिंग कर सकते हैं। आप कौन सी सेवा करवाना चाहते हैं? हमारी मुख्य सेवाएँ हैं: ${servicesListString || 'कोई सेवा उपलब्ध नहीं है'}।`;
       }
       if (textLower.includes('discount') || textLower.includes('offer') || textLower.includes('छूट') || textLower.includes('सस्ता') || textLower.includes('ऑफर')) {
@@ -1164,7 +1164,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     if (lang === 'HINGLISH') {
-      if (textLower.includes('walk-in') || textLower.includes('walkin') || textLower.includes('at the salon')) {
+      if (textLower.includes('walk-in') || textLower.includes('walkin') || textLower.includes('at the salon') || textLower.includes('queue')) {
         return `Salon me aapka welcome hai! Since aap physically salon par hi hain, hum aapki walk-in booking abhi turant confirm kar sakte hain. Aapko kaunsi service chahiye? Humari services hain: ${servicesListString || 'koi service available nahi hai'}.`;
       }
       if (textLower.includes('discount') || textLower.includes('offer') || textLower.includes('choot') || textLower.includes('sasta') || textLower.includes('kam') || textLower.includes('package')) {
@@ -1223,7 +1223,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     // Default: ENGLISH
-    if (textLower.includes('walk-in') || textLower.includes('walkin') || textLower.includes('at the salon')) {
+    if (textLower.includes('walk-in') || textLower.includes('walkin') || textLower.includes('at the salon') || textLower.includes('queue')) {
       return `Welcome to the salon! Since you are here at the reception, we can book a slot for you right now. What service would you like? Our services are: ${servicesListString || 'none available'}.`;
     }
     if (textLower.includes('discount') || textLower.includes('offer') || textLower.includes('deal') || textLower.includes('cheaper') || textLower.includes('package')) {

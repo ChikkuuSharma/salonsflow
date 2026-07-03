@@ -226,7 +226,7 @@ export default function ReviewsPage() {
 
   const waNumber = salonData?.whatsappNumber ? salonData.whatsappNumber.replace(/[^0-9]/g, "") : "919999999999";
   const salonName = salonData?.name || "Our Salon";
-  const prefilledText = `Hi ${salonName}, I am at the salon for a Walk-in Booking!`;
+  const prefilledText = `Join Queue`;
   const qrLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(prefilledText)}`;
   const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrLink)}`;
 

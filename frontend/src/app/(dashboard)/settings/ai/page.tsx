@@ -366,6 +366,26 @@ export default function AISettingsPage() {
                   >
                     Disconnect Channel
                   </button>
+
+                  {/* Test Walk-in QR Code helper */}
+                  <div className="border-t border-slate-100 pt-6 mt-4 text-center">
+                    <span className="text-[10px] font-black uppercase text-purple-650 tracking-wider bg-purple-50 border border-purple-200/50 px-3 py-1 rounded-full">
+                      Test Walk-In QR
+                    </span>
+                    <p className="text-slate-550 text-[11px] font-semibold mt-3 max-w-[280px] mx-auto leading-relaxed">
+                      Scan this testing QR code to try your new live Walk-In Queue Booking flow:
+                    </p>
+                    <div className="bg-white border-2 border-slate-100 rounded-2xl p-3 my-4 shadow-sm inline-block">
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Join Queue")}`)}`} 
+                        alt="Test Walk-in QR" 
+                        className="w-36 h-36 object-contain"
+                      />
+                    </div>
+                    <p className="text-[10px] text-zinc-400 font-bold leading-normal max-w-xs mx-auto">
+                      Scan this with your phone camera, tap "Send" in WhatsApp to test the queue receptionist response.
+                    </p>
+                  </div>
                 </div>
               )}
 

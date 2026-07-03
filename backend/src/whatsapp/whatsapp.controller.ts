@@ -387,7 +387,7 @@ export class WhatsappController {
           take: 5,
         });
         const combinedTextForWalkin = (parsed.text + ' ' + recentInbound.map(m => m.content).join(' ')).toLowerCase();
-        if (combinedTextForWalkin.includes('walk-in') || combinedTextForWalkin.includes('walkin') || combinedTextForWalkin.includes('at the salon')) {
+        if (combinedTextForWalkin.includes('walk-in') || combinedTextForWalkin.includes('walkin') || combinedTextForWalkin.includes('at the salon') || combinedTextForWalkin.includes('queue')) {
           isWalkIn = true;
         }
 
