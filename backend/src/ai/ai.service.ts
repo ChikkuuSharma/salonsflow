@@ -6,6 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,25 +15,41 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AiService implements OnModuleInit {
   private readonly logger = new Logger(AiService.name);
   private openai: OpenAI | null = null;
+  private gemini: GoogleGenerativeAI | null = null;
 
   constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit() {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+
+    if (geminiApiKey && geminiApiKey !== 'mock-gemini-api-key-placeholder') {
+      this.gemini = new GoogleGenerativeAI(geminiApiKey);
+      this.logger.log(
+        'Gemini Generative AI initialized successfully.',
+      );
+    }
+
     if (
-      apiKey &&
-      apiKey !== 'mock-openai-api-key-placeholder' &&
-      apiKey.startsWith('sk-')
+      openaiApiKey &&
+      openaiApiKey !== 'mock-openai-api-key-placeholder' &&
+      openaiApiKey.startsWith('sk-')
     ) {
-      this.openai = new OpenAI({ apiKey });
+      this.openai = new OpenAI({ apiKey: openaiApiKey });
       this.logger.log(
         'OpenAI Service initialized successfully with provided API key.',
       );
-    } else {
+    }
+
+    if (!this.gemini && !this.openai) {
       this.logger.warn(
-        'OpenAI API Key is missing or invalid. Initializing in Local Smart Fallback mode.',
+        'Both OpenAI and Gemini API Keys are missing or invalid. Initializing in Local Smart Fallback mode.',
       );
     }
+  }
+
+  private isAiConfigured(): boolean {
+    return this.gemini !== null || this.openai !== null;
   }
 
   private isOpenAiConfigured(): boolean {
@@ -128,8 +145,38 @@ MULTILINGUAL / INDIAN MARKET RULES:
       where: { salonId, isActive: true },
     });
 
-    if (!this.isOpenAiConfigured()) {
+    if (!this.isAiConfigured()) {
       return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
+    }
+
+    if (this.gemini) {
+      try {
+        const model = this.gemini.getGenerativeModel({
+          model: 'gemini-1.5-flash',
+          systemInstruction: this.generateSystemPrompt(salon, services),
+        });
+
+        const contents = messages.map((msg) => ({
+          role: msg.direction === 'INBOUND' ? 'user' : 'model',
+          parts: [{ text: msg.content }],
+        }));
+
+        const result = await model.generateContent({
+          contents,
+          generationConfig: {
+            maxOutputTokens: 150,
+            temperature: 0.7,
+          },
+        });
+
+        const text = result.response.text();
+        return text || (await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content));
+      } catch (error) {
+        this.logger.error(
+          `Error generating Gemini response: ${error.message}. Falling back to local engine.`,
+        );
+        return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
+      }
     }
 
     try {
@@ -173,8 +220,35 @@ MULTILINGUAL / INDIAN MARKET RULES:
     salonName: string,
     trackingUrl: string,
   ): Promise<string> {
-    if (!this.isOpenAiConfigured()) {
+    if (!this.isAiConfigured()) {
       return `Hi ${clientName}, thank you for visiting ${salonName} today! We hope you loved your ${serviceName}. If you enjoyed your experience, we'd love it if you left us a review here: ${trackingUrl}`;
+    }
+
+    if (this.gemini) {
+      try {
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `Generate a warm, professional, highly personalized Google Review request message for a client who just completed an appointment.
+        Client Name: ${clientName}
+        Service Received: ${serviceName}
+        Salon Name: ${salonName}
+        
+        The message must end with this review link: ${trackingUrl}
+        
+        Keep the message under 3 sentences for WhatsApp readability. Do not wrap the link in markdown.`;
+
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 150,
+            temperature: 0.7,
+          },
+        });
+
+        return result.response.text().trim() || `Hi ${clientName}, thank you for visiting ${salonName}! We hope you loved your ${serviceName}. Please leave us a review here: ${trackingUrl}`;
+      } catch (error) {
+        this.logger.error(`Error generating Gemini review request: ${error.message}`);
+        return `Hi ${clientName}, thank you for visiting ${salonName} today! We hope you loved your ${serviceName}. If you enjoyed your experience, we'd love it if you left us a review here: ${trackingUrl}`;
+      }
     }
 
     try {
@@ -215,8 +289,34 @@ MULTILINGUAL / INDIAN MARKET RULES:
     salonName: string,
     intervalDays: number,
   ): Promise<string> {
-    if (!this.isOpenAiConfigured()) {
+    if (!this.isAiConfigured()) {
       return `Hi ${clientName}, it has been about ${intervalDays} days since your last ${serviceName} at ${salonName}. Would you like to schedule your next appointment? Reply with your preferred date and time to book easily!`;
+    }
+
+    if (this.gemini) {
+      try {
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `Generate a warm, friendly, highly personalized WhatsApp rebooking invitation message in Hinglish or English for a customer.
+        Customer Name: ${clientName}
+        Service Name: ${serviceName}
+        Salon Name: ${salonName}
+        Interval: ${intervalDays} days since last visit
+        
+        Suggest they book their next visit by replying directly with their preferred date and time. Keep it under 3 sentences for WhatsApp readability.`;
+
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 150,
+            temperature: 0.7,
+          },
+        });
+
+        return result.response.text().trim() || `Hi ${clientName}, it's time for your next ${serviceName}! Reply with a date and time to book your slot at ${salonName}.`;
+      } catch (error) {
+        this.logger.error(`Error generating Gemini rebooking: ${error.message}`);
+        return `Hi ${clientName}, it has been about ${intervalDays} days since your last ${serviceName} at ${salonName}. Would you like to schedule your next appointment? Reply with your preferred date and time to book easily!`;
+      }
     }
 
     try {
@@ -253,13 +353,36 @@ MULTILINGUAL / INDIAN MARKET RULES:
   async detectLanguage(
     text: string,
   ): Promise<'ENGLISH' | 'HINDI' | 'HINGLISH'> {
-    if (!this.isOpenAiConfigured()) {
+    if (!this.isAiConfigured()) {
       return this.localDetectLanguage(text);
     }
 
     const prompt = `Classify the language of the following text into exactly one of these labels: ENGLISH, HINDI, HINGLISH.
 Text: "${text}"
 Output ONLY the label. Do not include markdown or punctuation.`;
+
+    if (this.gemini) {
+      try {
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 10,
+            temperature: 0,
+          },
+        });
+
+        const lang = result.response.text().trim().toUpperCase();
+        if (['ENGLISH', 'HINDI', 'HINGLISH'].includes(lang)) {
+          return lang as any;
+        }
+        return this.localDetectLanguage(text);
+      } catch (e) {
+        this.logger.error(`Error in Gemini detectLanguage: ${e.message}`);
+        return this.localDetectLanguage(text);
+      }
+    }
 
     try {
       const response = await this.openai!.chat.completions.create({
@@ -437,8 +560,56 @@ Output ONLY the label. Do not include markdown or punctuation.`;
     | 'WAITLIST'
     | 'OTHER'
   > {
-    if (!this.isOpenAiConfigured()) {
+    if (!this.isAiConfigured()) {
       return this.localDetermineIntent(message);
+    }
+
+    if (this.gemini) {
+      try {
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `Classify the intent of the following user message into exactly one of these categories:
+        - BOOKING (if scheduling a new appointment)
+        - FAQ (general questions about the salon)
+        - CANCELLATION (cancelling an appointment)
+        - RESCHEDULE (rescheduling an existing appointment)
+        - PRICE_QUERY (asking about service charges/price list)
+        - LOCATION_QUERY (asking where the salon is located or for directions)
+        - HUMAN_TAKEOVER (asking to speak with a human/manager/staff)
+        - SERVICE_INQUIRY (asking which services are offered)
+        - WAITLIST (asking to join the waiting list, queue, or be notified if a slot opens up)
+        - OTHER (if none of the above)
+        
+        Message: "${message}"
+        Output ONLY the category name. Do not include markdown or punctuation.`;
+
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 15,
+            temperature: 0,
+          },
+        });
+
+        const intent = result.response.text().trim().toUpperCase();
+        const validIntents = [
+          'BOOKING',
+          'FAQ',
+          'CANCELLATION',
+          'RESCHEDULE',
+          'PRICE_QUERY',
+          'LOCATION_QUERY',
+          'HUMAN_TAKEOVER',
+          'SERVICE_INQUIRY',
+          'WAITLIST',
+        ];
+        if (validIntents.includes(intent)) {
+          return intent as any;
+        }
+        return 'OTHER';
+      } catch (e) {
+        this.logger.error(`Error in Gemini determineIntent: ${e.message}`);
+        return this.localDetermineIntent(message);
+      }
     }
 
     const prompt = `Classify the intent of the following user message into exactly one of these categories:
@@ -495,8 +666,53 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     message: string,
     salonId?: string,
   ): Promise<{ date: string; time: string; serviceName: string; staffName?: string } | null> {
-    if (!this.isOpenAiConfigured()) {
+    if (!this.isAiConfigured()) {
       return this.localExtractBookingDetails(message, salonId);
+    }
+
+    if (this.gemini) {
+      try {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
+
+        const model = this.gemini.getGenerativeModel({
+          model: 'gemini-1.5-flash',
+          generationConfig: {
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const prompt = `Analyze the user's message and extract appointment details.
+        Today is ${dayOfWeek}, ${todayStr}.
+        Resolve any relative dates (like 'tomorrow' = today + 1, 'next Monday', 'aaj' = today, 'kal' = tomorrow, 'parso' = day after tomorrow) relative to today's date ${todayStr}.
+        Resolve relative times: 'subah' = morning (10:00), 'dopahar' = afternoon (14:00), 'shaam' = evening (17:00), 'raat' = night (21:00).
+        
+        User message: "${message}"
+        
+        Output a JSON object matching this schema:
+        {
+          "date": "YYYY-MM-DD format date or null if not specified",
+          "time": "HH:MM format time, or relative time name, or AVAILABILITY, or null if not specified",
+          "serviceName": "Name of service or null if not specified",
+          "staffName": "Name of stylist/staff or null if not specified"
+        }`;
+
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        });
+
+        const parsed = JSON.parse(result.response.text());
+        return {
+          date: parsed.date || null,
+          time: parsed.time || null,
+          serviceName: parsed.serviceName || null,
+          staffName: parsed.staffName || null,
+        };
+      } catch (error) {
+        this.logger.error(`Error in Gemini extractBookingDetails: ${error.message}`);
+        return this.localExtractBookingDetails(message, salonId);
+      }
     }
 
     try {
@@ -1285,9 +1501,9 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
    * Transcribe audio binary from Meta using OpenAI Whisper API
    */
   async transcribeAudio(audioId: string, mimeType: string): Promise<string> {
-    if (!this.isOpenAiConfigured()) {
+    if (!this.isAiConfigured()) {
       this.logger.warn(
-        'OpenAI API Key is missing. Returning local mock voice transcription.',
+        'AI API Key is missing. Returning local mock voice transcription.',
       );
       return 'Bhai, kal shaam ko 5 baje premium haircut ka appointment book kar do.';
     }
@@ -1331,7 +1547,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       const arrayBuffer = await binaryRes.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // Reject voice notes longer than 45 seconds to cap Whisper costs
+      // Reject voice notes longer than 45 seconds to cap processing costs
       const estimatedDuration = Math.ceil(buffer.length / 3000);
       if (estimatedDuration > 45) {
         throw new BadRequestException('AUDIO_TOO_LONG');
@@ -1349,6 +1565,35 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         `voice-${audioId}.${fileExtension}`,
       );
       fs.writeFileSync(tempFilePath, buffer);
+
+      if (this.gemini) {
+        try {
+          const fileBuffer = fs.readFileSync(tempFilePath);
+          const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                data: fileBuffer.toString('base64'),
+                mimeType: mimeType || 'audio/ogg',
+              },
+            },
+            'Transcribe the audio exactly. Output only the transcription text, do not add any meta-commentary.',
+          ]);
+
+          // Cleanup temp file
+          try {
+            if (fs.existsSync(tempFilePath)) {
+              fs.unlinkSync(tempFilePath);
+            }
+          } catch (err) {
+            this.logger.warn(`Failed to clean up temp file ${tempFilePath}: ${err.message}`);
+          }
+
+          return result.response.text().trim();
+        } catch (error) {
+          this.logger.error(`Error in Gemini audio transcription: ${error.message}`);
+        }
+      }
 
       // Transcribe via Whisper
       const response = await this.openai!.audio.transcriptions.create({
@@ -1376,7 +1621,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         throw error;
       }
       this.logger.error(
-        `Error in Whisper transcription: ${error.message}. Returning fallback mock.`,
+        `Error in Whisper/Gemini transcription: ${error.message}. Returning fallback mock.`,
       );
       return 'Bhai, kal shaam ko 5 baje premium haircut ka appointment book kar do.';
     }
@@ -1386,9 +1631,33 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
    * Generates a concise action-oriented recommendation based on business metrics
    */
   async generateBusinessRecommendation(metricsSummary: string): Promise<string> {
-    if (!this.isOpenAiConfigured()) {
-      throw new Error('OpenAI is not configured');
+    if (!this.isAiConfigured()) {
+      throw new Error('AI is not configured');
     }
+
+    if (this.gemini) {
+      try {
+        const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `You are the Business Intelligence AI for SalonFlow, a premium CRM and operations software for Indian Salons.
+        Write a single, short, action-oriented, friendly growth recommendation (max 2 sentences) for the salon owner based on these metrics:
+        ${metricsSummary}
+        
+        Do not use markdown syntax. Do not wrap in quotes. Write in direct, friendly Indian business English.`;
+
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 150,
+            temperature: 0.7,
+          },
+        });
+
+        return result.response.text().trim() || '';
+      } catch (e) {
+        this.logger.error(`Error in Gemini generateBusinessRecommendation: ${e.message}`);
+      }
+    }
+
     try {
       const prompt = `You are the Business Intelligence AI for SalonFlow, a premium CRM and operations software for Indian Salons.
 Write a single, short, action-oriented, friendly growth recommendation (max 2 sentences) for the salon owner based on these metrics:
