@@ -129,7 +129,7 @@ MULTILINGUAL / INDIAN MARKET RULES:
     });
 
     if (!this.isOpenAiConfigured()) {
-      return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent);
+      return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
     }
 
     try {
@@ -154,13 +154,13 @@ MULTILINGUAL / INDIAN MARKET RULES:
 
       return (
         response.choices[0].message?.content ||
-        (await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent))
+        (await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content))
       );
     } catch (error) {
       this.logger.error(
         `Error generating AI response: ${error.message}. Falling back to local engine.`,
       );
-      return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent);
+      return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
     }
   }
 
@@ -1028,9 +1028,11 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     salon: any,
     language: string = 'ENGLISH',
     intent: string = 'OTHER',
+    lastMessageText?: string,
   ): Promise<string> {
     const lang = language.toUpperCase();
     const intentUpper = intent.toUpperCase();
+    const textLower = (lastMessageText || '').toLowerCase();
 
     // Fetch active salon services dynamically from the database
     const services = await this.prisma.service.findMany({
@@ -1042,7 +1044,53 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       .map((s) => `${s.name} (₹${s.price})`)
       .join(', ');
 
+    // 1. Check if the message is a specific service price inquiry
+    let matchedServiceName = '';
+    let matchedServicePrice = 0;
+    for (const s of services) {
+      if (textLower.includes(s.name.toLowerCase())) {
+        matchedServiceName = s.name;
+        matchedServicePrice = s.price;
+        break;
+      }
+    }
+
+    // 2. Check if the message is asking for timings / available slots
+    const isSlotsQuery =
+      textLower.includes('slot') ||
+      textLower.includes('available') ||
+      textLower.includes('free') ||
+      textLower.includes('khali') ||
+      textLower.includes('timing') ||
+      textLower.includes('खाली') ||
+      textLower.includes('समय') ||
+      textLower.includes('कब');
+
+    const isTomorrow =
+      textLower.includes('tomorrow') ||
+      textLower.includes('kal') ||
+      textLower.includes('कल');
+
+    const isToday =
+      textLower.includes('today') ||
+      textLower.includes('aaj') ||
+      textLower.includes('आज');
+
     if (lang === 'HINDI') {
+      if (isSlotsQuery) {
+        if (isTomorrow) {
+          return `कल के लिए हमारे उपलब्ध स्लॉट हैं: सुबह 11:30, दोपहर 2:00, शाम 4:30, और शाम 6:00। आप किस समय आना चाहेंगे?`;
+        }
+        if (isToday) {
+          return `आज के लिए हमारे खाली स्लॉट हैं: दोपहर 3:00, शाम 5:30, और शाम 7:00। आप किस समय आना चाहेंगे?`;
+        }
+        return `हमारे स्लॉट सुबह 10:00 से रात 8:00 बजे तक खुले रहते हैं। आज और कल दोनों दिन समय उपलब्ध हैं। आप कब आना चाहेंगे?`;
+      }
+
+      if (matchedServiceName) {
+        return `हमारे सैलून में "${matchedServiceName}" का दाम ₹${matchedServicePrice} है। क्या आप इसे बुक करना चाहेंगे?`;
+      }
+
       if (
         intentUpper === 'PRICE_QUERY' ||
         intentUpper === 'SERVICE_INQUIRY' ||
@@ -1072,6 +1120,20 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     if (lang === 'HINGLISH') {
+      if (isSlotsQuery) {
+        if (isTomorrow) {
+          return `Kal (Tomorrow) ke liye available slots hain: 11:30 AM, 2:00 PM, 4:30 PM, aur 6:00 PM. Aapko kaunsa time suit karega?`;
+        }
+        if (isToday) {
+          return `Aaj (Today) ke available slots hain: 3:00 PM, 5:30 PM, aur 7:00 PM. Aap kis time aana chahenge?`;
+        }
+        return `Humare bookings subah 10:00 AM se shaam 8:00 PM tak open hote hain. Aaj aur kal dono din slots available hain. Aap kab aana chahenge?`;
+      }
+
+      if (matchedServiceName) {
+        return `Humare yahan "${matchedServiceName}" ka price ₹${matchedServicePrice} hai. Kya aap appointment book karna chahenge?`;
+      }
+
       if (
         intentUpper === 'PRICE_QUERY' ||
         intentUpper === 'SERVICE_INQUIRY' ||
@@ -1101,6 +1163,20 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     // Default: ENGLISH
+    if (isSlotsQuery) {
+      if (isTomorrow) {
+        return `Tomorrow's available slots are: 11:30 AM, 2:00 PM, 4:30 PM, and 6:00 PM. Which one would you like to reserve?`;
+      }
+      if (isToday) {
+        return `Today's available slots are: 3:00 PM, 5:30 PM, and 7:00 PM. Which slot works for you?`;
+      }
+      return `Our salon hours are 10:00 AM to 8:00 PM. We have slots open for both today and tomorrow. When would you like to book?`;
+    }
+
+    if (matchedServiceName) {
+      return `The price for "${matchedServiceName}" is ₹${matchedServicePrice}. Would you like to schedule it?`;
+    }
+
     if (
       intentUpper === 'PRICE_QUERY' ||
       intentUpper === 'SERVICE_INQUIRY' ||
