@@ -1077,6 +1077,16 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       textLower.includes('आज');
 
     if (lang === 'HINDI') {
+      if (textLower.includes('discount') || textLower.includes('offer') || textLower.includes('छूट') || textLower.includes('सस्ता') || textLower.includes('ऑफर')) {
+        return `हमारे वर्तमान डिस्काउंट और ऑफर्स की जानकारी के लिए कृपया मैनेजर से बात करें। क्या मैं आपका कॉल ट्रांसफर करूँ?`;
+      }
+      if (textLower.includes('open') || textLower.includes('close') || textLower.includes('timing') || textLower.includes('समय') || textLower.includes('घंटे') || textLower.includes('खुलने')) {
+        return `सैलून सुबह 10:00 बजे से रात 8:00 बजे तक खुला रहता है। हम सप्ताह के सभी दिन खुले हैं।`;
+      }
+      if (textLower.includes('staff') || textLower.includes('stylist') || textLower.includes('बारबर') || textLower.includes('स्टाफ') || textLower.includes('लड़का') || textLower.includes('लड़की')) {
+        return `हमारे पास विशेषज्ञ हेयर स्टाइलिस्ट उपलब्ध हैं। आप बुकिंग के समय अपनी पसंद का स्टाफ चुन सकते हैं।`;
+      }
+
       if (isSlotsQuery) {
         if (isTomorrow) {
           return `कल के लिए हमारे उपलब्ध स्लॉट हैं: सुबह 11:30, दोपहर 2:00, शाम 4:30, और शाम 6:00। आप किस समय आना चाहेंगे?`;
@@ -1120,6 +1130,16 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     if (lang === 'HINGLISH') {
+      if (textLower.includes('discount') || textLower.includes('offer') || textLower.includes('choot') || textLower.includes('sasta') || textLower.includes('kam') || textLower.includes('package')) {
+        return `Humare current discounts aur packages ki details ke liye aap directly manager se connect kar sakte hain. Kya main connect karu?`;
+      }
+      if (textLower.includes('open') || textLower.includes('close') || textLower.includes('timing') || textLower.includes('hour') || textLower.includes('working')) {
+        return `Humara salon subah 10:00 AM se shaam 8:00 PM tak open rehta hai, all days a week.`;
+      }
+      if (textLower.includes('staff') || textLower.includes('stylist') || textLower.includes('barber') || textLower.includes('expert') || textLower.includes('bhaiya') || textLower.includes('banda')) {
+        return `Humare paas expert stylists available hain. Aap booking ke time apna preferred specialist select kar sakte hain.`;
+      }
+
       if (isSlotsQuery) {
         if (isTomorrow) {
           return `Kal (Tomorrow) ke liye available slots hain: 11:30 AM, 2:00 PM, 4:30 PM, aur 6:00 PM. Aapko kaunsa time suit karega?`;
@@ -1163,6 +1183,16 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     // Default: ENGLISH
+    if (textLower.includes('discount') || textLower.includes('offer') || textLower.includes('deal') || textLower.includes('cheaper') || textLower.includes('package')) {
+      return `For our latest promotional offers and package rates, please check with our manager. Would you like me to connect you?`;
+    }
+    if (textLower.includes('open') || textLower.includes('close') || textLower.includes('timing') || textLower.includes('hour') || textLower.includes('working')) {
+      return `Our salon is open daily from 10:00 AM to 8:00 PM.`;
+    }
+    if (textLower.includes('staff') || textLower.includes('stylist') || textLower.includes('barber') || textLower.includes('hairdresser')) {
+      return `We have expert stylists available. You can request your preferred stylist during the booking process.`;
+    }
+
     if (isSlotsQuery) {
       if (isTomorrow) {
         return `Tomorrow's available slots are: 11:30 AM, 2:00 PM, 4:30 PM, and 6:00 PM. Which one would you like to reserve?`;
