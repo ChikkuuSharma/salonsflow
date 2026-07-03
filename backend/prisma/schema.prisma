@@ -513,4 +513,17 @@ model AdminCredential {
   updatedAt DateTime @updatedAt
 }
 
+model WhatsAppSession {
+  id        String   @id @default(uuid())
+  salonId   String
+  key       String
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([salonId, key])
+  @@index([salonId])
+}
+
+
 

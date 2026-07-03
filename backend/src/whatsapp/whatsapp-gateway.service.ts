@@ -1,8 +1,9 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject, forwardRef } from '@nestjs/common';
 import makeWASocket, {
   DisconnectReason,
-  useMultiFileAuthState,
   WASocket,
+  initAuthCreds,
+  BufferJSON,
 } from '@whiskeysockets/baileys';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -32,18 +33,20 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     this.logger.log('Initializing active saved QR WhatsApp sessions...');
-    const sessionDir = path.join(process.cwd(), 'sessions');
-    if (fs.existsSync(sessionDir)) {
-      const salonIds = fs.readdirSync(sessionDir);
-      for (const salonId of salonIds) {
-        const fullPath = path.join(sessionDir, salonId);
-        if (fs.statSync(fullPath).isDirectory()) {
-          this.logger.log(`Auto-reconnecting WhatsApp session for salon: ${salonId}`);
-          this.initializeSession(salonId).catch((err) => {
-            this.logger.error(`Failed to auto-reconnect salon ${salonId}: ${err.message}`);
-          });
-        }
+    try {
+      const activeSessions = await this.prisma.whatsAppSession.findMany({
+        where: { key: 'creds' },
+        select: { salonId: true },
+      });
+
+      for (const session of activeSessions) {
+        this.logger.log(`Auto-reconnecting WhatsApp session for salon: ${session.salonId}`);
+        this.initializeSession(session.salonId).catch((err) => {
+          this.logger.error(`Failed to auto-reconnect salon ${session.salonId}: ${err.message}`);
+        });
       }
+    } catch (err) {
+      this.logger.error(`Failed to load active WhatsApp sessions: ${err.message}`);
     }
   }
 
@@ -79,25 +82,131 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       this.sessions.delete(salonId);
     }
 
-    const sessionPath = path.join(process.cwd(), 'sessions', salonId);
-    if (fs.existsSync(sessionPath)) {
-      try {
-        fs.rmSync(sessionPath, { recursive: true, force: true });
-      } catch (e) {
-        this.logger.error(`Failed to delete session directory: ${e.message}`);
-      }
+    try {
+      await this.prisma.whatsAppSession.deleteMany({
+        where: { salonId },
+      });
+      this.logger.log(`Cleared WhatsApp session from DB for salon ${salonId}`);
+    } catch (err) {
+      this.logger.error(`Failed to delete WhatsApp session from DB: ${err.message}`);
     }
 
     return { success: true };
   }
 
-  async initializeSession(salonId: string): Promise<void> {
-    const sessionPath = path.join(process.cwd(), 'sessions', salonId);
-    if (!fs.existsSync(sessionPath)) {
-      fs.mkdirSync(sessionPath, { recursive: true });
+  async usePrismaAuthState(salonId: string) {
+    let creds = initAuthCreds();
+
+    const dbCreds = await this.prisma.whatsAppSession.findUnique({
+      where: {
+        salonId_key: {
+          salonId,
+          key: 'creds',
+        },
+      },
+    });
+
+    if (dbCreds) {
+      try {
+        creds = JSON.parse(dbCreds.value, BufferJSON.reviver);
+      } catch (err) {
+        this.logger.error(`Failed to parse credentials from DB for salon ${salonId}: ${err.message}`);
+      }
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+    const keys: { [key: string]: any } = {};
+
+    return {
+      state: {
+        creds,
+        keys: {
+          get: async (type: string, ids: string[]) => {
+            const data: { [id: string]: any } = {};
+            await Promise.all(
+              ids.map(async (id) => {
+                const key = `${type}-${id}`;
+                let value = keys[key];
+                if (!value) {
+                  const dbKey = await this.prisma.whatsAppSession.findUnique({
+                    where: {
+                      salonId_key: {
+                        salonId,
+                        key,
+                      },
+                    },
+                  });
+                  if (dbKey) {
+                    try {
+                      value = JSON.parse(dbKey.value, BufferJSON.reviver);
+                      keys[key] = value;
+                    } catch (err) {
+                      this.logger.error(`Failed to parse key ${key} from DB: ${err.message}`);
+                    }
+                  }
+                }
+                data[id] = value;
+              }),
+            );
+            return data;
+          },
+          set: async (data: any) => {
+            for (const type in data) {
+              for (const id in data[type]) {
+                const value = data[type][id];
+                const key = `${type}-${id}`;
+                if (value) {
+                  keys[key] = value;
+                  const valueStr = JSON.stringify(value, BufferJSON.replacer);
+                  await this.prisma.whatsAppSession.upsert({
+                    where: {
+                      salonId_key: {
+                        salonId,
+                        key,
+                      },
+                    },
+                    update: { value: valueStr },
+                    create: {
+                      salonId,
+                      key,
+                      value: valueStr,
+                    },
+                  });
+                } else {
+                  delete keys[key];
+                  await this.prisma.whatsAppSession.deleteMany({
+                    where: {
+                      salonId,
+                      key,
+                    },
+                  });
+                }
+              }
+            }
+          },
+        },
+      },
+      saveCreds: async () => {
+        const valueStr = JSON.stringify(creds, BufferJSON.replacer);
+        await this.prisma.whatsAppSession.upsert({
+          where: {
+            salonId_key: {
+              salonId,
+              key: 'creds',
+            },
+          },
+          update: { value: valueStr },
+          create: {
+            salonId,
+            key: 'creds',
+            value: valueStr,
+          },
+        });
+      },
+    };
+  }
+
+  async initializeSession(salonId: string): Promise<void> {
+    const { state, saveCreds } = await this.usePrismaAuthState(salonId);
 
     const sock = makeWASocket({
       auth: state,
@@ -153,12 +262,13 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
           });
         } else {
           this.sessions.delete(salonId);
-          if (fs.existsSync(sessionPath)) {
-            try {
-              fs.rmSync(sessionPath, { recursive: true, force: true });
-            } catch (e) {
-              this.logger.error(`Failed to delete session directory: ${e.message}`);
-            }
+          try {
+            await this.prisma.whatsAppSession.deleteMany({
+              where: { salonId },
+            });
+            this.logger.log(`Cleared WhatsApp session from DB for salon ${salonId} due to logout`);
+          } catch (err) {
+            this.logger.error(`Failed to clear WhatsApp session on logout: ${err.message}`);
           }
         }
       }
