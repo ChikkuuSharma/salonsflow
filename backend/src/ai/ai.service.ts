@@ -1029,6 +1029,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     language: string = 'ENGLISH',
     intent: string = 'OTHER',
     lastMessageText?: string,
+    conversationId?: string,
   ): Promise<string> {
     const lang = language.toUpperCase();
     const intentUpper = intent.toUpperCase();
@@ -1044,15 +1045,42 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       .map((s) => `${s.name} (₹${s.price})`)
       .join(', ');
 
-    // 1. Check if the message is a specific service price inquiry
-    let matchedServiceName = '';
-    let matchedServicePrice = 0;
+    // Scan recent message history for service choice
+    let selectedService = '';
     for (const s of services) {
       if (textLower.includes(s.name.toLowerCase())) {
-        matchedServiceName = s.name;
-        matchedServicePrice = s.price;
+        selectedService = s.name;
         break;
       }
+    }
+
+    if (!selectedService && conversationId) {
+      try {
+        const recentMessages = await this.prisma.message.findMany({
+          where: { conversationId, direction: 'INBOUND' },
+          orderBy: { timestamp: 'desc' },
+          take: 5,
+        });
+        for (const msg of recentMessages) {
+          for (const s of services) {
+            if (msg.content.toLowerCase().includes(s.name.toLowerCase())) {
+              selectedService = s.name;
+              break;
+            }
+          }
+          if (selectedService) break;
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to scan message history: ${err.message}`);
+      }
+    }
+
+    // 1. Check if the message is a specific service price inquiry
+    let matchedServiceName = selectedService;
+    let matchedServicePrice = 0;
+    if (selectedService) {
+      const match = services.find(s => s.name === selectedService);
+      if (match) matchedServicePrice = match.price;
     }
 
     // 2. Check if the message is asking for timings / available slots
@@ -1124,7 +1152,10 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         return `मैं आपको वेटिंग लिस्ट में जोड़ सकता हूँ। कृपया अपनी पसंदीदा तारीख और समय बताएं।`;
       }
       if (intentUpper === 'BOOKING') {
-        return `मैं बुकिंग में मदद कर सकता हूँ! आप कौन सी सेवा, तारीख और समय चाहते हैं? हमारी सेवाएँ हैं: ${servicesListString || 'कोई सेवा उपलब्ध नहीं है'}।`;
+        if (selectedService) {
+          return `बढ़िया पसंद! "${selectedService}" के लिए आप किस तारीख और समय पर आना चाहेंगे? (जैसे: आज शाम 5:00 बजे, या कल दोपहर 2:00 बजे)`;
+        }
+        return `मैं बुकिंग में मदद कर सकता हूँ! आप कौन सी सेवा चाहते हैं? हमारी मुख्य सेवाएँ हैं: ${servicesListString || 'कोई सेवा उपलब्ध नहीं है'}।`;
       }
       return `एलीगेंस सैलून में संपर्क करने के लिए धन्यवाद। आज हम आपकी क्या मदद कर सकते हैं?`;
     }
@@ -1177,7 +1208,10 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         return `Main aapko waiting list me add kar sakta hu. Please apna preferred date aur time batayein.`;
       }
       if (intentUpper === 'BOOKING') {
-        return `Main booking me help kar sakta hu! Aapko kaunsi service, date aur time par chahiye? Humari services hain: ${servicesListString || 'koi service available nahi hai'}.`;
+        if (selectedService) {
+          return `Great choice! "${selectedService}" ke liye aap kis date aur time par aana chahenge? (e.g. Aaj shaam ko 5 baje, ya Kal dopahar 2 baje)`;
+        }
+        return `Main booking me help kar sakta hu! Aapko kaunsi service chahiye? Humari services hain: ${servicesListString || 'koi service available nahi hai'}.`;
       }
       return `Elegance Salon me contact karne ke liye thanks. Aaj aapki kya help karu?`;
     }
@@ -1230,7 +1264,10 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       return `I can add you to our waiting list. Please let me know your preferred date and time.`;
     }
     if (intentUpper === 'BOOKING') {
-      return `I can help you book! What service, date, and time would you like? Our services are: ${servicesListString || 'none available'}.`;
+      if (selectedService) {
+        return `Great choice! What date and time would you like to book for your "${selectedService}"? (e.g., today at 5:00 PM, or tomorrow at 2:00 PM)`;
+      }
+      return `I can help you book! What service would you like to schedule? Our services are: ${servicesListString || 'none available'}.`;
     }
     return `Hello! Welcome to ${salon.name}. We are located at ${salon.address || '123 Main St, New Delhi'}. Our services are: ${servicesListString || 'none'}. How can I assist you with a booking today?`;
   }

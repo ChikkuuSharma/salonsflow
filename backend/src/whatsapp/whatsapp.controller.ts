@@ -379,7 +379,20 @@ export class WhatsappController {
       this.logger.log(`Determined intent: ${intent}`);
 
       if (intent === 'BOOKING') {
-        const details = await this.aiService.extractBookingDetails(parsed.text, salon.id);
+        let details = await this.aiService.extractBookingDetails(parsed.text, salon.id);
+        if (!details || !details.date || !details.time || !details.serviceName || details.time === 'AVAILABILITY') {
+          const recentMessages = await this.prisma.message.findMany({
+            where: { conversationId: conversation.id, direction: 'INBOUND' },
+            orderBy: { timestamp: 'desc' },
+            take: 4,
+          });
+          const combinedText = recentMessages.map((m) => m.content).reverse().join(' | ');
+          const combinedDetails = await this.aiService.extractBookingDetails(combinedText, salon.id);
+          if (combinedDetails && combinedDetails.date && combinedDetails.time && combinedDetails.serviceName && combinedDetails.time !== 'AVAILABILITY') {
+            details = combinedDetails;
+          }
+        }
+
         if (details) {
           if (details.time === 'AVAILABILITY') {
             const service = await this.prisma.service.findFirst({
