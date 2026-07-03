@@ -375,6 +375,70 @@ export class WhatsappController {
         finalResponseText = `Thank you! Your appointment for "${confirmedHold.service.name}" at ${timeString} is now confirmed.`;
       }
     } else {
+      // 1. Walk-In Queue Booking check (runs before intent classification to capture single service words)
+      let isWalkInCustomer = false;
+      const walkInInbound = await this.prisma.message.findMany({
+        where: { conversationId: conversation.id, direction: 'INBOUND' },
+        orderBy: { timestamp: 'desc' },
+        take: 5,
+      });
+      const combinedWalkInText = (parsed.text + ' ' + walkInInbound.map(m => m.content).join(' ')).toLowerCase();
+      if (
+        combinedWalkInText.includes('walk-in') ||
+        combinedWalkInText.includes('walkin') ||
+        combinedWalkInText.includes('at the salon') ||
+        combinedWalkInText.includes('queue')
+      ) {
+        isWalkInCustomer = true;
+      }
+
+      if (isWalkInCustomer) {
+        const activeServices = await this.prisma.service.findMany({
+          where: { salonId: salon.id, isActive: true },
+        });
+        let matchedService = null;
+        const incomingText = parsed.text.toLowerCase().trim();
+        for (const s of activeServices) {
+          if (incomingText === s.name.toLowerCase() || incomingText.includes(s.name.toLowerCase())) {
+            matchedService = s;
+            break;
+          }
+        }
+
+        if (matchedService) {
+          try {
+            const waitlistEntry = await this.waitingListService.addToWaitingList({
+              salonId: salon.id,
+              customerId: customer.id,
+              serviceId: matchedService.id,
+              requestedStartTime: new Date(),
+            });
+
+            const queueCount = await this.prisma.waitingList.count({
+              where: {
+                salonId: salon.id,
+                status: 'WAITING',
+              },
+            });
+            const queueNumber = queueCount;
+            const waitPeriod = (queueCount - 1) * 15;
+
+            if (language === 'HINDI') {
+              finalResponseText = `सफलता! आपकी "${matchedService.name}" के लिए वॉक-इन बुकिंग पक्की हो गई है।\n\nआपका बुकिंग नंबर: #${queueNumber} है।\nअनुमानित प्रतीक्षा समय: ${waitPeriod <= 0 ? 'अभी तुरंत' : `${waitPeriod} मिनट`} है। कृपया प्रतीक्षा क्षेत्र में बैठें।`;
+            } else if (language === 'HINGLISH') {
+              finalResponseText = `Success! Aapki walk-in booking confirm ho gayi hai for ${matchedService.name}.\n\nAapka Booking Queue Number: #${queueNumber} hai.\nExpected wait time: ${waitPeriod <= 0 ? 'Abhi turant (0 mins)' : `${waitPeriod} minutes`} hai. Please reception area me wait karein.`;
+            } else {
+              finalResponseText = `Success! Your walk-in booking for "${matchedService.name}" has been confirmed.\n\nYour Booking Queue Number is: #${queueNumber}.\nExpected wait time is: ${waitPeriod <= 0 ? 'Immediate' : `${waitPeriod} minutes`}. Please wait in the reception area.`;
+            }
+
+            await this.whatsappService.sendMessage(parsed.fromPhone, finalResponseText, conversation.id);
+            return;
+          } catch (err) {
+            this.logger.error(`Failed to add walk-in to waiting list in pre-intent handler: ${err.message}`);
+          }
+        }
+      }
+
       const intent = await this.aiService.determineIntent(parsed.text);
       this.logger.log(`Determined intent: ${intent}`);
 
