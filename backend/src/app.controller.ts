@@ -15,6 +15,20 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get('diagnostics')
+  async getDiagnostics() {
+    const [salons, users, sessions, messages, logs] = await Promise.all([
+      this.prisma.salon.findMany({ take: 5 }),
+      this.prisma.user.findMany({ take: 5 }),
+      this.prisma.whatsAppSession.findMany({
+        select: { id: true, salonId: true, key: true, createdAt: true, updatedAt: true }
+      }),
+      this.prisma.message.findMany({ take: 15, orderBy: { timestamp: 'desc' } }),
+      this.prisma.auditLog.findMany({ take: 15, orderBy: { createdAt: 'desc' } })
+    ]);
+    return { salons, users, sessions, messages, logs };
+  }
+
   @Post('api/v1/public/leads')
   async createPublicLead(
     @Body()
