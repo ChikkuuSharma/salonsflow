@@ -92,9 +92,16 @@ export class AppService {
         },
       });
 
-      // 3. Create Demo User
-      const demoUser = await tx.user.create({
-        data: {
+      // 3. Create Demo User (Upsert to prevent unique constraint failures)
+      const demoUser = await tx.user.upsert({
+        where: { clerkId: 'dev-bypass-user-demo' },
+        update: {
+          name: 'Demo Owner',
+          email: 'demo@salonflow.com',
+          role: Role.OWNER,
+          salonId,
+        },
+        create: {
           clerkId: 'dev-bypass-user-demo',
           name: 'Demo Owner',
           email: 'demo@salonflow.com',

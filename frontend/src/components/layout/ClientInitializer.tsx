@@ -7,9 +7,28 @@ export function ClientInitializer() {
     if (typeof window !== "undefined") {
       const originalFetch = window.fetch;
       window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
-        const url = typeof input === "string"
-          ? input
-          : (input instanceof URL ? input.href : (input as any).url || "");
+        let finalInput = input;
+        const currentHostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
+        
+        if (currentHostname !== "localhost") {
+          if (typeof input === "string" && input.includes("localhost:3001")) {
+            finalInput = input.replace("localhost:3001", `${currentHostname}:3001`);
+          } else if (input instanceof URL && input.href.includes("localhost:3001")) {
+            finalInput = new URL(input.href.replace("localhost:3001", `${currentHostname}:3001`));
+          } else if (input && typeof input === "object" && "url" in input) {
+            try {
+              const reqObj = input as any;
+              if (reqObj.url && reqObj.url.includes("localhost:3001")) {
+                const newUrl = reqObj.url.replace("localhost:3001", `${currentHostname}:3001`);
+                finalInput = new Request(newUrl, reqObj);
+              }
+            } catch (e) {}
+          }
+        }
+
+        const url = typeof finalInput === "string"
+          ? finalInput
+          : (finalInput instanceof URL ? finalInput.href : (finalInput as any).url || "");
 
         // Only intercept backend API requests to prevent polluting external requests (like Clerk)
         if (url.includes("/api/v1/")) {
@@ -48,7 +67,7 @@ export function ClientInitializer() {
             }
           }
         }
-        return originalFetch(input, init);
+        return originalFetch(finalInput, init);
       };
     }
   }, []);

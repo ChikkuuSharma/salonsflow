@@ -24,17 +24,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className={`${inter.variable} ${outfit.variable} h-full antialiased`}
-      >
-        <body className="min-h-full flex flex-col font-sans">
-          <ClientInitializer />
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  const content = (
+    <html
+      lang="en"
+      className={`${inter.variable} ${outfit.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col font-sans">
+        <ClientInitializer />
+        {children}
+      </body>
+    </html>
   );
+
+  if (publishableKey && publishableKey.startsWith("pk_") && !publishableKey.includes("PLACEHOLDER")) {
+    return (
+      <ClerkProvider publishableKey={publishableKey}>
+        {content}
+      </ClerkProvider>
+    );
+  }
+
+  return content;
 }

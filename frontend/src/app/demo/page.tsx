@@ -53,7 +53,7 @@ export default function DemoPage() {
           setProgress(100);
           setTimeout(() => {
             localStorage.setItem("auth_token", data.token);
-            router.push("/dashboard");
+            window.location.href = "/dashboard";
           }, 400);
         }
       } catch (err: any) {

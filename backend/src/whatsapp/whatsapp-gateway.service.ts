@@ -13,6 +13,7 @@ import pino from 'pino';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { WhatsappService } from './whatsapp.service';
+import { WhatsappController } from './whatsapp.controller';
 
 const pinoLogger = pino({ level: 'silent' });
 
@@ -87,8 +88,18 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         where: { salonId },
       });
       this.logger.log(`Cleared WhatsApp session from DB for salon ${salonId}`);
+
+      // Reset WhatsApp fields on Salon record to clear link state
+      await this.prisma.salon.update({
+        where: { id: salonId },
+        data: {
+          whatsappNumber: '+919876543210-disconnected-' + salonId,
+          whatsappPhoneNumberId: null,
+        },
+      });
+      this.logger.log(`Cleared WhatsApp connection fields from Salon table for ${salonId}`);
     } catch (err) {
-      this.logger.error(`Failed to delete WhatsApp session from DB: ${err.message}`);
+      this.logger.error(`Failed to delete WhatsApp session: ${err.message}`);
     }
 
     return { success: true };
@@ -257,9 +268,22 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         this.sessions.set(salonId, { socket: sock, status: 'DISCONNECTED' });
 
         if (shouldReconnect) {
-          this.initializeSession(salonId).catch((err) => {
-            this.logger.error(`Failed to reconnect session for salon ${salonId}: ${err.message}`);
+          const sessionExists = await this.prisma.whatsAppSession.findUnique({
+            where: {
+              salonId_key: {
+                salonId,
+                key: 'creds',
+              },
+            },
           });
+          if (sessionExists) {
+            this.initializeSession(salonId).catch((err) => {
+              this.logger.error(`Failed to reconnect session for salon ${salonId}: ${err.message}`);
+            });
+          } else {
+            this.logger.log(`Skipping auto-reconnect for salon ${salonId} because credentials do not exist in DB.`);
+            this.sessions.delete(salonId);
+          }
         } else {
           this.sessions.delete(salonId);
           try {
@@ -267,6 +291,16 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
               where: { salonId },
             });
             this.logger.log(`Cleared WhatsApp session from DB for salon ${salonId} due to logout`);
+
+            // Clear Salon table connection fields on logout
+            await this.prisma.salon.update({
+              where: { id: salonId },
+              data: {
+                whatsappNumber: '+919876543210-disconnected-' + salonId,
+                whatsappPhoneNumberId: null,
+              },
+            });
+            this.logger.log(`Cleared WhatsApp connection fields from Salon table for ${salonId} due to logout`);
           } catch (err) {
             this.logger.error(`Failed to clear WhatsApp session on logout: ${err.message}`);
           }
@@ -292,20 +326,21 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
               this.logger.log(`QR Inbound message from ${cleanFrom} for salon ${salonId}: ${text}`);
 
               try {
-                const result = await this.whatsappService.saveIncomingMessage(
-                  salonId,
-                  cleanFrom,
-                  senderName,
-                  text,
-                  'ENGLISH',
-                );
+                const parsedMsg = {
+                  fromPhone: cleanFrom,
+                  customerName: senderName,
+                  text: text,
+                  messageId: msg.key.id || 'qr-msg-' + Date.now(),
+                  timestamp: new Date(),
+                  recipientPhoneNumberId: 'qr-linked-' + sock.user?.id.split(':')[0],
+                  audio: null, // Audio download from Baileys is handled via different buffers
+                };
 
-                const reply = await this.aiService.generateResponse(
-                  result.conversation.id,
-                  salonId,
-                );
+                const salon = await this.prisma.salon.findUnique({
+                  where: { id: salonId },
+                });
 
-                await this.sendDirectMessage(salonId, from, reply);
+                await this.whatsappService.processParsedMessage(parsedMsg, salon);
               } catch (err) {
                 this.logger.error(`Error handling QR message event: ${err.message}`);
               }
