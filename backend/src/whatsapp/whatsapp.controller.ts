@@ -548,12 +548,52 @@ export class WhatsappController {
                 });
               }
 
+              // Check if they are a walk-in customer from history
+              let isWalkIn = false;
+              const recentInbound = await this.prisma.message.findMany({
+                where: { conversationId: conversation.id, direction: 'INBOUND' },
+                orderBy: { timestamp: 'desc' },
+                take: 5,
+              });
+              for (const m of recentInbound) {
+                const textLower = m.content.toLowerCase();
+                if (textLower.includes('walk-in') || textLower.includes('walkin') || textLower.includes('at the salon')) {
+                  isWalkIn = true;
+                  break;
+                }
+              }
+
+              let queueSuffix = '';
+              if (isWalkIn) {
+                // Get active count for today
+                const queueCount = await this.prisma.appointment.count({
+                  where: {
+                    salonId: salon.id,
+                    status: 'CONFIRMED',
+                    startTime: {
+                      gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                      lte: new Date(new Date().setHours(23, 59, 59, 999)),
+                    },
+                  },
+                });
+                const queueNumber = queueCount + 1;
+                const waitPeriod = queueCount * 15; // 15 mins per person
+
+                if (language === 'HINDI') {
+                  queueSuffix = `\n\nआपका बुकिंग नंबर: #${queueNumber} है।\nअनुमानित प्रतीक्षा समय: ${waitPeriod === 0 ? 'अभी तुरंत' : `${waitPeriod} मिनट`} है। कृपया प्रतीक्षा क्षेत्र में बैठें।`;
+                } else if (language === 'HINGLISH') {
+                  queueSuffix = `\n\nAapka Booking Queue Number: #${queueNumber} hai.\nExpected wait time: ${waitPeriod === 0 ? 'Abhi turant' : `${waitPeriod} minutes`} hai. Please reception area me wait karein.`;
+                } else {
+                  queueSuffix = `\n\nYour Booking Queue Number is: #${queueNumber}.\nExpected wait time is: ${waitPeriod === 0 ? 'Immediate' : `${waitPeriod} minutes`}. Please wait in the reception area.`;
+                }
+              }
+
               if (language === 'HINDI') {
-                finalResponseText = `नमस्ते! आपकी "${appointment.service.name}" की बुकिंग ${bookedStaffName ? `${bookedStaffName} के साथ ` : ''}${details.date} को ${timeString} बजे पक्की हो गई है।${checkoutLink ? ` कृपया यहाँ भुगतान करें: ${checkoutLink}` : ' (सैलून पर भुगतान करें)'}`;
+                finalResponseText = `नमस्ते! आपकी "${appointment.service.name}" की बुकिंग ${bookedStaffName ? `${bookedStaffName} के साथ ` : ''}${details.date} को ${timeString} बजे पक्की हो गई है।${checkoutLink ? ` कृपया यहाँ भुगतान करें: ${checkoutLink}` : ' (सैलून पर भुगतान करें)'}` + queueSuffix;
               } else if (language === 'HINGLISH') {
-                finalResponseText = `Success! Aapki appointment "${appointment.service.name}" ${bookedStaffName ? `${bookedStaffName} ke saath ` : ''}ke liye ${details.date} ko ${timeString} baje confirm ho gayi hai!${checkoutLink ? ` Please pay karne ke liye is link par click karein: ${checkoutLink}` : ' (Pay at Salon confirmed)'}`;
+                finalResponseText = `Success! Aapki appointment "${appointment.service.name}" ${bookedStaffName ? `${bookedStaffName} ke saath ` : ''}ke liye ${details.date} ko ${timeString} baje confirm ho gayi hai!${checkoutLink ? ` Please pay karne ke liye is link par click karein: ${checkoutLink}` : ' (Pay at Salon confirmed)'}` + queueSuffix;
               } else {
-                finalResponseText = `Success! I have confirmed your appointment for "${appointment.service.name}"${bookedStaffName ? ` with ${bookedStaffName}` : ''} on ${details.date} at ${timeString}!${checkoutLink ? ` Please complete your payment here: ${checkoutLink}` : ' (Pay at Salon confirmed)'}`;
+                finalResponseText = `Success! I have confirmed your appointment for "${appointment.service.name}"${bookedStaffName ? ` with ${bookedStaffName}` : ''} on ${details.date} at ${timeString}!${checkoutLink ? ` Please complete your payment here: ${checkoutLink}` : ' (Pay at Salon confirmed)'}` + queueSuffix;
               }
             } catch (err) {
               this.logger.warn(`Booking conflict for ${details.serviceName}. Fetching alternative slots: ${err.message}`);
