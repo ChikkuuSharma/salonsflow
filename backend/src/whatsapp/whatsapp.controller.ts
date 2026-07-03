@@ -399,7 +399,17 @@ export class WhatsappController {
         let matchedService = null;
         const incomingText = parsed.text.toLowerCase().trim();
         for (const s of activeServices) {
-          if (incomingText === s.name.toLowerCase() || incomingText.includes(s.name.toLowerCase())) {
+          const sName = s.name.toLowerCase();
+          const userWords = incomingText.split(/\s+/).filter((w: string) => w.length > 2);
+          const serviceWords = sName.split(/\s+/).filter((w: string) => w.length > 2);
+          const hasOverlap = userWords.some((uw: string) => serviceWords.some((sw: string) => sw.includes(uw) || uw.includes(sw)));
+
+          if (
+            incomingText === sName ||
+            incomingText.includes(sName) ||
+            sName.includes(incomingText) ||
+            hasOverlap
+          ) {
             matchedService = s;
             break;
           }
