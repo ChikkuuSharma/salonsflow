@@ -69,18 +69,7 @@ export function ClientInitializer() {
               });
             }
 
-            // 4. Salons Me (Get & Put)
-            if (reqUrl.includes("/api/v1/salons/me")) {
-              if (method === "PUT" && reqBody) {
-                const bodyObj = typeof reqBody === "string" ? JSON.parse(reqBody) : reqBody;
-                db.salon = { ...db.salon, ...bodyObj };
-                localStorage.setItem("mock_db", JSON.stringify(db));
-              }
-              return new Response(JSON.stringify(db.salon), {
-                status: 200,
-                headers: { "Content-Type": "application/json" }
-              });
-            }
+
 
             // 5. Analytics Metrics
             if (reqUrl.includes("/api/v1/analytics/metrics")) {
@@ -322,43 +311,7 @@ export function ClientInitializer() {
               });
             }
 
-            // 26. Whatsapp Status / QR / Disconnect
-            if (reqUrl.includes("/api/v1/webhooks/whatsapp/status")) {
-              const num = db.salon?.whatsappNumber;
-              const hasNum = !!num && num !== "";
-              return new Response(JSON.stringify({ 
-                status: hasNum ? "CONNECTED" : "DISCONNECTED", 
-                qr: "", 
-                whatsappNumber: num || "" 
-              }), {
-                status: 200,
-                headers: { "Content-Type": "application/json" }
-              });
-            }
-            if (reqUrl.includes("/api/v1/webhooks/whatsapp/qr")) {
-              const userNum = window.prompt("Enter the WhatsApp phone number you want to link to this demo account (e.g. +919896644735):", db.salon?.whatsappNumber || "+919896644735");
-              if (userNum) {
-                db.salon.whatsappNumber = userNum;
-                localStorage.setItem("mock_db", JSON.stringify(db));
-                return new Response(JSON.stringify({ status: "CONNECTED", qr: "" }), {
-                  status: 200,
-                  headers: { "Content-Type": "application/json" }
-                });
-              } else {
-                return new Response(JSON.stringify({ status: "DISCONNECTED", qr: "" }), {
-                  status: 200,
-                  headers: { "Content-Type": "application/json" }
-                });
-              }
-            }
-            if (reqUrl.includes("/api/v1/webhooks/whatsapp/disconnect")) {
-              db.salon.whatsappNumber = "";
-              localStorage.setItem("mock_db", JSON.stringify(db));
-              return new Response(JSON.stringify({ success: true, status: "DISCONNECTED" }), {
-                status: 200,
-                headers: { "Content-Type": "application/json" }
-              });
-            }
+
 
           } catch(e) {
             console.error("Local database error:", e);

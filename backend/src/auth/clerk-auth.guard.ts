@@ -120,7 +120,41 @@ export class ClerkAuthGuard implements CanActivate {
                   name: 'Demo Salon',
                   whatsappNumber: '+919999999999',
                   address: '123 Main St, New Delhi',
+                  aiPrompt: 'You are Elegance Salon AI assistant. Be friendly and schedule appointments.',
+                  subscription: {
+                    create: {
+                      plan: 'PRO',
+                      status: 'ACTIVE',
+                    },
+                  },
                 },
+              });
+            }
+
+            // Ensure default salon has services and staff for WhatsApp booking tests
+            const serviceCount = await this.prisma.service.count({
+              where: { salonId: defaultSalon.id },
+            });
+            if (serviceCount === 0) {
+              await this.prisma.service.createMany({
+                data: [
+                  { salonId: defaultSalon.id, name: 'Premium Haircut', durationMins: 30, price: 300 },
+                  { salonId: defaultSalon.id, name: 'Hair Spa', durationMins: 45, price: 1200 },
+                  { salonId: defaultSalon.id, name: 'Shaving & Styling', durationMins: 20, price: 150 },
+                  { salonId: defaultSalon.id, name: 'Facial Clean Up', durationMins: 40, price: 500 },
+                ],
+              });
+            }
+
+            const staffCount = await this.prisma.staff.count({
+              where: { salonId: defaultSalon.id },
+            });
+            if (staffCount === 0) {
+              await this.prisma.staff.createMany({
+                data: [
+                  { salonId: defaultSalon.id, name: 'Amit Verma', isAvailable: true },
+                  { salonId: defaultSalon.id, name: 'Neha Sharma', isAvailable: true },
+                ],
               });
             }
 
