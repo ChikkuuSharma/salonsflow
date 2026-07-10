@@ -33,11 +33,18 @@ export class RecoveryService {
       const duration = service.durationMins;
       const suggestions: Array<{ staffId: string; staffName: string; startTime: Date; endTime: Date }> = [];
 
-      // Define salon operating hours (10 AM to 8 PM)
+      // Load salon working hours from configuration
+      const salon = await this.prisma.salon.findUnique({
+        where: { id: salonId },
+        select: { openingTime: true, closingTime: true },
+      });
+      const [openHour, openMin] = (salon?.openingTime || '10:00').split(':').map(Number);
+      const [closeHour, closeMin] = (salon?.closingTime || '20:00').split(':').map(Number);
+
       const dayStart = new Date(requestedTime);
-      dayStart.setHours(10, 0, 0, 0);
+      dayStart.setHours(openHour, openMin, 0, 0);
       const dayEnd = new Date(requestedTime);
-      dayEnd.setHours(20, 0, 0, 0);
+      dayEnd.setHours(closeHour, closeMin, 0, 0);
 
       // Generate time offsets of 30-min intervals on the same day
       const candidateTimes: Date[] = [];

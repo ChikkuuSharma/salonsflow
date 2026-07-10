@@ -14,6 +14,8 @@ export default function AISettingsPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [homeBookingFee, setHomeBookingFee] = useState<number | string>(0);
+  const [openingTime, setOpeningTime] = useState("10:00");
+  const [closingTime, setClosingTime] = useState("20:00");
   const [aiPrompt, setAiPrompt] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [qrCode, setQrCode] = useState("");
@@ -54,6 +56,8 @@ export default function AISettingsPage() {
         setName(data.name || "");
         setAddress(data.address || "");
         setHomeBookingFee(data.homeBookingFee ?? 0);
+        setOpeningTime(data.openingTime || "10:00");
+        setClosingTime(data.closingTime || "20:00");
         setAiPrompt(data.aiPrompt || "");
         setWhatsappNumber(data.whatsappNumber || "");
         setSubscription(data.subscription || { plan: "FREE", status: "ACTIVE" });
@@ -78,6 +82,8 @@ export default function AISettingsPage() {
         name,
         address,
         homeBookingFee: Number(homeBookingFee) || 0,
+        openingTime,
+        closingTime,
       };
       // Include aiPrompt if editable (not on FREE plan)
       const isPremium = subscription?.plan === "BASIC" || subscription?.plan === "PRO";
@@ -104,6 +110,8 @@ export default function AISettingsPage() {
       setName(updatedSalon.name || "");
       setAddress(updatedSalon.address || "");
       setHomeBookingFee(updatedSalon.homeBookingFee ?? 0);
+      setOpeningTime(updatedSalon.openingTime || "10:00");
+      setClosingTime(updatedSalon.closingTime || "20:00");
       setWhatsappNumber(updatedSalon.whatsappNumber || "");
       if (updatedSalon.aiPrompt) setAiPrompt(updatedSalon.aiPrompt);
 
@@ -338,6 +346,28 @@ export default function AISettingsPage() {
                 <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-semibold block leading-normal">
                   Set the additional convenience fee charged to clients choosing home booking services. Leave 0 for free.
                 </span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block">Opening Time (24h)</label>
+                  <input
+                    type="time"
+                    value={openingTime}
+                    onChange={(e) => setOpeningTime(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-100 focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 focus:outline-none font-semibold"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block">Closing Time (24h)</label>
+                  <input
+                    type="time"
+                    value={closingTime}
+                    onChange={(e) => setClosingTime(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-zinc-100 focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 focus:outline-none font-semibold"
+                    required
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

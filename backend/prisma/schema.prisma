@@ -101,6 +101,10 @@ model Salon {
   weeklyReportsEnabled    Boolean            @default(true)
   monthlyReportsEnabled   Boolean            @default(true)
   businessReports         BusinessReport[]
+
+  // Working Hours config
+  openingTime             String             @default("10:00")
+  closingTime             String             @default("20:00")
 }
 
 model Subscription {

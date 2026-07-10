@@ -1293,6 +1293,65 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     const intentUpper = intent.toUpperCase();
     const textLower = (lastMessageText || '').toLowerCase();
 
+    // Time parsing and dynamic slot generation helpers
+    const parseTime = (timeStr: string) => {
+      const [h, m] = (timeStr || '10:00').split(':').map(Number);
+      return { hour: h, minute: m };
+    };
+
+    const formatTo12Hour = (hour: number, minute: number) => {
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+      const displayMin = minute.toString().padStart(2, '0');
+      return `${displayHour}:${displayMin} ${ampm}`;
+    };
+
+    const getDynamicSlots = (isTodayFlag: boolean, openTimeStr: string, closeTimeStr: string) => {
+      const open = parseTime(openTimeStr || '10:00');
+      const close = parseTime(closeTimeStr || '20:00');
+      
+      const slots: string[] = [];
+      const intervalMinutes = 90; // 1.5 hour interval slots
+      
+      // Calculate current IST time (UTC +5:30)
+      const nowUtc = new Date();
+      const nowIst = new Date(nowUtc.getTime() + 5.5 * 60 * 60 * 1000);
+      const curHour = nowIst.getUTCHours();
+      const curMin = nowIst.getUTCMinutes();
+
+      let currentHour = open.hour;
+      let currentMinute = open.minute;
+
+      while (currentHour < close.hour || (currentHour === close.hour && currentMinute < close.minute)) {
+        // If query is for today, skip slots in the past
+        const isFuture = !isTodayFlag || 
+          (currentHour > curHour || (currentHour === curHour && currentMinute > curMin));
+
+        if (isFuture) {
+          slots.push(formatTo12Hour(currentHour, currentMinute));
+        }
+
+        // Increment time by interval
+        currentMinute += intervalMinutes;
+        if (currentMinute >= 60) {
+          currentHour += Math.floor(currentMinute / 60);
+          currentMinute = currentMinute % 60;
+        }
+      }
+      return slots;
+    };
+
+    // Format dynamic slot strings
+    const openTimeStr = salon.openingTime || '10:00';
+    const closeTimeStr = salon.closingTime || '20:00';
+    const parsedOpen = parseTime(openTimeStr);
+    const parsedClose = parseTime(closeTimeStr);
+    const formattedOpen = formatTo12Hour(parsedOpen.hour, parsedOpen.minute);
+    const formattedClose = formatTo12Hour(parsedClose.hour, parsedClose.minute);
+
+    const todaySlots = getDynamicSlots(true, openTimeStr, closeTimeStr);
+    const tomorrowSlots = getDynamicSlots(false, openTimeStr, closeTimeStr);
+
     // Fetch active salon services dynamically from the database
     const services = await this.prisma.service.findMany({
       where: { salonId: salon.id, isActive: true },
@@ -1418,7 +1477,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         return `हमारे वर्तमान डिस्काउंट और ऑफर्स की जानकारी के लिए कृपया मैनेजर से बात करें। क्या मैं आपका कॉल ट्रांसफर करूँ?`;
       }
       if (textLower.includes('open') || textLower.includes('close') || textLower.includes('timing') || textLower.includes('समय') || textLower.includes('घंटे') || textLower.includes('खुलने')) {
-        return `सैलून सुबह 10:00 बजे से रात 8:00 बजे तक खुला रहता है। हम सप्ताह के सभी दिन खुले हैं।`;
+        return `सैलून सुबह ${formattedOpen} से रात ${formattedClose} तक खुला रहता है। हम सप्ताह के सभी दिन खुले हैं।`;
       }
       if (textLower.includes('staff') || textLower.includes('stylist') || textLower.includes('बारबर') || textLower.includes('स्टाफ') || textLower.includes('लड़का') || textLower.includes('लड़की')) {
         return `हमारे पास विशेषज्ञ हेयर स्टाइलिस्ट उपलब्ध हैं। आप बुकिंग के समय अपनी पसंद का स्टाफ चुन सकते हैं।`;
@@ -1426,12 +1485,15 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
 
       if (isSlotsQuery) {
         if (isTomorrow) {
-          return `कल के लिए हमारे उपलब्ध स्लॉट हैं: सुबह 11:30, दोपहर 2:00, शाम 4:30, और शाम 6:00। आप किस समय आना चाहेंगे?`;
+          return `कल के लिए हमारे उपलब्ध स्लॉट हैं: ${tomorrowSlots.join(', ') || 'कोई स्लॉट उपलब्ध नहीं है'}। आप किस समय आना चाहेंगे?`;
         }
         if (isToday) {
-          return `आज के लिए हमारे खाली स्लॉट हैं: दोपहर 3:00, शाम 5:30, और शाम 7:00। आप किस समय आना चाहेंगे?`;
+          if (todaySlots.length === 0) {
+            return `हमारा सैलून आज के लिए बंद हो चुका है। क्या आप कल के उपलब्ध स्लॉट देखना चाहेंगे?`;
+          }
+          return `आज के लिए हमारे खाली स्लॉट हैं: ${todaySlots.join(', ')}। आप किस समय आना चाहेंगे?`;
         }
-        return `हमारे स्लॉट सुबह 10:00 से रात 8:00 बजे तक खुले रहते हैं। आज और कल दोनों दिन समय उपलब्ध हैं। आप कब आना चाहेंगे?`;
+        return `हमारे स्लॉट सुबह ${formattedOpen} से रात ${formattedClose} तक खुले रहते हैं। आज और कल दोनों दिन समय उपलब्ध हैं। आप कब आना चाहेंगे?`;
       }
 
       if (matchedServiceName) {
@@ -1477,20 +1539,23 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         return `Humare current discounts aur packages ki details ke liye aap directly manager se connect kar sakte hain. Kya main connect karu?`;
       }
       if (textLower.includes('open') || textLower.includes('close') || textLower.includes('timing') || textLower.includes('hour') || textLower.includes('working')) {
-        return `Humara salon subah 10:00 AM se shaam 8:00 PM tak open rehta hai, all days a week.`;
+        return `Humara salon subah ${formattedOpen} se shaam ${formattedClose} tak open rehta hai, all days a week.`;
       }
       if (textLower.includes('staff') || textLower.includes('stylist') || textLower.includes('barber') || textLower.includes('expert') || textLower.includes('bhaiya') || textLower.includes('banda')) {
-        return `Humare paas expert stylists available hain. Aap booking ke time apna preferred specialist select kar sakte hain.`;
+        return `Humere paas expert stylists available hain. Aap booking ke time apna preferred specialist select kar sakte hain.`;
       }
 
       if (isSlotsQuery) {
         if (isTomorrow) {
-          return `Kal (Tomorrow) ke liye available slots hain: 11:30 AM, 2:00 PM, 4:30 PM, aur 6:00 PM. Aapko kaunsa time suit karega?`;
+          return `Kal (Tomorrow) ke liye available slots hain: ${tomorrowSlots.join(', ') || 'koi slots khali nahi hain'}. Aapko kaunsa time suit karega?`;
         }
         if (isToday) {
-          return `Aaj (Today) ke available slots hain: 3:00 PM, 5:30 PM, aur 7:00 PM. Aap kis time aana chahenge?`;
+          if (todaySlots.length === 0) {
+            return `Humara salon aaj close ho chuka hai. Kya aap kal (tomorrow) ke slots check karna chahenge?`;
+          }
+          return `Aaj (Today) ke available slots hain: ${todaySlots.join(', ')}. Aap kis time aana chahenge?`;
         }
-        return `Humare bookings subah 10:00 AM se shaam 8:00 PM tak open hote hain. Aaj aur kal dono din slots available hain. Aap kab aana chahenge?`;
+        return `Humare bookings subah ${formattedOpen} se shaam ${formattedClose} tak open hote hain. Aaj aur kal dono din slots available hain. Aap kab aana chahenge?`;
       }
 
       if (matchedServiceName) {
@@ -1536,7 +1601,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       return `For our latest promotional offers and package rates, please check with our manager. Would you like me to connect you?`;
     }
     if (textLower.includes('open') || textLower.includes('close') || textLower.includes('timing') || textLower.includes('hour') || textLower.includes('working')) {
-      return `Our salon is open daily from 10:00 AM to 8:00 PM.`;
+      return `Our salon is open daily from ${formattedOpen} to ${formattedClose}.`;
     }
     if (textLower.includes('staff') || textLower.includes('stylist') || textLower.includes('barber') || textLower.includes('hairdresser')) {
       return `We have expert stylists available. You can request your preferred stylist during the booking process.`;
@@ -1544,12 +1609,15 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
 
     if (isSlotsQuery) {
       if (isTomorrow) {
-        return `Tomorrow's available slots are: 11:30 AM, 2:00 PM, 4:30 PM, and 6:00 PM. Which one would you like to reserve?`;
+        return `Tomorrow's available slots are: ${tomorrowSlots.join(', ') || 'none available'}. Which one would you like to reserve?`;
       }
       if (isToday) {
-        return `Today's available slots are: 3:00 PM, 5:30 PM, and 7:00 PM. Which slot works for you?`;
+        if (todaySlots.length === 0) {
+          return `Our salon is closed for today. Would you like to check tomorrow's available slots instead?`;
+        }
+        return `Today's available slots are: ${todaySlots.join(', ')}. Which slot works for you?`;
       }
-      return `Our salon hours are 10:00 AM to 8:00 PM. We have slots open for both today and tomorrow. When would you like to book?`;
+      return `Our salon hours are ${formattedOpen} to ${formattedClose}. We have slots open for both today and tomorrow. When would you like to book?`;
     }
 
     if (matchedServiceName) {

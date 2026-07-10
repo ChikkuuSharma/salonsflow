@@ -75,6 +75,8 @@ export class SalonsController {
     @Body('instagramPageId') instagramPageId?: string,
     @Body('instagramAccessToken') instagramAccessToken?: string,
     @Body('isProfileComplete') isProfileComplete?: boolean,
+    @Body('openingTime') openingTime?: string,
+    @Body('closingTime') closingTime?: string,
   ) {
     const salonId = await this.getSalonId(req);
 
@@ -113,6 +115,8 @@ export class SalonsController {
       instagramPageId,
       instagramAccessToken,
       isProfileComplete,
+      openingTime,
+      closingTime,
     });
   }
 }

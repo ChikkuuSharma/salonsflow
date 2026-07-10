@@ -56,6 +56,8 @@ export class SalonsService {
       instagramPageId?: string;
       instagramAccessToken?: string;
       isProfileComplete?: boolean;
+      openingTime?: string;
+      closingTime?: string;
     },
   ) {
     this.logger.log(`Updating salon properties for: ${salonId}`);
