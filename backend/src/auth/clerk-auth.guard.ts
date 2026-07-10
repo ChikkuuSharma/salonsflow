@@ -143,48 +143,6 @@ export class ClerkAuthGuard implements CanActivate {
                   },
                 },
               });
-            } else {
-              // Ensure default salon has an active subscription record in the database
-              const subExists = await this.prisma.subscription.findUnique({
-                where: { salonId: defaultSalon.id },
-              });
-              if (!subExists) {
-                this.logger.warn(`Creating active PRO subscription for existing default salon ${defaultSalon.id}...`);
-                await this.prisma.subscription.create({
-                  data: {
-                    salonId: defaultSalon.id,
-                    plan: 'PRO',
-                    status: 'ACTIVE',
-                  },
-                });
-              }
-            }
-
-            // Ensure default salon has services and staff for WhatsApp booking tests
-            const serviceCount = await this.prisma.service.count({
-              where: { salonId: defaultSalon.id },
-            });
-            if (serviceCount === 0) {
-              await this.prisma.service.createMany({
-                data: [
-                  { salonId: defaultSalon.id, name: 'Premium Haircut', durationMins: 30, price: 300 },
-                  { salonId: defaultSalon.id, name: 'Hair Spa', durationMins: 45, price: 1200 },
-                  { salonId: defaultSalon.id, name: 'Shaving & Styling', durationMins: 20, price: 150 },
-                  { salonId: defaultSalon.id, name: 'Facial Clean Up', durationMins: 40, price: 500 },
-                ],
-              });
-            }
-
-            const staffCount = await this.prisma.staff.count({
-              where: { salonId: defaultSalon.id },
-            });
-            if (staffCount === 0) {
-              await this.prisma.staff.createMany({
-                data: [
-                  { salonId: defaultSalon.id, name: 'Amit Verma', isAvailable: true },
-                  { salonId: defaultSalon.id, name: 'Neha Sharma', isAvailable: true },
-                ],
-              });
             }
 
             let uniqueEmail = email;
@@ -216,6 +174,67 @@ export class ClerkAuthGuard implements CanActivate {
             } else {
               throw createErr;
             }
+          }
+        }
+        // Self-heal demo/bypass salon subscription, services, and staff on-the-fly
+        if (dbUser && dbUser.salonId) {
+          const salonId = dbUser.salonId;
+          try {
+            // 1. Verify/seed active PRO subscription
+            const sub = await this.prisma.subscription.findUnique({
+              where: { salonId },
+            });
+            if (!sub) {
+              this.logger.warn(`Healing: Creating active PRO subscription for demo salon ${salonId}...`);
+              await this.prisma.subscription.create({
+                data: {
+                  salonId,
+                  plan: 'PRO',
+                  status: 'ACTIVE',
+                },
+              });
+            } else if (sub.plan !== 'PRO' || sub.status !== 'ACTIVE') {
+              this.logger.warn(`Healing: Updating subscription to active PRO for demo salon ${salonId}...`);
+              await this.prisma.subscription.update({
+                where: { id: sub.id },
+                data: {
+                  plan: 'PRO',
+                  status: 'ACTIVE',
+                },
+              });
+            }
+
+            // 2. Verify/seed default services
+            const serviceCount = await this.prisma.service.count({
+              where: { salonId },
+            });
+            if (serviceCount === 0) {
+              this.logger.warn(`Healing: Seeding default services for demo salon ${salonId}...`);
+              await this.prisma.service.createMany({
+                data: [
+                  { salonId, name: 'Premium Haircut', durationMins: 30, price: 300 },
+                  { salonId, name: 'Hair Spa', durationMins: 45, price: 1200 },
+                  { salonId, name: 'Shaving & Styling', durationMins: 20, price: 150 },
+                  { salonId, name: 'Facial Clean Up', durationMins: 40, price: 500 },
+                ],
+              });
+            }
+
+            // 3. Verify/seed default staff
+            const staffCount = await this.prisma.staff.count({
+              where: { salonId },
+            });
+            if (staffCount === 0) {
+              this.logger.warn(`Healing: Seeding default staff for demo salon ${salonId}...`);
+              await this.prisma.staff.createMany({
+                data: [
+                  { salonId, name: 'Amit Verma', isAvailable: true },
+                  { salonId, name: 'Neha Sharma', isAvailable: true },
+                ],
+              });
+            }
+          } catch (healErr) {
+            this.logger.error(`Failed to self-heal default salon data: ${healErr.message}`);
           }
         }
 
