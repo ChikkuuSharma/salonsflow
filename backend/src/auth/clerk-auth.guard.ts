@@ -94,6 +94,7 @@ export class ClerkAuthGuard implements CanActivate {
           if (!dbUser) {
             throw new UnauthorizedException('Authenticated user does not exist');
           }
+          await this.selfHealSalon(dbUser.salonId);
           (request as any).user = {
             sub: dbUser.clerkId,
             email: dbUser.email,
@@ -178,64 +179,7 @@ export class ClerkAuthGuard implements CanActivate {
         }
         // Self-heal demo/bypass salon subscription, services, and staff on-the-fly
         if (dbUser && dbUser.salonId) {
-          const salonId = dbUser.salonId;
-          try {
-            // 1. Verify/seed active PRO subscription
-            const sub = await this.prisma.subscription.findUnique({
-              where: { salonId },
-            });
-            if (!sub) {
-              this.logger.warn(`Healing: Creating active PRO subscription for demo salon ${salonId}...`);
-              await this.prisma.subscription.create({
-                data: {
-                  salonId,
-                  plan: 'PRO',
-                  status: 'ACTIVE',
-                },
-              });
-            } else if (sub.plan !== 'PRO' || sub.status !== 'ACTIVE') {
-              this.logger.warn(`Healing: Updating subscription to active PRO for demo salon ${salonId}...`);
-              await this.prisma.subscription.update({
-                where: { id: sub.id },
-                data: {
-                  plan: 'PRO',
-                  status: 'ACTIVE',
-                },
-              });
-            }
-
-            // 2. Verify/seed default services
-            const serviceCount = await this.prisma.service.count({
-              where: { salonId },
-            });
-            if (serviceCount === 0) {
-              this.logger.warn(`Healing: Seeding default services for demo salon ${salonId}...`);
-              await this.prisma.service.createMany({
-                data: [
-                  { salonId, name: 'Premium Haircut', durationMins: 30, price: 300 },
-                  { salonId, name: 'Hair Spa', durationMins: 45, price: 1200 },
-                  { salonId, name: 'Shaving & Styling', durationMins: 20, price: 150 },
-                  { salonId, name: 'Facial Clean Up', durationMins: 40, price: 500 },
-                ],
-              });
-            }
-
-            // 3. Verify/seed default staff
-            const staffCount = await this.prisma.staff.count({
-              where: { salonId },
-            });
-            if (staffCount === 0) {
-              this.logger.warn(`Healing: Seeding default staff for demo salon ${salonId}...`);
-              await this.prisma.staff.createMany({
-                data: [
-                  { salonId, name: 'Amit Verma', isAvailable: true },
-                  { salonId, name: 'Neha Sharma', isAvailable: true },
-                ],
-              });
-            }
-          } catch (healErr) {
-            this.logger.error(`Failed to self-heal default salon data: ${healErr.message}`);
-          }
+          await this.selfHealSalon(dbUser.salonId);
         }
 
         // Attach user info with salonId directly to request
@@ -270,6 +214,66 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException(
         'Invalid or expired authentication token',
       );
+    }
+  }
+
+  private async selfHealSalon(salonId: string) {
+    try {
+      // 1. Verify/seed active PRO subscription
+      const sub = await this.prisma.subscription.findUnique({
+        where: { salonId },
+      });
+      if (!sub) {
+        this.logger.warn(`Healing: Creating active PRO subscription for demo salon ${salonId}...`);
+        await this.prisma.subscription.create({
+          data: {
+            salonId,
+            plan: 'PRO',
+            status: 'ACTIVE',
+          },
+        });
+      } else if (sub.plan !== 'PRO' || sub.status !== 'ACTIVE') {
+        this.logger.warn(`Healing: Updating subscription to active PRO for demo salon ${salonId}...`);
+        await this.prisma.subscription.update({
+          where: { id: sub.id },
+          data: {
+            plan: 'PRO',
+            status: 'ACTIVE',
+          },
+        });
+      }
+
+      // 2. Verify/seed default services
+      const serviceCount = await this.prisma.service.count({
+        where: { salonId },
+      });
+      if (serviceCount === 0) {
+        this.logger.warn(`Healing: Seeding default services for demo salon ${salonId}...`);
+        await this.prisma.service.createMany({
+          data: [
+            { salonId, name: 'Premium Haircut', durationMins: 30, price: 300 },
+            { salonId, name: 'Hair Spa', durationMins: 45, price: 1200 },
+            { salonId, name: 'Shaving & Styling', durationMins: 20, price: 150 },
+            { salonId, name: 'Facial Clean Up', durationMins: 40, price: 500 },
+          ],
+        });
+      }
+
+      // 3. Verify/seed default staff
+      const staffCount = await this.prisma.staff.count({
+        where: { salonId },
+      });
+      if (staffCount === 0) {
+        this.logger.warn(`Healing: Seeding default staff for demo salon ${salonId}...`);
+        await this.prisma.staff.createMany({
+          data: [
+            { salonId, name: 'Amit Verma', isAvailable: true },
+            { salonId, name: 'Neha Sharma', isAvailable: true },
+          ],
+        });
+      }
+    } catch (healErr) {
+      this.logger.error(`Failed to self-heal default salon data: ${healErr.message}`);
     }
   }
 
