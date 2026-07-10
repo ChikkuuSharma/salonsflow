@@ -85,8 +85,20 @@ function BookingContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !customerPhone || !selectedService || !selectedDate || !selectedSlot) {
-      setError("Please fill in all details, select a service, date, and time slot.");
+    if (!customerName.trim()) {
+      setError("Name is required. Please enter your name.");
+      return;
+    }
+    if (!customerPhone.trim()) {
+      setError("Mobile Number is required. Please enter your mobile number.");
+      return;
+    }
+    if (!selectedService) {
+      setError("Please select a service.");
+      return;
+    }
+    if (!selectedSlot) {
+      setError("Please select a Time Slot from the list of available times below.");
       return;
     }
 
@@ -253,8 +265,45 @@ function BookingContent() {
           {/* Step 3: Select Date & Stylist */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Date Select */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">3. Select Date</h3>
+            <div className="space-y-3 col-span-1 md:col-span-2">
+              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">3. Choose Date</h3>
+              
+              {/* Scrollable date chips */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none custom-scrollbar">
+                {Array.from({ length: 7 }).map((_, i) => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + i);
+                  
+                  const y = d.getFullYear();
+                  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+                  const dy = d.getDate().toString().padStart(2, '0');
+                  const dateStr = `${y}-${m}-${dy}`;
+                  
+                  const isSelected = selectedDate === dateStr;
+                  const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
+                  const dayNum = d.getDate();
+                  const monthName = d.toLocaleDateString("en-US", { month: "short" });
+
+                  return (
+                    <button
+                      key={dateStr}
+                      type="button"
+                      onClick={() => setSelectedDate(dateStr)}
+                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border min-w-[75px] transition-all hover:scale-[1.02] cursor-pointer select-none ${
+                        isSelected
+                          ? "bg-indigo-600 border-indigo-500 text-white shadow-md"
+                          : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-900/50"
+                      }`}
+                    >
+                      <span className="text-[9px] font-bold uppercase tracking-wider font-mono">{dayName}</span>
+                      <span className="text-sm font-black mt-1 font-display">{dayNum}</span>
+                      <span className="text-[8px] font-bold uppercase tracking-widest opacity-80 mt-0.5">{monthName}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Advanced calendar input */}
               <div className="relative">
                 <CalendarIcon className="absolute left-3 top-3.5 h-4 w-4 text-slate-500" />
                 <input
@@ -322,7 +371,7 @@ function BookingContent() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting || slotsLoading || !selectedSlot}
+            disabled={submitting || slotsLoading}
             className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-extrabold text-xs py-4 rounded-2xl shadow-lg active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider"
           >
             {submitting ? (
