@@ -645,7 +645,8 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
             });
 
             if (service) {
-              const requestedTime = new Date(`${details.date}T12:00:00Z`);
+              const [yr, mo, dy] = details.date.split('-').map(Number);
+              const requestedTime = new Date(Date.UTC(yr, mo - 1, dy, 12, 0) - 5.5 * 60 * 60 * 1000);
               let staffId: string | undefined = undefined;
               if (details.staffName) {
                 const staff = await this.prisma.staff.findFirst({
@@ -663,6 +664,21 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
 
               const partners = await this.recoveryService.getPartnerSalons(salon.id);
 
+              const formatTimeIST = (d: Date): string => {
+                const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+                const hrs = ist.getUTCHours();
+                const mins = ist.getUTCMinutes();
+                const ampm = hrs >= 12 ? 'PM' : 'AM';
+                const dispHr = hrs % 12 === 0 ? 12 : hrs % 12;
+                const dispMin = mins.toString().padStart(2, '0');
+                return `${dispHr}:${dispMin} ${ampm}`;
+              };
+              const formatDateIST = (d: Date): string => {
+                const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+                const mos = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                return `${mos[ist.getUTCMonth()]} ${ist.getUTCDate()}`;
+              };
+
               finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
                 intent: 'BOOKING_AVAILABILITY',
                 status: alternatives.length > 0 ? 'INFO' : 'ERROR',
@@ -673,8 +689,8 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
                   partnerSalons: partners.map(p => p.name)
                 },
                 alternativeSlots: alternatives.map(alt => ({
-                  time: alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                  date: alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+                  time: formatTimeIST(alt.startTime),
+                  date: formatDateIST(alt.startTime),
                   staffName: alt.staffName
                 }))
               });
@@ -688,7 +704,9 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
             }
           } else {
             try {
-              const startTime = new Date(`${details.date}T${details.time}:00Z`);
+              const [h, m] = details.time.split(':').map(Number);
+              const [yr, mo, dy] = details.date.split('-').map(Number);
+              const startTime = new Date(Date.UTC(yr, mo - 1, dy, h, m) - 5.5 * 60 * 60 * 1000);
 
               let staffId: string | undefined = undefined;
               if (details.staffName) {
@@ -717,10 +735,16 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
                   bookingSource,
                 });
 
-              const timeString = appointment.startTime.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              });
+              const formatConfirmTimeIST = (d: Date): string => {
+                const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+                const hrs = ist.getUTCHours();
+                const mins = ist.getUTCMinutes();
+                const ampm = hrs >= 12 ? 'PM' : 'AM';
+                const dispHr = hrs % 12 === 0 ? 12 : hrs % 12;
+                const dispMin = mins.toString().padStart(2, '0');
+                return `${dispHr}:${dispMin} ${ampm}`;
+              };
+              const timeString = formatConfirmTimeIST(appointment.startTime);
 
               const bookedStaffName = appointment.staff?.name;
 

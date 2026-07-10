@@ -41,10 +41,13 @@ export class RecoveryService {
       const [openHour, openMin] = (salon?.openingTime || '10:00').split(':').map(Number);
       const [closeHour, closeMin] = (salon?.closingTime || '20:00').split(':').map(Number);
 
-      const dayStart = new Date(requestedTime);
-      dayStart.setHours(openHour, openMin, 0, 0);
-      const dayEnd = new Date(requestedTime);
-      dayEnd.setHours(closeHour, closeMin, 0, 0);
+      const year = requestedTime.getUTCFullYear();
+      const month = requestedTime.getUTCMonth();
+      const day = requestedTime.getUTCDate();
+
+      // Create UTC Date representing IST local opening and closing times (IST = UTC + 5.5 hours)
+      const dayStart = new Date(Date.UTC(year, month, day, openHour, openMin) - 5.5 * 60 * 60 * 1000);
+      const dayEnd = new Date(Date.UTC(year, month, day, closeHour, closeMin) - 5.5 * 60 * 60 * 1000);
 
       // Generate time offsets of 30-min intervals on the same day
       const candidateTimes: Date[] = [];
@@ -52,7 +55,13 @@ export class RecoveryService {
       const now = new Date();
       
       while (current.getTime() + duration * 60000 <= dayEnd.getTime()) {
-        const isToday = current.toDateString() === now.toDateString();
+        const currentIst = new Date(current.getTime() + 5.5 * 60 * 60 * 1000);
+        const nowIst = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+
+        const isToday = currentIst.getUTCDate() === nowIst.getUTCDate() &&
+                        currentIst.getUTCMonth() === nowIst.getUTCMonth() &&
+                        currentIst.getUTCFullYear() === nowIst.getUTCFullYear();
+
         // Only add future slots if the target day is today
         if (!isToday || current.getTime() >= now.getTime()) {
           candidateTimes.push(new Date(current));
