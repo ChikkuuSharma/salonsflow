@@ -177,7 +177,10 @@ export class WhatsappService {
     if (targetSalonId) {
       const session = await this.gatewayService.getSessionStatus(targetSalonId);
       if (session.status === 'CONNECTED') {
-        const cleanPhone = toPhone.replace('+', '') + '@s.whatsapp.net';
+        let cleanPhone = toPhone.replace('+', '');
+        if (!cleanPhone.includes('@')) {
+          cleanPhone = cleanPhone + '@s.whatsapp.net';
+        }
         const sent = await this.gatewayService.sendDirectMessage(targetSalonId, cleanPhone, text);
         if (sent) {
           if (conversationId) {

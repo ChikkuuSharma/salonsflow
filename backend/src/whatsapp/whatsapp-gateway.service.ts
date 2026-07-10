@@ -377,7 +377,19 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
             const senderName = msg.pushName || 'Customer';
 
             if (from && text) {
-              const cleanFrom = '+' + from.split('@')[0];
+              // Ignore group chats and status broadcasts
+              if (from.endsWith('@g.us') || from.endsWith('@broadcast')) {
+                continue;
+              }
+
+              let cleanFrom = '+' + from.split('@')[0];
+              if (from.includes('@')) {
+                const domain = from.split('@')[1];
+                if (domain !== 's.whatsapp.net') {
+                  cleanFrom = '+' + from; // Keep full JID for LIDs or other types
+                }
+              }
+
               this.logger.log(`QR Inbound message from ${cleanFrom} for salon ${salonId}: ${text}`);
 
               try {
