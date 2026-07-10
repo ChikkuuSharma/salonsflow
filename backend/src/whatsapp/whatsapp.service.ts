@@ -621,7 +621,10 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
           }
         }
 
-        const frontendUrl = process.env.FRONTEND_URL || 'https://salonsflow.in';
+        let frontendUrl = process.env.FRONTEND_URL || 'https://salonsflow.in';
+        if (frontendUrl.includes('salonsflow.com')) {
+          frontendUrl = frontendUrl.replace('salonsflow.com', 'salonsflow.in');
+        }
         const bookingLink = `${frontendUrl}/book?salonId=${salon.id}`;
 
         if (language === 'HINDI') {
