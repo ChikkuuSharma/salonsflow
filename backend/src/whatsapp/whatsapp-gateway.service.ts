@@ -41,6 +41,18 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       });
 
       for (const session of activeSessions) {
+        const salonExists = await this.prisma.salon.findUnique({
+          where: { id: session.salonId },
+        });
+
+        if (!salonExists) {
+          this.logger.warn(`Stale WhatsApp session found for non-existent salon ${session.salonId}. Cleaning up session credentials.`);
+          await this.prisma.whatsAppSession.deleteMany({
+            where: { salonId: session.salonId },
+          });
+          continue;
+        }
+
         this.logger.log(`Auto-reconnecting WhatsApp session for salon: ${session.salonId}`);
         this.initializeSession(session.salonId).catch((err) => {
           this.logger.error(`Failed to auto-reconnect salon ${session.salonId}: ${err.message}`);
@@ -347,6 +359,11 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
                 const salon = await this.prisma.salon.findUnique({
                   where: { id: salonId },
                 });
+
+                if (!salon) {
+                  this.logger.warn(`Received message for non-existent salon ID ${salonId}. Skipping message processing.`);
+                  return;
+                }
 
                 await this.whatsappService.processParsedMessage(parsedMsg, salon);
               } catch (err) {
