@@ -23,8 +23,9 @@ export class AppointmentsService {
   async findAll(salonId: string, date?: string) {
     let dateFilter = {};
     if (date) {
-      const startOfDay = new Date(`${date}T00:00:00Z`);
-      const endOfDay = new Date(`${date}T23:59:59Z`);
+      const [yr, mo, dy] = date.split('-').map(Number);
+      const startOfDay = new Date(Date.UTC(yr, mo - 1, dy, 0, 0, 0, 0) - 5.5 * 60 * 60 * 1000);
+      const endOfDay = new Date(Date.UTC(yr, mo - 1, dy, 23, 59, 59, 999) - 5.5 * 60 * 60 * 1000);
 
       dateFilter = {
         startTime: {

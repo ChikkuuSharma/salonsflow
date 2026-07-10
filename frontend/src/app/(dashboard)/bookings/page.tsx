@@ -67,12 +67,19 @@ export default function BookingsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
 
+  const getLocalDateStr = (d: Date) => {
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const dy = d.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${dy}`;
+  };
+
   // Form states
   const [formData, setFormData] = useState({
     customerId: "",
     serviceId: "",
     staffId: "",
-    date: new Date().toISOString().split("T")[0],
+    date: getLocalDateStr(new Date()),
     time: "10:00",
   });
   const [formError, setFormError] = useState<string | null>(null);
@@ -83,7 +90,10 @@ export default function BookingsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const formattedDate = currentDate.toISOString().split("T")[0];
+      const y = currentDate.getFullYear();
+      const mo = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+      const dy = currentDate.getDate().toString().padStart(2, '0');
+      const formattedDate = `${y}-${mo}-${dy}`;
       
       const [apptsRes, staffRes, servicesRes, customersRes] = await Promise.all([
         fetch(`${apiUrl}/api/v1/appointments?date=${formattedDate}`, {
@@ -141,7 +151,7 @@ export default function BookingsPage() {
       customerId: customerList[0]?.id || "",
       serviceId: serviceList[0]?.id || "",
       staffId: initialStaffId || "",
-      date: currentDate.toISOString().split("T")[0],
+      date: getLocalDateStr(currentDate),
       time: initialTime || "10:00",
     });
     setFormError(null);
@@ -452,11 +462,19 @@ export default function BookingsPage() {
                     
                     const dayName = startOfWeek.toLocaleDateString("en-US", { weekday: "short" });
                     const dayNum = startOfWeek.getDate();
-                    const formattedDate = startOfWeek.toISOString().split("T")[0];
+                    const targetY = startOfWeek.getFullYear();
+                    const targetM = (startOfWeek.getMonth() + 1).toString().padStart(2, '0');
+                    const targetD = startOfWeek.getDate().toString().padStart(2, '0');
+                    const targetLocalDateStr = `${targetY}-${targetM}-${targetD}`;
 
                     // Find appointments for this specific date
                     const dailyAppts = appointments.filter((appt) => {
-                      return appt.startTime.startsWith(formattedDate);
+                      const apptDate = new Date(appt.startTime);
+                      const y = apptDate.getFullYear();
+                      const m = (apptDate.getMonth() + 1).toString().padStart(2, '0');
+                      const d = apptDate.getDate().toString().padStart(2, '0');
+                      const apptLocalDateStr = `${y}-${m}-${d}`;
+                      return apptLocalDateStr === targetLocalDateStr;
                     });
 
                     return (
