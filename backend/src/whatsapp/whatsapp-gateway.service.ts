@@ -242,6 +242,22 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
+      try {
+        await this.prisma.auditLog.create({
+          data: {
+            salonId,
+            action: 'WHATSAPP_CONNECTION_UPDATE',
+            details: {
+              connection: connection || null,
+              qr: qr ? 'present' : 'absent',
+              error: lastDisconnect?.error?.message || (lastDisconnect?.error as any)?.output?.statusCode || null,
+            },
+          },
+        });
+      } catch (logErr) {
+        this.logger.error(`Failed to log connection update to DB: ${logErr.message}`);
+      }
+
       if (qr) {
         try {
           const qrBase64 = await QRCode.toDataURL(qr);
@@ -331,6 +347,25 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('messages.upsert', async (m) => {
+      try {
+        await this.prisma.auditLog.create({
+          data: {
+            salonId,
+            action: 'WHATSAPP_MESSAGES_UPSERT_TRIGGERED',
+            details: {
+              type: m.type,
+              messagesCount: m.messages?.length || 0,
+              firstMessageFromMe: m.messages?.[0]?.key?.fromMe || null,
+              remoteJid: m.messages?.[0]?.key?.remoteJid || null,
+              hasMessageObject: !!m.messages?.[0]?.message,
+              messageContent: m.messages?.[0]?.message?.conversation || m.messages?.[0]?.message?.extendedTextMessage?.text || null,
+            },
+          },
+        });
+      } catch (logErr) {
+        this.logger.error(`Failed to log message upsert to DB: ${logErr.message}`);
+      }
+
       if (m.type === 'notify') {
         for (const msg of m.messages) {
           if (!msg.key.fromMe && msg.message) {
