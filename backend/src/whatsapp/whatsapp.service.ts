@@ -725,51 +725,11 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
               const bookedStaffName = appointment.staff?.name;
 
               let checkoutLink: string | null = null;
-              try {
-                const stripe = new Stripe(process.env.STRIPE_API_KEY || 'dummy_key', {
-                  apiVersion: '2022-11-15' as any,
-                });
-                const session = await stripe.checkout.sessions.create({
-                  payment_method_types: ['card'],
-                  line_items: [
-                    {
-                      price_data: {
-                        currency: 'inr',
-                        product_data: {
-                          name: appointment.service.name,
-                        },
-                        unit_amount: Math.round(appointment.service.price * 100),
-                      },
-                      quantity: 1,
-                    },
-                  ],
-                  mode: 'payment',
-                  success_url: `https://salonflow.com/booking-success?session_id={CHECKOUT_SESSION_ID}`,
-                  cancel_url: `https://salonflow.com/booking-cancel`,
-                  metadata: {
-                    appointmentId: appointment.id,
-                    salonId: salon.id,
-                  },
-                });
-                checkoutLink = session.url;
-              } catch (stripeError) {
-                this.logger.error(`Stripe checkout session creation failed: ${stripeError.message}`);
-                await this.prisma.auditLog.create({
-                  data: {
-                    salonId: salon.id,
-                    action: 'PAYMENT_LINK_FAILED',
-                    details: {
-                      appointmentId: appointment.id,
-                      serviceName: appointment.service.name,
-                      error: stripeError.message,
-                    },
-                  },
-                });
-                await this.prisma.appointment.update({
-                  where: { id: appointment.id },
-                  data: { notes: (appointment.notes ? appointment.notes + ' | ' : '') + 'Pay at salon confirmed due to Stripe link failure.' },
-                });
-              }
+              // Stripe online payments disabled. Payment is collected directly at the salon by the owner.
+              await this.prisma.appointment.update({
+                where: { id: appointment.id },
+                data: { notes: (appointment.notes ? appointment.notes + ' | ' : '') + 'Direct checkout: payment collected at salon by owner.' },
+              });
 
               // Check if they are a walk-in customer from history
               let isWalkIn = false;
