@@ -41,7 +41,7 @@ export default function CommissionsPage() {
   const [formService, setFormService] = useState("");
   const [ratePercent, setRatePercent] = useState<number>(15);
 
-  const token = "dev-bypass-token";
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   // Load lists and payouts
@@ -438,3 +438,4 @@ export default function CommissionsPage() {
     </div>
   );
 }
+

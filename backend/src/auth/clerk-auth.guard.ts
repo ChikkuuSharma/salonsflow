@@ -143,6 +143,21 @@ export class ClerkAuthGuard implements CanActivate {
                   },
                 },
               });
+            } else {
+              // Ensure default salon has an active subscription record in the database
+              const subExists = await this.prisma.subscription.findUnique({
+                where: { salonId: defaultSalon.id },
+              });
+              if (!subExists) {
+                this.logger.warn(`Creating active PRO subscription for existing default salon ${defaultSalon.id}...`);
+                await this.prisma.subscription.create({
+                  data: {
+                    salonId: defaultSalon.id,
+                    plan: 'PRO',
+                    status: 'ACTIVE',
+                  },
+                });
+              }
             }
 
             // Ensure default salon has services and staff for WhatsApp booking tests

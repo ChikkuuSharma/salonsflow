@@ -55,7 +55,7 @@ export default function ServicesPage() {
     try {
       setLoading(true);
       setError(null);
-      const token = "dev-bypass-token";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       
       const response = await fetch(`${apiUrl}/api/v1/services`, {
@@ -136,7 +136,7 @@ export default function ServicesPage() {
       setSubmitting(true);
       setFormError(null);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const token = "dev-bypass-token";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
 
       const response = await fetch(`${apiUrl}/api/v1/services`, {
         method: "POST",
@@ -193,7 +193,7 @@ export default function ServicesPage() {
       setSubmitting(true);
       setFormError(null);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const token = "dev-bypass-token";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
 
       const response = await fetch(`${apiUrl}/api/v1/services/${editingService.id}`, {
         method: "PATCH",
@@ -227,7 +227,7 @@ export default function ServicesPage() {
   const handleToggleActive = async (service: Service) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const token = "dev-bypass-token";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
       
       const newStatus = !service.isActive;
 
@@ -268,7 +268,7 @@ export default function ServicesPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const token = "dev-bypass-token";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
 
       const response = await fetch(`${apiUrl}/api/v1/services/${service.id}`, {
         method: "DELETE",
@@ -654,3 +654,4 @@ export default function ServicesPage() {
     </div>
   );
 }
+

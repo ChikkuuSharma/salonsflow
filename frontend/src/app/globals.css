@@ -24,13 +24,13 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-border: var(--border);
-  --font-sans: var(--font-sans), sans-serif;
-  --font-display: var(--font-display), sans-serif;
+  --font-sans: var(--font-inter), sans-serif;
+  --font-display: var(--font-outfit), sans-serif;
 }
 
 body {
-  background-color: #f8fafc; /* Force light slate-50 background globally to prevent OS/Clerk theme mismatches */
-  color: #0f172a; /* Force dark slate-900 text globally */
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* Global Selection Color */

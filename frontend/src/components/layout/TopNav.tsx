@@ -13,7 +13,7 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isImpersonating, setIsImpersonating] = useState(false);
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-  const token = "dev-bypass-token";
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
 
   const handleExitImpersonation = () => {
     const adminToken = localStorage.getItem("admin_auth_token") || "dev-bypass-token-superadmin-admin";
@@ -194,3 +194,4 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
     </div>
   );
 }
+

@@ -77,7 +77,7 @@ export default function OnboardingPage() {
   // Help details open state
   const [showMetaHelp, setShowMetaHelp] = useState(false);
 
-  const token = "dev-bypass-token";
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   // Preset configuration applicator

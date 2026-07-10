@@ -28,7 +28,7 @@ export default function CampaignsPage() {
   const [targetSegment, setTargetSegment] = useState("inactive_30_days");
   const [content, setContent] = useState("");
 
-  const token = "dev-bypass-token";
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   async function loadData() {
@@ -291,3 +291,4 @@ export default function CampaignsPage() {
     </div>
   );
 }
+

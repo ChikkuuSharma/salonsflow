@@ -76,7 +76,7 @@ export default function DashboardPage() {
     { id: 4, name: "Sneha Patel", service: "Hair Coloring Treatment", price: 2200, time: "20:00", status: "Confirmed" }
   ]);
 
-  const token = "dev-bypass-token";
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const loadData = async () => {
@@ -502,3 +502,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

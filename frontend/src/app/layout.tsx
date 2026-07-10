@@ -5,12 +5,12 @@ import { ClientInitializer } from "@/components/layout/ClientInitializer";
 import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({
-  variable: "--font-sans",
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 const outfit = Outfit({
-  variable: "--font-display",
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
