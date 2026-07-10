@@ -105,6 +105,32 @@ export function ClientInitializer() {
 
             // 9. Appointments Staff
             if (reqUrl.includes("/api/v1/appointments/staff")) {
+              if (method === "PATCH" && reqBody) {
+                const bodyObj = typeof reqBody === "string" ? JSON.parse(reqBody) : reqBody;
+                const parts = reqUrl.split("/");
+                const staffId = parts[parts.length - 1];
+                const staff = db.staff.find((s: any) => s.id === staffId);
+                if (staff) {
+                  if (bodyObj.isAvailable !== undefined) staff.isAvailable = bodyObj.isAvailable;
+                  if (bodyObj.name !== undefined) staff.name = bodyObj.name;
+                  localStorage.setItem("mock_db", JSON.stringify(db));
+                  return new Response(JSON.stringify(staff), { status: 200, headers: { "Content-Type": "application/json" } });
+                }
+              }
+              if (method === "POST" && reqBody) {
+                const bodyObj = typeof reqBody === "string" ? JSON.parse(reqBody) : reqBody;
+                const newStaff = { id: "st_" + Date.now(), name: bodyObj.name, isAvailable: bodyObj.isAvailable ?? true, staffServices: [] };
+                db.staff.push(newStaff);
+                localStorage.setItem("mock_db", JSON.stringify(db));
+                return new Response(JSON.stringify(newStaff), { status: 201, headers: { "Content-Type": "application/json" } });
+              }
+              if (method === "DELETE") {
+                const parts = reqUrl.split("/");
+                const staffId = parts[parts.length - 1];
+                db.staff = db.staff.filter((s: any) => s.id !== staffId);
+                localStorage.setItem("mock_db", JSON.stringify(db));
+                return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+              }
               return new Response(JSON.stringify(db.staff), {
                 status: 200,
                 headers: { "Content-Type": "application/json" }
@@ -354,7 +380,7 @@ export function ClientInitializer() {
           }
 
           // Force local mock if we are in demo user session
-          if (isDemoToken || isDemoLoginAttempt || storedToken === "dev-bypass-token") {
+          if (isDemoLoginAttempt || storedToken === "dev-bypass-token") {
             const mockRes = handleMockDatabase(url, init?.method || "GET", init?.body);
             if (mockRes) return mockRes;
           }
