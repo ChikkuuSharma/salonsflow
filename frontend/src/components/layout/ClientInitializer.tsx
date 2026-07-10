@@ -324,19 +324,37 @@ export function ClientInitializer() {
 
             // 26. Whatsapp Status / QR / Disconnect
             if (reqUrl.includes("/api/v1/webhooks/whatsapp/status")) {
-              return new Response(JSON.stringify({ connected: true, phoneNumber: "+919999999999" }), {
+              const num = db.salon?.whatsappNumber;
+              const hasNum = !!num && num !== "";
+              return new Response(JSON.stringify({ 
+                status: hasNum ? "CONNECTED" : "DISCONNECTED", 
+                qr: "", 
+                whatsappNumber: num || "" 
+              }), {
                 status: 200,
                 headers: { "Content-Type": "application/json" }
               });
             }
             if (reqUrl.includes("/api/v1/webhooks/whatsapp/qr")) {
-              return new Response(JSON.stringify({ qrCode: "mock-qr-code-data" }), {
-                status: 200,
-                headers: { "Content-Type": "application/json" }
-              });
+              const userNum = window.prompt("Enter the WhatsApp phone number you want to link to this demo account (e.g. +919896644735):", db.salon?.whatsappNumber || "+919896644735");
+              if (userNum) {
+                db.salon.whatsappNumber = userNum;
+                localStorage.setItem("mock_db", JSON.stringify(db));
+                return new Response(JSON.stringify({ status: "CONNECTED", qr: "" }), {
+                  status: 200,
+                  headers: { "Content-Type": "application/json" }
+                });
+              } else {
+                return new Response(JSON.stringify({ status: "DISCONNECTED", qr: "" }), {
+                  status: 200,
+                  headers: { "Content-Type": "application/json" }
+                });
+              }
             }
             if (reqUrl.includes("/api/v1/webhooks/whatsapp/disconnect")) {
-              return new Response(JSON.stringify({ success: true }), {
+              db.salon.whatsappNumber = "";
+              localStorage.setItem("mock_db", JSON.stringify(db));
+              return new Response(JSON.stringify({ success: true, status: "DISCONNECTED" }), {
                 status: 200,
                 headers: { "Content-Type": "application/json" }
               });

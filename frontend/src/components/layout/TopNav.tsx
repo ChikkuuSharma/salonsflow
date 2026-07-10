@@ -137,32 +137,32 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
           </div>
         </div>
       )}
-      <header className="h-16 border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 w-full gap-4 shrink-0">
+      <header className="h-16 border-b border-slate-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 w-full gap-4 shrink-0">
         {onMenuClick && (
           <button 
             onClick={onMenuClick} 
-            className="lg:hidden text-zinc-450 text-zinc-400 hover:text-white p-2 hover:bg-zinc-900 rounded-lg shrink-0 cursor-pointer"
+            className="lg:hidden text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white p-2 hover:bg-slate-100 dark:hover:bg-zinc-900 rounded-lg shrink-0 cursor-pointer"
             title="Open menu"
           >
             <Menu className="h-5 w-5" />
           </button>
         )}
         <div className="hidden md:flex flex-col">
-          <h1 className="text-sm lg:text-base font-bold text-zinc-105 text-zinc-100 tracking-tight leading-tight">
-            Welcome back, <span className="text-emerald-400 font-extrabold">{ownerName}</span>!
+          <h1 className="text-sm lg:text-base font-bold text-slate-900 dark:text-zinc-100 tracking-tight leading-tight">
+            Welcome back, <span className="text-emerald-500 dark:text-emerald-400 font-extrabold">{ownerName}</span>!
           </h1>
-          <p className="text-[10px] lg:text-xs text-zinc-455 text-zinc-400 font-semibold mt-0.5">
-            Here's what's happening at <span className="text-emerald-400 font-bold">{salonName}</span> today.
+          <p className="text-[10px] lg:text-xs text-slate-500 dark:text-zinc-400 font-semibold mt-0.5">
+            Here's what's happening at <span className="text-emerald-500 dark:text-emerald-400 font-bold">{salonName}</span> today.
           </p>
         </div>
         
         <div className="flex-1 max-w-sm flex items-center gap-3 ml-auto">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-zinc-505 text-zinc-500" />
             <input 
               type="text" 
               placeholder="Search clients, bookings, reports..." 
-              className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl pl-9.5 pr-4 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-zinc-900 transition-all"
+              className="w-full bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-xl pl-9.5 pr-4 py-1.5 text-xs text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white dark:focus:bg-zinc-900 transition-all"
             />
           </div>
           
@@ -174,8 +174,8 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-4 border-l border-zinc-900 pl-4 shrink-0">
-          <button className="text-zinc-400 hover:text-white p-1.5 rounded-lg transition-colors relative bg-zinc-900/50 border border-zinc-800 shadow-sm cursor-pointer">
+        <div className="flex items-center gap-4 border-l border-slate-200 dark:border-zinc-900 pl-4 shrink-0">
+          <button className="text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white p-1.5 rounded-lg transition-colors relative bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 shadow-sm cursor-pointer">
             <Bell className="h-4 w-4" />
             <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-emerald-500 text-[8px] font-bold text-zinc-950 flex items-center justify-center leading-none">3</span>
           </button>
@@ -185,8 +185,8 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
               {ownerName.substring(0, 2).toUpperCase()}
             </div>
             <div className="hidden lg:flex flex-col text-left">
-              <span className="text-xs font-bold text-zinc-300 leading-none">{ownerName} Sharma</span>
-              <span className="text-[9px] font-bold text-emerald-450 text-emerald-400 mt-1 uppercase tracking-wider">{ownerRole}</span>
+              <span className="text-xs font-bold text-slate-800 dark:text-zinc-300 leading-none">{ownerName} Sharma</span>
+              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 uppercase tracking-wider">{ownerRole}</span>
             </div>
           </div>
         </div>
