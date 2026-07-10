@@ -155,6 +155,7 @@ MULTILINGUAL / INDIAN MARKET RULES:
     const lastMsgIntent = lastInboundMsg
       ? this.localDetermineIntent(lastInboundMsg.content)
       : 'OTHER';
+    const targetIntent = context?.intent || lastMsgIntent;
 
     // Fetch active salon services dynamically
     const services = await this.prisma.service.findMany({
@@ -162,7 +163,14 @@ MULTILINGUAL / INDIAN MARKET RULES:
     });
 
     if (!this.isAiConfigured()) {
-      return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
+      return await this.localGenerateResponse(
+        salon,
+        lastMsgLang,
+        targetIntent,
+        lastInboundMsg?.content,
+        conversationId,
+        context,
+      );
     }
 
     let systemInstruction = this.generateSystemPrompt(salon, services);
@@ -207,12 +215,12 @@ Keep it under 3 sentences, with NO markdown formatting (no asterisks/bold). Resp
         });
 
         const text = result.response.text();
-        return text || (await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content));
+        return text || (await this.localGenerateResponse(salon, lastMsgLang, targetIntent, lastInboundMsg?.content, conversationId, context));
       } catch (error) {
         this.logger.error(
           `Error generating Gemini response: ${error.message}. Falling back to local engine.`,
         );
-        return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
+        return await this.localGenerateResponse(salon, lastMsgLang, targetIntent, lastInboundMsg?.content, conversationId, context);
       }
     }
 
@@ -238,13 +246,13 @@ Keep it under 3 sentences, with NO markdown formatting (no asterisks/bold). Resp
 
       return (
         response.choices[0].message?.content ||
-        (await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content))
+        (await this.localGenerateResponse(salon, lastMsgLang, targetIntent, lastInboundMsg?.content, conversationId, context))
       );
     } catch (error) {
       this.logger.error(
         `Error generating AI response: ${error.message}. Falling back to local engine.`,
-      );
-      return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
+        );
+      return await this.localGenerateResponse(salon, lastMsgLang, targetIntent, lastInboundMsg?.content, conversationId, context);
     }
   }
 
@@ -1279,6 +1287,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     intent: string = 'OTHER',
     lastMessageText?: string,
     conversationId?: string,
+    context?: any,
   ): Promise<string> {
     const lang = language.toUpperCase();
     const intentUpper = intent.toUpperCase();
@@ -1321,6 +1330,54 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
         }
       } catch (err) {
         this.logger.warn(`Failed to scan message history: ${err.message}`);
+      }
+    }
+
+    // High-priority pipeline intent handlers
+    if (intentUpper === 'BOOKING_CONFIRM') {
+      const details = context?.details || {};
+      const service = details.serviceName || selectedService || 'service';
+      const time = details.time || 'scheduled time';
+      const date = details.date || 'scheduled date';
+      const staff = details.staffName ? ` with ${details.staffName}` : '';
+      const link = details.checkoutLink ? `\n\nPayment Link: ${details.checkoutLink}` : '';
+
+      if (lang === 'HINDI') {
+        return `आपका अपॉइंटमेंट पक्का हो गया है! ${service} की बुकिंग ${date} को ${time} बजे${details.staffName ? ` ${details.staffName} के साथ` : ''} तय हुई है।${details.checkoutLink ? ` भुगतान लिंक: ${details.checkoutLink}` : ''}`;
+      } else if (lang === 'HINGLISH') {
+        return `Aapka appointment confirm ho gaya hai! ${service} scheduled hai ${date} ko ${time} baje${details.staffName ? ` ${details.staffName} ke saath` : ''}.${details.checkoutLink ? ` Payment link: ${details.checkoutLink}` : ''}`;
+      } else {
+        return `Booking confirmed! Your appointment for ${service} is scheduled for ${date} at ${time}${staff}.${link}`;
+      }
+    }
+
+    if (intentUpper === 'BOOKING_CONFLICT' || intentUpper === 'BOOKING_AVAILABILITY') {
+      const alternatives = context?.alternativeSlots || [];
+      const slotsStr = alternatives
+        .map((alt: any) => `${alt.date} at ${alt.time}${alt.staffName ? ` (with ${alt.staffName})` : ''}`)
+        .join(', ');
+
+      if (lang === 'HINDI') {
+        return `क्षमा करें, चुना हुआ समय उपलब्ध नहीं है। हमारे पास ये अन्य स्लॉट खाली हैं: ${slotsStr || 'कोई स्लॉट उपलब्ध नहीं है'}। आप कौन सा समय चुनना चाहेंगे?`;
+      } else if (lang === 'HINGLISH') {
+        return `Sorry, requested time available nahi hai. Humare pass ye alternative slots hain: ${slotsStr || 'koi slots khali nahi hain'}. Aapko kaunsa time suit karega?`;
+      } else {
+        return `The requested slot is not available. Here are some alternative slots: ${slotsStr || 'none available'}. Which one would you prefer?`;
+      }
+    }
+
+    if (intentUpper === 'BOOKING_MISSING_DETAILS') {
+      const details = context?.details || {};
+      const service = details.serviceName || selectedService;
+
+      if (service) {
+        if (lang === 'HINDI') {
+          return `बढ़िया पसंद! "${service}" के लिए आप किस तारीख और समय पर आना चाहेंगे? (जैसे: आज शाम 5:00 बजे, या कल दोपहर 2:00 बजे)`;
+        } else if (lang === 'HINGLISH') {
+          return `Great choice! "${service}" ke liye aap kis date aur time par aana chahenge? (e.g. Aaj shaam 5:00 baje, ya kal dopahar 2:00 baje)`;
+        } else {
+          return `Great choice! What date and time would you like to book for your "${service}"? (e.g., today at 5:00 PM, or tomorrow at 2:00 PM)`;
+        }
       }
     }
 
