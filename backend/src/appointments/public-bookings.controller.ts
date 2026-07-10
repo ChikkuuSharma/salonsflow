@@ -11,7 +11,7 @@ import {
 import { AppointmentsService } from './appointments.service';
 import { PrismaService } from '../prisma/prisma.service';
 
-@Controller('api/v1/public/bookings')
+@Controller('api/v1/public/appointments')
 export class PublicBookingsController {
   constructor(
     private readonly appointmentsService: AppointmentsService,

@@ -41,7 +41,7 @@ function BookingContent() {
     const fetchSalonDetails = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${apiUrl}/api/v1/public/bookings/salon/${salonId}`);
+        const res = await fetch(`${apiUrl}/api/v1/public/appointments/salon/${salonId}`);
         if (!res.ok) throw new Error("Failed to load salon details.");
         const data = await res.json();
         setSalonInfo(data);
@@ -66,7 +66,7 @@ function BookingContent() {
       try {
         setSlotsLoading(true);
         setSelectedSlot(null);
-        let url = `${apiUrl}/api/v1/public/bookings/slots?salonId=${salonId}&serviceId=${selectedService.id}&date=${selectedDate}`;
+        let url = `${apiUrl}/api/v1/public/appointments/slots?salonId=${salonId}&serviceId=${selectedService.id}&date=${selectedDate}`;
         if (selectedStaff) {
           url += `&staffId=${selectedStaff.id}`;
         }
@@ -105,7 +105,7 @@ function BookingContent() {
     try {
       setSubmitting(true);
       setError(null);
-      const res = await fetch(`${apiUrl}/api/v1/public/bookings`, {
+      const res = await fetch(`${apiUrl}/api/v1/public/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
