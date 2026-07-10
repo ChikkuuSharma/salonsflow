@@ -714,7 +714,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleNextStep}
                   id="btn-next-step"
-                  className="flex items-center justify-center gap-1.5 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-505 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-950/20 active:scale-95 duration-200 cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 duration-200 cursor-pointer border-0"
                 >
                   Continue <ArrowRight className="h-4 w-4" />
                 </button>
@@ -724,11 +724,11 @@ export default function OnboardingPage() {
                   onClick={handleSubmit}
                   disabled={loading}
                   id="btn-finish-setup"
-                  className="flex items-center justify-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-505 hover:to-indigo-505 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-950/20 active:scale-98 transition-all duration-200 cursor-pointer disabled:opacity-70 disabled:pointer-events-none"
+                  className="flex items-center justify-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 rounded-xl text-xs font-bold uppercase tracking-wider shadow-md active:scale-98 transition-all duration-200 cursor-pointer border-0 disabled:opacity-70 disabled:pointer-events-none"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin text-zinc-100" /> Setting Up...
+                      <Loader2 className="h-4 w-4 animate-spin text-zinc-950" /> Setting Up...
                     </>
                   ) : (
                     <>

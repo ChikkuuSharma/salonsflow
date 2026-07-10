@@ -469,19 +469,19 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
     }
 
     let finalResponseText = '';
+    const activeServicesList = await this.prisma.service.findMany({
+      where: { salonId: salon.id, isActive: true },
+    });
 
     if (confirmedHold) {
-      const timeString = confirmedHold.startTime.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
+      finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+        intent: 'WAITLIST_CONFIRM',
+        status: 'SUCCESS',
+        details: {
+          serviceName: confirmedHold.service.name,
+          startTime: confirmedHold.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
       });
-      if (language === 'HINDI') {
-        finalResponseText = `धन्यवाद! आपका अपॉइंटमेंट "${confirmedHold.service.name}" के लिए ${timeString} बजे कन्फर्म हो गया है।`;
-      } else if (language === 'HINGLISH') {
-        finalResponseText = `Thank you! Aapka appointment "${confirmedHold.service.name}" ke liye ${timeString} baje confirm ho gaya hai.`;
-      } else {
-        finalResponseText = `Thank you! Your appointment for "${confirmedHold.service.name}" at ${timeString} is now confirmed.`;
-      }
     } else {
       // 1. Walk-In Queue Booking check (runs before intent classification to capture single service words)
       let isWalkInCustomer = false;
@@ -501,12 +501,9 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
       }
 
       if (isWalkInCustomer) {
-        const activeServices = await this.prisma.service.findMany({
-          where: { salonId: salon.id, isActive: true },
-        });
         let matchedService = null;
         const incomingText = parsed.text.toLowerCase().trim();
-        for (const s of activeServices) {
+        for (const s of activeServicesList) {
           const sName = s.name.toLowerCase();
           const userWords = incomingText.split(/\s+/).filter((w: string) => w.length > 2);
           const serviceWords = sName.split(/\s+/).filter((w: string) => w.length > 2);
@@ -541,13 +538,15 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
             const queueNumber = queueCount;
             const waitPeriod = (queueCount - 1) * 15;
 
-            if (language === 'HINDI') {
-              finalResponseText = `सफलता! आपकी "${matchedService.name}" के लिए वॉक-इन बुकिंग पक्की हो गई है।\n\nआपका बुकिंग नंबर: #${queueNumber} है।\nअनुमानित प्रतीक्षा समय: ${waitPeriod <= 0 ? 'अभी तुरंत' : `${waitPeriod} मिनट`} है। कृपया प्रतीक्षा क्षेत्र में बैठें।`;
-            } else if (language === 'HINGLISH') {
-              finalResponseText = `Success! Aapki walk-in booking confirm ho gayi hai for ${matchedService.name}.\n\nAapka Booking Queue Number: #${queueNumber} hai.\nExpected wait time: ${waitPeriod <= 0 ? 'Abhi turant (0 mins)' : `${waitPeriod} minutes`} hai. Please reception area me wait karein.`;
-            } else {
-              finalResponseText = `Success! Your walk-in booking for "${matchedService.name}" has been confirmed.\n\nYour Booking Queue Number is: #${queueNumber}.\nExpected wait time is: ${waitPeriod <= 0 ? 'Immediate' : `${waitPeriod} minutes`}. Please wait in the reception area.`;
-            }
+            finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+              intent: 'WAITLIST_ADD',
+              status: 'SUCCESS',
+              details: {
+                serviceName: matchedService.name,
+                queueNumber,
+                expectedWaitMinutes: waitPeriod <= 0 ? 0 : waitPeriod,
+              }
+            });
 
             await this.sendMessage(parsed.fromPhone, finalResponseText, conversation.id);
             return;
@@ -574,12 +573,9 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
         }
 
         if (isWalkIn) {
-          const activeServices = await this.prisma.service.findMany({
-            where: { salonId: salon.id, isActive: true },
-          });
           let serviceToBook = null;
           const msgText = parsed.text.toLowerCase();
-          for (const s of activeServices) {
+          for (const s of activeServicesList) {
             if (msgText.includes(s.name.toLowerCase())) {
               serviceToBook = s;
               break;
@@ -604,13 +600,15 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
               const queueNumber = queueCount;
               const waitPeriod = (queueCount - 1) * 15;
 
-              if (language === 'HINDI') {
-                finalResponseText = `सफलता! आपकी "${serviceToBook.name}" के लिए वॉक-इन बुकिंग पक्की हो गई है।\n\nआपका बुकिंग नंबर: #${queueNumber} है।\nअनुमानित प्रतीक्षा समय: ${waitPeriod <= 0 ? 'अभी तुरंत' : `${waitPeriod} मिनट`} है। कृपया प्रतीक्षा क्षेत्र में बैठें।`;
-              } else if (language === 'HINGLISH') {
-                finalResponseText = `Success! Aapki walk-in booking confirm ho gayi hai for ${serviceToBook.name}.\n\nAapka Booking Queue Number: #${queueNumber} hai.\nExpected wait time: ${waitPeriod <= 0 ? 'Abhi turant (0 mins)' : `${waitPeriod} minutes`} hai. Please reception area me wait karein.`;
-              } else {
-                finalResponseText = `Success! Your walk-in booking for "${serviceToBook.name}" has been confirmed.\n\nYour Booking Queue Number is: #${queueNumber}.\nExpected wait time is: ${waitPeriod <= 0 ? 'Immediate' : `${waitPeriod} minutes`}. Please wait in the reception area.`;
-              }
+              finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                intent: 'WAITLIST_ADD',
+                status: 'SUCCESS',
+                details: {
+                  serviceName: serviceToBook.name,
+                  queueNumber,
+                  expectedWaitMinutes: waitPeriod <= 0 ? 0 : waitPeriod,
+                }
+              });
 
               await this.sendMessage(parsed.fromPhone, finalResponseText, conversation.id);
               return;
@@ -660,49 +658,30 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
                 staffId,
               );
 
-              if (alternatives.length > 0) {
-                const optionsStr = alternatives.map((alt, idx) => {
-                  const timeString = alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  const dateString = alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                  return `${idx + 1}. ${dateString} at ${timeString} with ${alt.staffName}`;
-                }).join('\n');
+              const partners = await this.recoveryService.getPartnerSalons(salon.id);
 
-                if (language === 'HINDI') {
-                  finalResponseText = `आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप बुक करना चाहते हैं, तो कृपया समय या विकल्प संख्या लिखकर भेजें।`;
-                } else if (language === 'HINGLISH') {
-                  finalResponseText = `Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein ya preferred time batayein.`;
-                } else {
-                  finalResponseText = `Here are the available slots for today:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number or specify your preferred time.`;
-                }
-              } else {
-                const partners = await this.recoveryService.getPartnerSalons(salon.id);
-                if (partners.length > 0) {
-                  const partnersStr = partners.map(p => p.name).join(', ');
-                  if (language === 'HINDI') {
-                    finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} पर बुक कर सकते हैं।`;
-                  } else if (language === 'HINGLISH') {
-                    finalResponseText = `Aaj koi slots available nahi hain. Aap another day try kar sakte hain, ya partner salons: ${partnersStr} pe book kar sakte hain.`;
-                  } else {
-                    finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr}.`;
-                  }
-                } else {
-                  if (language === 'HINDI') {
-                    finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। कृपया किसी अन्य दिन या समय के लिए पूछें।`;
-                  } else if (language === 'HINGLISH') {
-                    finalResponseText = `Sorry, aaj koi slots available nahi hain. Please another day ya time batayein.`;
-                  } else {
-                    finalResponseText = `Sorry, no slots are available today. Please ask for another day or time.`;
-                  }
-                }
-              }
+              finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                intent: 'BOOKING_AVAILABILITY',
+                status: alternatives.length > 0 ? 'INFO' : 'ERROR',
+                details: {
+                  serviceName: service.name,
+                  requestedDate: details.date,
+                  requestedTime: details.time,
+                  partnerSalons: partners.map(p => p.name)
+                },
+                alternativeSlots: alternatives.map(alt => ({
+                  time: alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  date: alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+                  staffName: alt.staffName
+                }))
+              });
             } else {
-              if (language === 'HINDI') {
-                finalResponseText = `क्षमा करें, मुझे यह सेवा नहीं मिली। कृपया स्पष्ट रूप से सेवा का नाम बताएं।`;
-              } else if (language === 'HINGLISH') {
-                finalResponseText = `Sorry, mujhe wo service nahi mili. Please service specify karein.`;
-              } else {
-                finalResponseText = `Sorry, I couldn't identify the service. Please specify the service name.`;
-              }
+              finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                intent: 'BOOKING_SERVICE_NOT_FOUND',
+                status: 'ERROR',
+                errorMsg: `Service not found matching "${details.serviceName}"`,
+                details: { serviceName: details.serviceName }
+              });
             }
           } else {
             try {
@@ -804,7 +783,8 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
                 }
               }
 
-              let queueSuffix = '';
+              let queueNumber = 0;
+              let waitPeriod = 0;
               if (isWalkIn) {
                 // Get active count for today
                 const queueCount = await this.prisma.appointment.count({
@@ -817,25 +797,23 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
                     },
                   },
                 });
-                const queueNumber = queueCount + 1;
-                const waitPeriod = queueCount * 15; // 15 mins per person
+                queueNumber = queueCount + 1;
+                waitPeriod = queueCount * 15; // 15 mins per person
+              }
 
-                if (language === 'HINDI') {
-                  queueSuffix = `\n\nआपका बुकिंग नंबर: #${queueNumber} है।\nअनुमानित प्रतीक्षा समय: ${waitPeriod === 0 ? 'अभी तुरंत' : `${waitPeriod} मिनट`} है। कृपया प्रतीक्षा क्षेत्र में बैठें।`;
-                } else if (language === 'HINGLISH') {
-                  queueSuffix = `\n\nAapka Booking Queue Number: #${queueNumber} hai.\nExpected wait time: ${waitPeriod === 0 ? 'Abhi turant' : `${waitPeriod} minutes`} hai. Please reception area me wait karein.`;
-                } else {
-                  queueSuffix = `\n\nYour Booking Queue Number is: #${queueNumber}.\nExpected wait time is: ${waitPeriod === 0 ? 'Immediate' : `${waitPeriod} minutes`}. Please wait in the reception area.`;
+              finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                intent: 'BOOKING_CONFIRM',
+                status: 'SUCCESS',
+                details: {
+                  serviceName: appointment.service.name,
+                  date: details.date,
+                  time: timeString,
+                  staffName: bookedStaffName,
+                  checkoutLink,
+                  queueNumber: isWalkIn ? queueNumber : null,
+                  expectedWaitMinutes: isWalkIn ? waitPeriod : null
                 }
-              }
-
-              if (language === 'HINDI') {
-                finalResponseText = `नमस्ते! आपकी "${appointment.service.name}" की बुकिंग ${bookedStaffName ? `${bookedStaffName} के साथ ` : ''}${details.date} को ${timeString} बजे पक्की हो गई है।${checkoutLink ? ` कृपया यहाँ भुगतान करें: ${checkoutLink}` : ' (सैलून पर भुगतान करें)'}` + queueSuffix;
-              } else if (language === 'HINGLISH') {
-                finalResponseText = `Success! Aapki appointment "${appointment.service.name}" ${bookedStaffName ? `${bookedStaffName} ke saath ` : ''}ke liye ${details.date} ko ${timeString} baje confirm ho gayi hai!${checkoutLink ? ` Please pay karne ke liye is link par click karein: ${checkoutLink}` : ' (Pay at Salon confirmed)'}` + queueSuffix;
-              } else {
-                finalResponseText = `Success! I have confirmed your appointment for "${appointment.service.name}"${bookedStaffName ? ` with ${bookedStaffName}` : ''} on ${details.date} at ${timeString}!${checkoutLink ? ` Please complete your payment here: ${checkoutLink}` : ' (Pay at Salon confirmed)'}` + queueSuffix;
-              }
+              });
             } catch (err) {
               this.logger.warn(`Booking conflict for ${details.serviceName}. Fetching alternative slots: ${err.message}`);
               const service = await this.prisma.service.findFirst({
@@ -865,60 +843,40 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
                   staffId,
                 );
 
-                if (alternatives.length > 0) {
-                  const optionsStr = alternatives.map((alt, idx) => {
-                    const timeString = alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const dateString = alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                    return `${idx + 1}. ${dateString} at ${timeString} with ${alt.staffName}`;
-                  }).join('\n');
+                const partners = await this.recoveryService.getPartnerSalons(salon.id);
 
-                  if (language === 'HINDI') {
-                    finalResponseText = `क्षमा करें, वह समय उपलब्ध नहीं है। आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप इनमें से कोई चाहते हैं, तो कृपया संख्या या समय बताएं, या "वेटिंग लिस्ट" लिखकर इस समय के खाली होने पर सूचना पा सकते हैं।`;
-                  } else if (language === 'HINGLISH') {
-                    finalResponseText = `Sorry, wo time available nahi hai. Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein, ya phir 'waiting list' join karne ke liye write 'waiting list'.`;
-                  } else {
-                    finalResponseText = `Sorry, that time slot is not available. Here are today's available slots:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number, or reply 'waiting list' to join the waitlist.`;
-                  }
-                } else {
-                  const partners = await this.recoveryService.getPartnerSalons(salon.id);
-                  if (partners.length > 0) {
-                    const partnersStr = partners.map(p => p.name).join(', ');
-                    if (language === 'HINDI') {
-                      finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} (जो सैलूनफ्लो द्वारा संचालित हैं) में बुकिंग कर सकते हैं। आप "वेटिंग लिस्ट" लिखकर भी इस समय के खाली होने पर सूचना पा सकते हैं।`;
-                    } else if (language === 'HINGLISH') {
-                      finalResponseText = `Aaj koi slots available nahi hain. Aap another day timing ke liye request kar sakte hain, ya hamare partner salons: ${partnersStr} (powered by SalonsFlow) pe book kar sakte hain. Ya phir 'waiting list' type karke waitlist join kar sakte hain.`;
-                    } else {
-                      finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr} (also powered by SalonsFlow). Alternatively, reply 'waiting list' to join the waitlist.`;
-                    }
-                  } else {
-                    if (language === 'HINDI') {
-                      finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं या "वेटिंग लिस्ट" लिखकर भेज सकते हैं।`;
-                    } else if (language === 'HINGLISH') {
-                      finalResponseText = `Sorry, aaj koi slots available nahi hain. Aap another day timing try kar sakte hain ya waitlist me aane ke liye 'waiting list' write karein.`;
-                    } else {
-                      finalResponseText = `Sorry, no slots are available today. Please ask for another day/time or reply 'waiting list' to join the waitlist.`;
-                    }
-                  }
-                }
+                finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                  intent: 'BOOKING_CONFLICT',
+                  status: 'ERROR',
+                  errorMsg: err.message,
+                  details: {
+                    serviceName: service.name,
+                    requestedDate: details.date,
+                    requestedTime: details.time,
+                    partnerSalons: partners.map(p => p.name)
+                  },
+                  alternativeSlots: alternatives.map(alt => ({
+                    time: alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    date: alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+                    staffName: alt.staffName
+                  }))
+                });
               } else {
-                if (language === 'HINDI') {
-                  finalResponseText = `मुझे पता चला कि आप ${details.date} को ${details.time} बजे "${details.serviceName}" बुक करना चाहते थे, लेकिन मैं इसे पूरा नहीं कर सका: ${err.message}।`;
-                } else if (language === 'HINGLISH') {
-                  finalResponseText = `Aap ${details.date} ko ${details.time} baje "${details.serviceName}" book karna chahte the, par booking nahi ho payi: ${err.message}.`;
-                } else {
-                  finalResponseText = `I identified you wanted to book a "${details.serviceName}" on ${details.date} at ${details.time}, but could not complete it: ${err.message}.`;
-                }
+                finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                  intent: 'BOOKING_SERVICE_NOT_FOUND',
+                  status: 'ERROR',
+                  errorMsg: `Service not found matching "${details.serviceName}"`,
+                  details: { serviceName: details.serviceName }
+                });
               }
             }
           }
         } else {
-          if (language === 'HINDI') {
-            finalResponseText = `मैं समझता हूँ कि आप अपॉइंटमेंट बुक करना चाहते हैं, लेकिन मुझे सही तारीख, समय या सेवा नहीं मिल सकी। क्या आप कृपया स्पष्ट बता सकते हैं?`;
-          } else if (language === 'HINGLISH') {
-            finalResponseText = `Main samajh gaya ki aap book karna chahte hain, par mujhe sahi date, time ya service nahi mili. Please detail me batayein?`;
-          } else {
-            finalResponseText = `I understand you want to book an appointment, but I couldn't extract the exact date, time, or service. Could you please specify them?`;
-          }
+          finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+            intent: 'BOOKING_MISSING_DETAILS',
+            status: 'ERROR',
+            errorMsg: 'Missing booking details date, time, or serviceName'
+          });
         }
       } else if (intent === 'RESCHEDULE') {
         const upcoming = await this.prisma.appointment.findFirst({
@@ -933,13 +891,11 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
         });
 
         if (!upcoming) {
-          if (language === 'HINDI') {
-            finalResponseText = `मुझे आपका कोई आने वाला अपॉइंटमेंट नहीं मिला। क्या आप नया बुक करना चाहते हैं?`;
-          } else if (language === 'HINGLISH') {
-            finalResponseText = `Mujhe aapka koi upcoming appointment nahi mila. Kya aap naya book karna chahte hain?`;
-          } else {
-            finalResponseText = `I couldn't find any upcoming appointments for you. Would you like to book a new one?`;
-          }
+          finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+            intent: 'RESCHEDULE_NOT_FOUND',
+            status: 'ERROR',
+            errorMsg: 'No upcoming appointment found to reschedule.'
+          });
         } else {
           const details = await this.aiService.extractBookingDetails(parsed.text, salon.id);
           if (details && details.date && details.time) {
@@ -961,13 +917,17 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
               );
 
               const timeString = updated.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              if (language === 'HINDI') {
-                finalResponseText = `आपका अपॉइंटमेंट ${updated.service.name} के लिए अब ${details.date} को ${timeString} बजे बदल दिया गया है।`;
-              } else if (language === 'HINGLISH') {
-                finalResponseText = `Success! Aapka appointment ${updated.service.name} ke liye ab ${details.date} ko ${timeString} baje shift ho gaya hai.`;
-              } else {
-                finalResponseText = `Success! Your appointment for ${updated.service.name} has been rescheduled to ${details.date} at ${timeString}.`;
-              }
+
+              finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                intent: 'RESCHEDULE_CONFIRM',
+                status: 'SUCCESS',
+                details: {
+                  serviceName: updated.service.name,
+                  date: details.date,
+                  time: timeString,
+                  staffName: updated.staff?.name
+                }
+              });
             } catch (err) {
               this.logger.warn(`Reschedule failed for appointment ${upcoming.id}: ${err.message}. Fetching alternatives.`);
               const newStartTime = new Date(`${details.date}T${details.time}:00Z`);
@@ -978,50 +938,32 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
                 upcoming.staffId || undefined,
               );
 
-              if (alternatives.length > 0) {
-                const optionsStr = alternatives.map((alt, idx) => {
-                  const timeStr = alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  const dateStr = alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                  return `${idx + 1}. ${dateStr} at ${timeStr} with ${alt.staffName}`;
-                }).join('\n');
+              const partners = await this.recoveryService.getPartnerSalons(salon.id);
 
-                if (language === 'HINDI') {
-                  finalResponseText = `क्षमा करें, वह समय उपलब्ध नहीं है। आज के लिए उपलब्ध स्लॉट यहाँ दिए गए हैं:\n${optionsStr}\n\nयदि आप इनमें से कोई चाहते हैं, तो कृपया संख्या या समय बताएं, या "वेटिंग लिस्ट" लिखकर इस समय के खाली होने पर सूचना पा सकते हैं।`;
-                } else if (language === 'HINGLISH') {
-                  finalResponseText = `Sorry, wo time available nahi hai. Aaj ke available slots ye hain:\n${optionsStr}\n\nKya aap inme se koi choose karna chahte hain? Option number reply karein, ya phir 'waiting list' join karne ke liye write 'waiting list'.`;
-                } else {
-                  finalResponseText = `Sorry, that time slot is not available. Here are today's available slots:\n${optionsStr}\n\nWould you like to book one of these? Reply with the option number, or reply 'waiting list' to join the waitlist.`;
-                }
-              } else {
-                const partners = await this.recoveryService.getPartnerSalons(salon.id);
-                if (partners.length > 0) {
-                  const partnersStr = partners.map(p => p.name).join(', ');
-                  if (language === 'HINDI') {
-                    finalResponseText = `आज हमारे पास कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं, या हमारे सहयोगी सैलून: ${partnersStr} (जो सैलूनफ्लो द्वारा संचालित हैं) में बुकिंग कर सकते हैं। आप "वेटिंग लिस्ट" लिखकर भी इस समय के खाली होने पर सूचना पा सकते हैं।`;
-                  } else if (language === 'HINGLISH') {
-                    finalResponseText = `Aaj koi slots available nahi hain. Aap another day timing ke liye request kar sakte hain, ya hamare partner salons: ${partnersStr} (powered by SalonsFlow) pe book kar sakte hain. Ya phir 'waiting list' type karke waitlist join kar sakte hain.`;
-                  } else {
-                    finalResponseText = `No slots are available today. You can request a slot for another day, or book with our partner salons: ${partnersStr} (also powered by SalonsFlow). Alternatively, reply 'waiting list' to join the waitlist.`;
-                  }
-                } else {
-                  if (language === 'HINDI') {
-                    finalResponseText = `क्षमा करें, आज कोई स्लॉट उपलब्ध नहीं है। आप किसी अन्य दिन का समय चुन सकते हैं या "वेटिंग लिस्ट" लिखकर भेज सकते हैं।`;
-                  } else if (language === 'HINGLISH') {
-                    finalResponseText = `Sorry, aaj koi slots available nahi hain. Aap another day timing try kar sakte hain ya waitlist me aane ke liye 'waiting list' write karein.`;
-                  } else {
-                    finalResponseText = `Sorry, no slots are available today. Please ask for another day/time or reply 'waiting list' to join the waitlist.`;
-                  }
-                }
-              }
+              finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+                intent: 'RESCHEDULE_CONFLICT',
+                status: 'ERROR',
+                errorMsg: err.message,
+                details: {
+                  serviceName: upcoming.service.name,
+                  requestedDate: details.date,
+                  requestedTime: details.time,
+                  partnerSalons: partners.map(p => p.name)
+                },
+                alternativeSlots: alternatives.map(alt => ({
+                  time: alt.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  date: alt.startTime.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+                  staffName: alt.staffName
+                }))
+              });
             }
           } else {
-            if (language === 'HINDI') {
-              finalResponseText = `आप अपना ${upcoming.service.name} अपॉइंटमेंट बदलना चाहते हैं। कृपया नया पसंदीदा समय और तारीख बताएं।`;
-            } else if (language === 'HINGLISH') {
-              finalResponseText = `Aap apna ${upcoming.service.name} appointment reschedule karna chahte hain. Please naya date aur time batayein.`;
-            } else {
-              finalResponseText = `You want to reschedule your ${upcoming.service.name} appointment. Please specify your preferred new date and time.`;
-            }
+            finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+              intent: 'RESCHEDULE_MISSING_DETAILS',
+              status: 'ERROR',
+              errorMsg: 'Missing reschedule target date or time details.',
+              details: { serviceName: upcoming.service.name }
+            });
           }
         }
       } else if (intent === 'WAITLIST') {
@@ -1051,13 +993,12 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
           });
 
           if (!service) {
-            if (language === 'HINDI') {
-              finalResponseText = `मुझे वह सेवा नहीं मिली। कृपया स्पष्ट रूप से सेवा का नाम बताएं।`;
-            } else if (language === 'HINGLISH') {
-              finalResponseText = `Mujhe wo service nahi mili. Please service ka naam specify karein.`;
-            } else {
-              finalResponseText = `I couldn't identify the service. Please specify the service name.`;
-            }
+            finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+              intent: 'WAITLIST_SERVICE_NOT_FOUND',
+              status: 'ERROR',
+              errorMsg: `Service not found matching "${details.serviceName}"`,
+              details: { serviceName: details.serviceName }
+            });
           } else {
             let staffId: string | null = null;
             if (details.staffName) {
@@ -1077,22 +1018,23 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
             });
 
             const timeString = requestedStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            if (language === 'HINDI') {
-              finalResponseText = `सफलतापूर्वक! आपको ${details.date} को ${timeString} बजे "${service.name}" के लिए वेटिंग लिस्ट में जोड़ दिया गया है। जब भी स्लॉट खाली होगा, हम आपको सूचित करेंगे।`;
-            } else if (language === 'HINGLISH') {
-              finalResponseText = `Aapko waitlist me add kar diya gaya hai! ${details.date} ko ${timeString} baje "${service.name}" ke liye. Agar slot khali hoga toh notify karenge.`;
-            } else {
-              finalResponseText = `Added to waiting list! You are queued for "${service.name}" on ${details.date} at ${timeString}. We will notify you if it opens up.`;
-            }
+
+            finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+              intent: 'WAITLIST_ADD',
+              status: 'SUCCESS',
+              details: {
+                serviceName: service.name,
+                date: details.date,
+                time: timeString
+              }
+            });
           }
         } else {
-          if (language === 'HINDI') {
-            finalResponseText = `मैं आपको वेटिंग लिस्ट में जोड़ सकता हूँ, लेकिन मुझे आवश्यक विवरण (सेवा, तारीख, समय) नहीं मिले। कृपया बताएं।`;
-          } else if (language === 'HINGLISH') {
-            finalResponseText = `Main aapko waiting list me add kar sakta hu, par mujhe details nahi mili. Please service, date aur time batayein.`;
-          } else {
-            finalResponseText = `I can add you to the waiting list, but I couldn't find the requested service, date, or time. Please specify them.`;
-          }
+          finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+            intent: 'WAITLIST_MISSING_DETAILS',
+            status: 'ERROR',
+            errorMsg: 'Missing waitlist details date, time, or serviceName.'
+          });
         }
       } else {
         if (intent === 'OTHER') {
@@ -1116,16 +1058,15 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
             this.logger.log(`Conversation cap reached (> 5 non-booking messages today) for customer ${customer.id}. Silencing bot.`);
             return;
           } else if (!isDev && nonBookingCount === 5) {
-            const takeoverMsg =
-              language === 'HINDI'
-                ? 'हमारी दैनिक संदेश सीमा समाप्त हो गई है। हमारी टीम का एक सदस्य जल्द ही आपसे संपर्क करेगा।'
-                : language === 'HINGLISH'
-                ? 'Humari daily message limit exceed ho gayi hai. Humare team member aapse jald hi contact karenge.'
-                : 'We have reached our message limit for today. A human receptionist will assist you shortly.';
+            finalResponseText = await this.aiService.generateResponse(conversation.id, salon.id, {
+              intent: 'HUMAN_TAKEOVER_LIMIT',
+              status: 'ERROR',
+              errorMsg: 'Daily message cap reached.'
+            });
 
             await this.sendMessage(
               parsed.fromPhone,
-              takeoverMsg,
+              finalResponseText,
               conversation.id,
             );
 
@@ -1146,6 +1087,14 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
         finalResponseText = await this.aiService.generateResponse(
           conversation.id,
           salon.id,
+          {
+            intent,
+            status: 'INFO',
+            details: {
+              services: activeServicesList,
+              location: salon.address
+            }
+          }
         );
       }
     }

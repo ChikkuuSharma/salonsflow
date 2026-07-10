@@ -207,96 +207,96 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-zinc-100">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800 font-display">Smart Client Database</h2>
-          <p className="text-sm text-slate-500 font-medium">Unified profile console tracking visit history, loyalty tiers, and automated WhatsApp campaign tags.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-100 font-display">Smart Client Database</h2>
+          <p className="text-sm text-zinc-400 font-medium">Unified profile console tracking visit history, loyalty tiers, and automated WhatsApp campaign tags.</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm active:scale-95 duration-200 border-0 cursor-pointer font-sans"
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-95 duration-200 border-0 cursor-pointer font-sans"
         >
           <UserPlus className="h-4.5 w-4.5" /> Add Offline Customer
         </button>
       </div>
 
-      <Card className="bg-white border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
+      <Card className="bg-zinc-900/60 border-zinc-800 shadow-sm overflow-hidden rounded-3xl backdrop-blur-md">
+        <div className="p-4 border-b border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-zinc-950/40">
           <div className="relative flex-1 w-full sm:max-w-md">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
             <input 
               type="text" 
               placeholder="Search clients by name or phone..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-slate-250 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all duration-200 font-semibold"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 font-semibold"
             />
           </div>
-          <button className="w-full sm:w-auto flex items-center justify-center gap-2 border border-slate-250 rounded-xl px-4 py-2 text-sm text-slate-655 hover:bg-slate-50 transition-all bg-white font-semibold cursor-pointer">
+          <button className="w-full sm:w-auto flex items-center justify-center gap-2 border border-zinc-800 rounded-xl px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-all bg-zinc-900 font-semibold cursor-pointer">
             <Filter className="h-4 w-4" /> Filter
           </button>
         </div>
         
         <CardContent className="p-0 overflow-x-auto">
           {error && (
-            <div className="p-8 text-center text-red-500 font-medium">
+            <div className="p-8 text-center text-red-400 font-medium">
               Error: {error}
             </div>
           )}
 
           {loading && customers.length === 0 ? (
             <div className="flex flex-col justify-center items-center py-16 gap-3">
-              <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
-              <span className="text-slate-500 text-sm font-semibold">Synchronizing profiles...</span>
+              <Loader2 className="h-8 w-8 text-emerald-400 animate-spin" />
+              <span className="text-zinc-400 text-sm font-semibold">Synchronizing profiles...</span>
             </div>
           ) : (
             <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-display">
+              <thead className="bg-zinc-950/80 text-zinc-400 border-b border-zinc-800 font-display">
                 <tr>
-                  <th className="px-6 py-4 font-bold text-slate-600">Name</th>
-                  <th className="px-6 py-4 font-bold text-slate-600">WhatsApp Number</th>
-                  <th className="px-6 py-4 font-bold text-slate-600">Source</th>
-                  <th className="px-6 py-4 font-bold text-slate-600">Total Visits</th>
-                  <th className="px-6 py-4 font-bold text-slate-600">Last Visit</th>
-                  <th className="px-6 py-4 font-bold text-slate-600">Status</th>
+                  <th className="px-6 py-4 font-bold text-zinc-300">Name</th>
+                  <th className="px-6 py-4 font-bold text-zinc-300">WhatsApp Number</th>
+                  <th className="px-6 py-4 font-bold text-zinc-300">Source</th>
+                  <th className="px-6 py-4 font-bold text-zinc-300">Total Visits</th>
+                  <th className="px-6 py-4 font-bold text-zinc-300">Last Visit</th>
+                  <th className="px-6 py-4 font-bold text-zinc-300">Status</th>
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-zinc-800/60 bg-zinc-900/10">
                 {customers.map((customer) => {
                   const isVIP = customer.totalVisits >= 5;
                   const status = isVIP ? 'VIP' : 'Active';
                   return (
-                    <tr key={customer.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
-                      <td className="px-6 py-4 font-bold text-slate-800">
-                        <Link href={`/customers/${customer.id}`} className="text-purple-650 hover:text-purple-755 hover:underline transition-colors">
+                    <tr key={customer.id} className="hover:bg-zinc-900/30 transition-colors border-b border-zinc-800/50">
+                      <td className="px-6 py-4 font-bold text-zinc-100">
+                        <Link href={`/customers/${customer.id}`} className="text-emerald-400 hover:text-emerald-350 hover:underline transition-colors">
                           {customer.name}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 text-slate-600 font-semibold">{customer.phone}</td>
+                      <td className="px-6 py-4 text-zinc-300 font-semibold">{customer.phone}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border
                           ${customer.source === 'WHATSAPP' || !customer.source 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                            : 'bg-blue-50 text-blue-700 border-blue-100'}`}>
+                            ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/30' 
+                            : 'bg-blue-950/40 text-blue-400 border border-blue-900/30'}`}>
                           {customer.source?.replace('_', ' ') || "WHATSAPP"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-600 font-semibold">{customer.totalVisits}</td>
-                      <td className="px-6 py-4 text-slate-600 font-semibold">
+                      <td className="px-6 py-4 text-zinc-300 font-semibold">{customer.totalVisits}</td>
+                      <td className="px-6 py-4 text-zinc-300 font-semibold">
                         {customer.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : 'Never'}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border
                           ${status === 'VIP' 
-                            ? 'bg-purple-50 text-purple-700 border-purple-100' 
-                            : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                            ? 'bg-indigo-950/40 text-indigo-400 border border-indigo-900/30' 
+                            : 'bg-zinc-950 text-zinc-400 border border-zinc-800'}`}>
                           {status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-slate-400 hover:text-slate-600 transition-colors bg-transparent border-0 cursor-pointer">
+                        <button className="text-zinc-500 hover:text-zinc-300 transition-colors bg-transparent border-0 cursor-pointer">
                           <MoreHorizontal className="h-5 w-5" />
                         </button>
                       </td>
@@ -307,12 +307,12 @@ export default function CustomersPage() {
                   <tr>
                     <td colSpan={7} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-4">
-                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-full text-slate-400 shadow-inner">
+                        <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-full text-zinc-550 shadow-inner">
                           <Users className="h-7 w-7" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-slate-800 text-base font-display">No client records found</h3>
-                          <p className="text-xs text-slate-450 mt-1 font-semibold leading-relaxed">
+                          <h3 className="font-semibold text-zinc-200 text-base font-display">No client records found</h3>
+                          <p className="text-xs text-zinc-400 mt-1 font-semibold leading-relaxed">
                             Registered client details and simulated WhatsApp booking data will synchronize dynamically here to fuel automated campaign lists.
                           </p>
                         </div>
@@ -329,23 +329,23 @@ export default function CustomersPage() {
       {/* Add Offline Customer Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
-          <div className="bg-zinc-950 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-zinc-800/80 animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-gradient-to-r from-emerald-900/60 to-zinc-900 border-b border-zinc-800 text-zinc-100 px-6 py-4 flex items-center justify-between">
+          <div className="bg-zinc-900 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-zinc-800 animate-in fade-in zoom-in-95 duration-250">
+            <div className="bg-zinc-950 border-b border-zinc-800 text-zinc-100 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-emerald-400" />
                 <h3 className="font-bold text-lg font-display">Log Offline Walk-In</h3>
               </div>
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="text-zinc-400 hover:text-zinc-100 transition-colors p-1"
+                className="text-zinc-400 hover:text-white transition-colors p-1 cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-zinc-950">
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto bg-zinc-900 custom-scrollbar">
               {formError && (
-                <div className="p-3 bg-red-950/60 border border-red-900/50 rounded-md text-red-300 text-xs font-semibold">
+                <div className="p-3 bg-rose-950/80 border border-rose-900/40 rounded-xl text-rose-400 text-xs font-semibold">
                   {formError}
                 </div>
               )}
@@ -359,7 +359,7 @@ export default function CustomersPage() {
                     placeholder="e.g. Arjun Mehta"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
                 <div className="space-y-1">
@@ -370,7 +370,7 @@ export default function CustomersPage() {
                     placeholder="e.g. +919812345678"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full bg-zinc-955 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -381,13 +381,13 @@ export default function CustomersPage() {
                   <select
                     value={formData.gender}
                     onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                   >
-                    <option value="" className="bg-zinc-905">Select Gender</option>
-                    <option value="MALE" className="bg-zinc-905">Male</option>
-                    <option value="FEMALE" className="bg-zinc-905">Female</option>
-                    <option value="NON_BINARY" className="bg-zinc-905">Non-binary</option>
-                    <option value="PREFER_NOT_TO_SAY" className="bg-zinc-905">Prefer not to say</option>
+                    <option value="" className="bg-zinc-950">Select Gender</option>
+                    <option value="MALE" className="bg-zinc-950">Male</option>
+                    <option value="FEMALE" className="bg-zinc-950">Female</option>
+                    <option value="NON_BINARY" className="bg-zinc-950">Non-binary</option>
+                    <option value="PREFER_NOT_TO_SAY" className="bg-zinc-950">Prefer not to say</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -396,13 +396,13 @@ export default function CustomersPage() {
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
               </div>
 
               <div className="border-t border-zinc-800 pt-4 my-2">
-                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <p className="text-xs font-bold text-emerald-450 text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <Calendar className="h-4 w-4" /> Log Visit Details
                 </p>
                 
@@ -414,7 +414,7 @@ export default function CustomersPage() {
                       required
                       value={formData.visitDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, visitDate: e.target.value }))}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full bg-zinc-955 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </div>
                   <div className="space-y-1">
@@ -422,7 +422,7 @@ export default function CustomersPage() {
                     <select
                       value={formData.source}
                       onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                     >
                       <option value="WALK_IN" className="bg-zinc-950">Walk-in</option>
                       <option value="PHONE" className="bg-zinc-950">Phone Call</option>
@@ -445,7 +445,7 @@ export default function CustomersPage() {
                     required
                     value={formData.serviceId}
                     onChange={(e) => handleServiceChange(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                   >
                     <option value="" className="bg-zinc-950">Select Service</option>
                     {services.map((svc) => (
@@ -465,7 +465,7 @@ export default function CustomersPage() {
                     placeholder="Actual amount paid"
                     value={formData.amountPaid}
                     onChange={(e) => setFormData(prev => ({ ...prev, amountPaid: e.target.value }))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full bg-zinc-950 border border-zinc-805 border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -477,7 +477,7 @@ export default function CustomersPage() {
                 <select
                   value={formData.staffId}
                   onChange={(e) => setFormData(prev => ({ ...prev, staffId: e.target.value }))}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                 >
                   <option value="" className="bg-zinc-950">Select Stylist (Optional)</option>
                   {staffList.map((stf) => (
@@ -494,24 +494,24 @@ export default function CustomersPage() {
                   placeholder="Allergies, styling notes, haircut specifications..."
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 h-20 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                  className="w-full bg-zinc-950 border border-zinc-805 border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 h-20 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 resize-none h-20"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-855">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-md text-sm font-semibold text-zinc-300 hover:text-white transition-colors"
+                  className="px-4 py-2 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer bg-transparent"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-70 disabled:pointer-events-none duration-200"
+                  className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-75 disabled:pointer-events-none cursor-pointer border-0"
                 >
-                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin text-zinc-950" />}
                   Save & Log Visit
                 </button>
               </div>

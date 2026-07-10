@@ -50,14 +50,14 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
 
   const SidebarContent = (
     <>
-      <div className="h-16 flex items-center justify-between px-6 border-b border-purple-950/40 shrink-0">
+      <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-900 shrink-0">
         <div className="flex items-center gap-2.5 text-left">
-          <img src="/logo.png" alt="SalonsFlow Logo" className="h-8 w-8 rounded-lg object-contain shadow-md bg-white border border-purple-100 p-0.5" />
+          <img src="/logo.png" alt="SalonsFlow Logo" className="h-8 w-8 rounded-lg object-contain shadow-md bg-zinc-900 border border-zinc-800 p-0.5" />
           <div className="flex flex-col">
             <span className="font-display font-black text-base tracking-tight text-white leading-none">
-              Salons<span className="text-purple-400">Flow</span>
+              Salons<span className="text-emerald-400">Flow</span>
             </span>
-            <span className="text-[9px] font-bold text-purple-300/70 tracking-wider uppercase mt-1">
+            <span className="text-[9px] font-bold text-emerald-500/70 tracking-wider uppercase mt-1">
               Grow While You Style
             </span>
           </div>
@@ -65,14 +65,14 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         {onClose && (
           <button 
             onClick={onClose} 
-            className="lg:hidden text-purple-300 hover:text-white p-1 hover:bg-purple-950/40 rounded-lg cursor-pointer"
+            className="lg:hidden text-zinc-400 hover:text-white p-1 hover:bg-zinc-900 rounded-lg cursor-pointer"
             title="Close menu"
           >
             <X className="h-5 w-5" />
           </button>
         )}
       </div>
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar bg-zinc-950">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -83,22 +83,22 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 border border-transparent",
                 isActive 
-                  ? "bg-purple-950/40 text-purple-200 border-purple-900/40 shadow-sm font-bold" 
-                  : "text-purple-300/70 hover:bg-purple-950/20 hover:text-white"
+                  ? "bg-emerald-950/40 text-emerald-400 border-emerald-900/40 shadow-sm font-bold" 
+                  : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100"
               )}
             >
-              <item.icon className={cn("h-4.5 w-4.5", isActive ? "text-pink-400" : "text-purple-400/80")} />
+              <item.icon className={cn("h-4.5 w-4.5", isActive ? "text-emerald-400" : "text-zinc-500")} />
               {item.name}
             </Link>
           );
         })}
       </nav>
-      <div className="p-4 border-t border-purple-950/40 bg-purple-950/10 shrink-0">
-        <div className="relative overflow-hidden bg-gradient-to-tr from-purple-900/50 to-indigo-900/50 rounded-2xl p-3.5 border border-purple-800/20 text-center shadow-md">
-          <div className="absolute -right-4 -bottom-4 h-16 w-16 bg-pink-500/10 rounded-full blur-xl"></div>
+      <div className="p-4 border-t border-zinc-900 bg-zinc-950 shrink-0">
+        <div className="relative overflow-hidden bg-gradient-to-tr from-zinc-900 to-zinc-950 rounded-2xl p-3.5 border border-zinc-800 text-center shadow-md">
+          <div className="absolute -right-4 -bottom-4 h-16 w-16 bg-emerald-500/10 rounded-full blur-xl"></div>
           <h4 className="text-xs font-bold text-white">Upgrade to Premium</h4>
-          <p className="text-[10px] text-purple-200/90 mt-1 leading-normal">Get unlimited bookings & advanced AI capabilities.</p>
-          <button className="w-full mt-3 py-1.5 px-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white rounded-xl text-[10px] font-bold shadow-md shadow-purple-950/40 transition-all cursor-pointer">
+          <p className="text-[10px] text-zinc-400 mt-1 leading-normal">Get unlimited bookings & advanced AI capabilities.</p>
+          <button className="w-full mt-3 py-1.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 rounded-xl text-[10px] font-bold shadow-md shadow-emerald-950/20 transition-all cursor-pointer">
             Go Premium
           </button>
         </div>
@@ -109,7 +109,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-64 border-r border-purple-950/40 bg-[#0c0822] h-screen flex flex-col shrink-0">
+      <aside className="hidden lg:flex w-64 border-r border-zinc-900 bg-zinc-950 h-screen flex flex-col shrink-0">
         {SidebarContent}
       </aside>
 
@@ -118,11 +118,11 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         <div className="fixed inset-0 z-50 lg:hidden flex">
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300" 
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300" 
             onClick={onClose} 
           />
           {/* Drawer Panel */}
-          <aside className="relative w-64 bg-[#0c0822] border-r border-purple-950/40 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-left duration-250">
+          <aside className="relative w-64 bg-zinc-950 border-r border-zinc-900 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-left duration-250">
             {SidebarContent}
           </aside>
         </div>

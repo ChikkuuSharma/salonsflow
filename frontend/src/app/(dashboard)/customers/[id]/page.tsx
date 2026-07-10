@@ -130,28 +130,28 @@ export default function CustomerProfilePage({ params }: { params: Promise<{ id: 
   const messages = customer.conversations?.[0]?.messages || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-zinc-100">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 bg-gradient-to-tr from-emerald-500 to-indigo-600 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-md shadow-purple-500/10 border border-purple-100">
+          <div className="h-16 w-16 bg-gradient-to-tr from-emerald-500 to-indigo-600 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-md border border-zinc-800">
             {customer.name.charAt(0)}
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-800 font-display">{customer.name}</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-100 font-display">{customer.name}</h2>
               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border
                 ${isVIP 
-                  ? 'bg-purple-50 text-purple-700 border-purple-100' 
-                  : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                {isVIP ? <Star className="h-3 w-3 fill-purple-400 text-purple-400 border-none animate-none" /> : <Award className="h-3 w-3 text-slate-400" />}
+                  ? 'bg-indigo-950/40 text-indigo-400 border-indigo-900/30' 
+                  : 'bg-zinc-950 text-zinc-400 border-zinc-800'}`}>
+                {isVIP ? <Star className="h-3 w-3 fill-indigo-400 text-indigo-455 text-indigo-400 border-none animate-none" /> : <Award className="h-3 w-3 text-zinc-400" />}
                 {status}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-slate-500 mt-1.5 text-sm font-semibold">
-              <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-400" /> {customer.phone}</span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-zinc-400 mt-1.5 text-sm font-semibold">
+              <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-zinc-500" /> {customer.phone}</span>
               {customer.gender && (
-                <span className="flex items-center gap-1.5 border-l border-slate-200 pl-4">
-                  <User className="h-3.5 w-3.5 text-slate-400" /> 
+                <span className="flex items-center gap-1.5 border-l border-zinc-800 pl-4">
+                  <User className="h-3.5 w-3.5 text-zinc-500" /> 
                   <span className="capitalize">{customer.gender.toLowerCase()}</span>
                 </span>
               )}
@@ -161,7 +161,7 @@ export default function CustomerProfilePage({ params }: { params: Promise<{ id: 
         <div className="flex gap-3">
           <Link 
             href={`/conversations?phone=${customer.phone}`} 
-            className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 duration-200 cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 text-zinc-200 hover:bg-zinc-805 hover:bg-zinc-800 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 duration-200 cursor-pointer"
           >
             <MessageSquare className="h-4 w-4" /> Message Client
           </Link>
@@ -171,61 +171,61 @@ export default function CustomerProfilePage({ params }: { params: Promise<{ id: 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Left Column: Details & Insights */}
         <div className="space-y-6">
-          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-            <CardHeader className="border-b border-slate-100 pb-4 bg-slate-50/20">
-              <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2 font-display">
-                <Activity className="h-5 w-5 text-emerald-500" /> Client Overview
+          <Card className="bg-zinc-900/60 border-zinc-800 shadow-sm overflow-hidden rounded-3xl backdrop-blur-md">
+            <CardHeader className="border-b border-zinc-800 pb-4 bg-zinc-950/40">
+              <CardTitle className="text-lg font-bold text-zinc-100 flex items-center gap-2 font-display">
+                <Activity className="h-5 w-5 text-emerald-400" /> Client Overview
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 pt-5">
-              <div className="grid grid-cols-2 gap-4 border-b border-slate-100 pb-4">
+              <div className="grid grid-cols-2 gap-4 border-b border-zinc-800 pb-4">
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Lifetime Spend</p>
-                  <p className="text-xl font-bold text-slate-800 mt-0.5 font-display font-black">₹{customer.metrics.lifetimeValue}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Lifetime Spend</p>
+                  <p className="text-xl font-bold text-zinc-100 mt-0.5 font-display font-black">₹{customer.metrics.lifetimeValue}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Visits</p>
-                  <p className="text-xl font-bold text-slate-800 mt-0.5 font-display font-black">{customer.metrics.totalVisits}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Total Visits</p>
+                  <p className="text-xl font-bold text-zinc-100 mt-0.5 font-display font-black">{customer.metrics.totalVisits}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Acquisition</p>
-                  <p className="text-sm font-bold text-emerald-600 mt-0.5 uppercase tracking-wide">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Acquisition</p>
+                  <p className="text-sm font-bold text-emerald-400 mt-0.5 uppercase tracking-wide">
                     {customer.source?.replace('_', ' ') || "WHATSAPP"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Visit Interval</p>
-                  <p className="text-sm font-bold text-slate-700 mt-0.5">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Visit Interval</p>
+                  <p className="text-sm font-bold text-zinc-300 mt-0.5">
                     {customer.metrics.totalVisits > 1 ? `~${customer.metrics.bookingFrequencyDays} Days` : "First Visit"}
                   </p>
                 </div>
               </div>
 
               {/* Preferences */}
-              <div className="space-y-3 border-b border-slate-100 pb-4">
+              <div className="space-y-3 border-b border-zinc-800 pb-4">
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1.5">Preferred Services</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-1.5">Preferred Services</p>
                   <div className="flex flex-wrap gap-1.5">
                     {customer.metrics.preferredServices.map((svc, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-md border border-emerald-100">
+                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-950/40 text-emerald-400 text-xs font-semibold rounded-md border border-emerald-900/30">
                         <Scissors className="h-3 w-3" /> {svc}
                       </span>
                     ))}
                     {customer.metrics.preferredServices.length === 0 && (
-                      <span className="text-xs text-slate-450 italic font-semibold">No services logged</span>
+                      <span className="text-xs text-zinc-500 italic font-semibold">No services logged</span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1.5">Preferred Stylists</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-1.5">Preferred Stylists</p>
                   <div className="flex flex-wrap gap-1.5">
                     {customer.metrics.preferredStaff.map((staff, i) => (
-                      <span key={i} className="inline-flex items-center px-2.5 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded-md border border-blue-100">
+                      <span key={i} className="inline-flex items-center px-2.5 py-0.5 bg-blue-950/40 text-blue-400 text-xs font-semibold rounded-md border border-blue-900/30">
                         {staff}
                       </span>
                     ))}
                     {customer.metrics.preferredStaff.length === 0 && (
-                      <span className="text-xs text-slate-455 italic font-semibold">None assigned yet</span>
+                      <span className="text-xs text-zinc-500 italic font-semibold">None assigned yet</span>
                     )}
                   </div>
                 </div>
@@ -233,12 +233,12 @@ export default function CustomerProfilePage({ params }: { params: Promise<{ id: 
 
               {/* Online vs Offline Channels */}
               <div className="space-y-2">
-                <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Booking Channel Split</p>
-                <div className="flex justify-between text-xs text-slate-600 font-semibold">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Booking Channel Split</p>
+                <div className="flex justify-between text-xs text-zinc-400 font-semibold">
                   <span>Online ({customer.metrics.onlineRatio}%)</span>
                   <span>Offline ({customer.metrics.offlineRatio}%)</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2 flex overflow-hidden border border-slate-200/50">
+                <div className="w-full bg-zinc-950 rounded-full h-2 flex overflow-hidden border border-zinc-800">
                   <div className="bg-emerald-500 h-full transition-all" style={{ width: `${customer.metrics.onlineRatio}%` }}></div>
                   <div className="bg-blue-500 h-full transition-all" style={{ width: `${customer.metrics.offlineRatio}%` }}></div>
                 </div>
@@ -246,8 +246,8 @@ export default function CustomerProfilePage({ params }: { params: Promise<{ id: 
 
               {/* Notes */}
               <div>
-                <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1.5">Staff Notes</p>
-                <div className="text-sm text-slate-600 bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl italic font-semibold leading-relaxed">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-1.5">Staff Notes</p>
+                <div className="text-sm text-zinc-300 bg-zinc-950 p-3.5 border border-zinc-800 rounded-xl italic font-semibold leading-relaxed">
                   {customer.notes || "No special instructions or preferences logged by staff."}
                 </div>
               </div>
@@ -257,86 +257,86 @@ export default function CustomerProfilePage({ params }: { params: Promise<{ id: 
 
         {/* Right Column: Booking History & Conversations */}
         <div className="md:col-span-2 space-y-6">
-          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/20">
-              <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2 font-display">
-                <Calendar className="h-5 w-5 text-emerald-500" /> Booking History & Visits
+          <Card className="bg-zinc-900/60 border-zinc-800 shadow-sm overflow-hidden rounded-3xl backdrop-blur-md">
+            <CardHeader className="border-b border-zinc-800 bg-zinc-950/40">
+              <CardTitle className="text-lg font-bold text-zinc-100 flex items-center gap-2 font-display">
+                <Calendar className="h-5 w-5 text-emerald-400" /> Booking History & Visits
               </CardTitle>
             </CardHeader>
-            <CardContent className="divide-y divide-slate-100 p-0">
+            <CardContent className="divide-y divide-zinc-800/60 p-0">
               {customer.appointments.map((booking) => {
                 const amount = booking.amountPaid !== null && booking.amountPaid !== undefined 
                   ? booking.amountPaid 
                   : (booking.service?.price || 0);
                 const isOffline = booking.bookingSource?.startsWith('OFFLINE_');
                 return (
-                  <div key={booking.id} className="flex items-center justify-between p-4 hover:bg-slate-50/30 transition-colors">
+                  <div key={booking.id} className="flex items-center justify-between p-4 hover:bg-zinc-950/30 transition-colors">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm text-slate-800">{booking.service?.name || "Standard Treatment"}</p>
+                        <p className="font-bold text-sm text-zinc-200">{booking.service?.name || "Standard Treatment"}</p>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide border
                           ${isOffline 
-                            ? 'bg-blue-50 text-blue-700 border-blue-100' 
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-100'}`}>
+                            ? 'bg-blue-950/40 text-blue-400 border border-blue-900/30' 
+                            : 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/30'}`}>
                           {isOffline ? 'Offline Visit' : 'WhatsApp AI'}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-slate-400 mt-1 font-semibold">
+                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-zinc-500 mt-1 font-semibold">
                         <span>{new Date(booking.startTime).toLocaleDateString()} at {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        {booking.staff && <span className="text-slate-300 font-normal">•</span>}
-                        {booking.staff && <span className="text-slate-450">Stylist: {booking.staff.name}</span>}
+                        {booking.staff && <span className="text-zinc-700 font-normal">•</span>}
+                        {booking.staff && <span className="text-zinc-400">Stylist: {booking.staff.name}</span>}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-slate-800">₹{amount}</p>
-                      <span className="text-[10px] uppercase text-slate-400 tracking-wide font-bold">{booking.status}</span>
+                      <p className="text-sm font-bold text-zinc-200">₹{amount}</p>
+                      <span className="text-[10px] uppercase text-zinc-500 tracking-wide font-bold">{booking.status}</span>
                     </div>
                   </div>
                 );
               })}
               {customer.appointments.length === 0 && (
-                <div className="text-center text-slate-400 py-16 font-semibold">
-                  <Calendar className="h-8 w-8 mb-2 mx-auto text-slate-300" />
+                <div className="text-center text-zinc-500 py-16 font-semibold">
+                  <Calendar className="h-8 w-8 mb-2 mx-auto text-zinc-655 text-zinc-600 animate-none" />
                   No visits or bookings recorded yet.
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/20 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800 font-display">
-                <MessageSquare className="h-5 w-5 text-emerald-500" /> AI Conversation Log
+          <Card className="bg-zinc-900/60 border-zinc-800 shadow-sm overflow-hidden rounded-3xl backdrop-blur-md">
+            <CardHeader className="border-b border-zinc-800 bg-zinc-950/40 flex flex-row items-center justify-between">
+              <CardTitle className="text-lg font-bold flex items-center gap-2 text-zinc-100 font-display">
+                <MessageSquare className="h-5 w-5 text-emerald-400" /> AI Conversation Log
               </CardTitle>
-              <span className="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 rounded-full">Active Channel</span>
+              <span className="text-xs text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-900/30 px-2.5 py-0.5 rounded-full">Active Channel</span>
             </CardHeader>
-            <CardContent className="p-0 bg-slate-50/30">
+            <CardContent className="p-0 bg-zinc-950/20">
               <div className="p-4 flex flex-col gap-4 max-h-[400px] overflow-y-auto custom-scrollbar">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex flex-col ${msg.direction === 'INBOUND' ? 'items-end' : 'items-start'}`}>
                     <div className={`
                       max-w-[80%] text-sm px-4 py-2.5 rounded-2xl shadow-xs leading-relaxed font-semibold
                       ${msg.direction === 'INBOUND' 
-                        ? 'bg-emerald-600 text-white rounded-br-none' 
-                        : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'}
+                        ? 'bg-zinc-805 bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-br-none' 
+                        : 'bg-gradient-to-r from-emerald-950/60 to-teal-950/40 text-emerald-400 border border-emerald-900/40 rounded-bl-none'}
                     `}>
                       {msg.content}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[10px] text-slate-400 font-semibold">
+                      <span className="text-[10px] text-zinc-555 text-zinc-500 font-semibold">
                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                       {msg.direction === 'OUTBOUND' && (
-                        <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.2 rounded uppercase tracking-wider font-bold flex items-center gap-0.5">
-                          <Bot className="h-2.5 w-2.5 text-emerald-500 animate-none" /> AI Agent
+                        <span className="text-[9px] bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 px-1.5 py-0.2 rounded uppercase tracking-wider font-bold flex items-center gap-0.5">
+                          <Bot className="h-2.5 w-2.5 text-emerald-400 animate-none" /> AI Agent
                         </span>
                       )}
                     </div>
                   </div>
                 ))}
                 {messages.length === 0 && (
-                  <div className="text-center text-slate-400 py-16 font-semibold">
-                    <MessageSquare className="h-8 w-8 mb-2 mx-auto text-slate-300 animate-none" />
+                  <div className="text-center text-zinc-500 py-16 font-semibold">
+                    <MessageSquare className="h-8 w-8 mb-2 mx-auto text-zinc-655 text-zinc-600 animate-none" />
                     No WhatsApp chat logs recorded yet.
                   </div>
                 )}

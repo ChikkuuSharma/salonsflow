@@ -209,34 +209,34 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070519] flex items-center justify-center p-6 relative font-sans overflow-y-auto">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative font-sans overflow-y-auto text-slate-800 selection:bg-purple-500 selection:text-white">
       {/* Background grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1a3e_1px,transparent_1px),linear-gradient(to_bottom,#1f1a3e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-[0.5] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-[0.4] pointer-events-none"></div>
 
       {/* Ambient lights */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/10 blur-[130px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-pink-500/10 blur-[150px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/5 blur-[130px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-pink-500/5 blur-[150px] rounded-full pointer-events-none"></div>
 
-      <div className="max-w-md w-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl z-10 p-8 flex flex-col space-y-6 my-8">
+      <div className="max-w-md w-full bg-white border border-slate-200/80 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl z-10 p-8 flex flex-col space-y-6 my-8">
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center items-center gap-2.5 mb-2">
             <img src="/logo.png" alt="SalonsFlow Logo" className="h-10 w-10 rounded-xl object-contain bg-white border border-purple-100 p-0.5 shadow-md" />
             <div className="flex flex-col text-left">
-              <span className="font-display font-black text-2xl tracking-tight text-white leading-none">
-                Salons<span className="text-purple-400">Flow</span>
+              <span className="font-display font-black text-2xl tracking-tight text-slate-800 leading-none">
+                Salons<span className="text-purple-600">Flow</span>
               </span>
-              <span className="text-[10px] font-bold text-purple-300/70 tracking-wider uppercase mt-1">
+              <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase mt-1">
                 Grow While You Style
               </span>
             </div>
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight pt-2">Unified Access Gateway</h2>
-          <p className="text-xs text-purple-200/60 leading-normal font-semibold">Select your account type to enter the SalonsFlow platform console.</p>
+          <h2 className="text-lg font-bold text-slate-800 tracking-tight pt-2">Unified Access Gateway</h2>
+          <p className="text-xs text-slate-500 leading-normal font-semibold">Select your account type to enter the SalonsFlow platform console.</p>
         </div>
 
         {/* Role Selector Tabs */}
-        <div className="grid grid-cols-3 gap-2 bg-white/5 p-1 rounded-xl border border-white/5">
+        <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
           {[
             { id: "demo", label: "Demo User", icon: Sparkles },
             { id: "owner", label: "Salon Owner", icon: User },
@@ -250,8 +250,8 @@ export default function LoginPage() {
                 onClick={() => handleRoleChange(tab.id as any)}
                 className={`py-2 px-1 text-[10px] font-bold uppercase tracking-wider rounded-lg flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
                   active
-                    ? "bg-purple-600 text-white shadow-lg shadow-purple-950/50 border border-purple-500/20"
-                    : "text-purple-300/60 hover:text-white hover:bg-white/5 border border-transparent"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-950/20 border border-purple-500/20"
+                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 border border-transparent"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -262,15 +262,15 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-red-300">
-            <AlertCircle className="h-4.5 w-4.5 text-red-400 shrink-0 mt-0.5" />
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-red-800">
+            <AlertCircle className="h-4.5 w-4.5 text-red-600 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-emerald-350">
-            <ShieldCheck className="h-4.5 w-4.5 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="bg-emerald-50 border border-emerald-250 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-emerald-800">
+            <ShieldCheck className="h-4.5 w-4.5 text-emerald-600 shrink-0 mt-0.5" />
             <span>{successMessage}</span>
           </div>
         )}
@@ -279,29 +279,29 @@ export default function LoginPage() {
         <div className="min-h-[220px] flex flex-col justify-center">
           {selectedRole === "demo" && (
             <div className="space-y-5 text-center">
-              <div className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-2xl space-y-2">
-                <span className="text-[10px] text-purple-400 font-extrabold uppercase tracking-widest block">Sandbox Credentials</span>
-                <p className="text-xs text-purple-200/80 font-semibold">Pre-configured Demo Environment</p>
+              <div className="p-4 bg-purple-50 border border-purple-100 rounded-2xl space-y-2">
+                <span className="text-[10px] text-purple-600 font-extrabold uppercase tracking-widest block">Sandbox Credentials</span>
+                <p className="text-xs text-slate-800 font-bold">Pre-configured Demo Environment</p>
                 <div className="flex justify-center gap-4 text-xs font-mono pt-1">
-                  <div className="bg-purple-950/60 border border-purple-800/30 px-3 py-1 rounded-lg">
-                    <span className="text-[9px] text-purple-400 block font-sans">Role</span>
-                    <span className="text-white font-bold text-xs">DEMO CLIENT</span>
+                  <div className="bg-white border border-purple-200/60 px-3 py-1 rounded-lg shadow-sm">
+                    <span className="text-[9px] text-purple-600 block font-sans font-bold">Role</span>
+                    <span className="text-slate-800 font-bold text-xs">DEMO CLIENT</span>
                   </div>
-                  <div className="bg-purple-950/60 border border-purple-800/30 px-3 py-1 rounded-lg">
-                    <span className="text-[9px] text-purple-400 block font-sans">Scope</span>
-                    <span className="text-white font-bold text-xs">SANDBOX SALON</span>
+                  <div className="bg-white border border-purple-200/60 px-3 py-1 rounded-lg shadow-sm">
+                    <span className="text-[9px] text-purple-600 block font-sans font-bold">Scope</span>
+                    <span className="text-slate-800 font-bold text-xs">SANDBOX SALON</span>
                   </div>
                 </div>
               </div>
 
-              <p className="text-[11px] text-purple-200/50 leading-relaxed font-semibold">
+              <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">
                 Explore fully populated CRM, dashboard analytics, WhatsApp message simulator, reviews ledger, and rebooking campaign pipelines with zero sign-up required.
               </p>
 
               <button
                 onClick={handleDemoLogin}
                 disabled={loading}
-                className="w-full h-11 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all duration-200 cursor-pointer active:scale-98"
+                className="w-full h-11 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all duration-200 cursor-pointer active:scale-98 border-0"
               >
                 {loading ? (
                   <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
@@ -318,53 +318,53 @@ export default function LoginPage() {
           {selectedRole === "admin" && (
             <form onSubmit={handleAdminSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {formMode === "register" ? "Choose Admin ID" : "Admin ID"}
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                  <User className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                   <input
                     type="text"
                     required
                     value={adminId}
                     onChange={(e) => setAdminId(e.target.value)}
                     placeholder={formMode === "register" ? "Choose a unique username" : "Enter Super Admin Username"}
-                    className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {formMode === "change-password" ? "Old Secret Password" : "Secret Password"}
                 </label>
                 <div className="relative">
-                  <Key className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                  <Key className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                   <input
                     type="password"
                     required
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                   />
                 </div>
               </div>
 
               {formMode === "change-password" && (
                 <div className="space-y-1.5 animate-in slide-in-from-top duration-200">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                     New Secret Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                    <Lock className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                     <input
                       type="password"
                       required
                       value={adminNewPassword}
                       onChange={(e) => setAdminNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                      className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                     />
                   </div>
                 </div>
@@ -374,7 +374,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 bg-purple-600 hover:bg-purple-550 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all duration-200 cursor-pointer active:scale-98"
+                  className="w-full h-11 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all duration-200 cursor-pointer active:scale-98 border-0"
                 >
                   {loading ? (
                     <span className="h-4.5 w-4.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
@@ -401,7 +401,7 @@ export default function LoginPage() {
                         setError(null);
                         setSuccessMessage(null);
                       }}
-                      className="text-purple-300/50 hover:text-white transition-colors cursor-pointer font-bold uppercase tracking-wider underline"
+                      className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
                     >
                       Create New Admin Credentials
                     </button>
@@ -412,7 +412,7 @@ export default function LoginPage() {
                         setError(null);
                         setSuccessMessage(null);
                       }}
-                      className="text-purple-300/50 hover:text-white transition-colors cursor-pointer font-bold uppercase tracking-wider underline"
+                      className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
                     >
                       Change Admin Password
                     </button>
@@ -425,7 +425,7 @@ export default function LoginPage() {
                       setError(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-purple-300/50 hover:text-white transition-colors cursor-pointer font-bold uppercase tracking-wider underline"
+                    className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
                   >
                     Back to Admin Login
                   </button>
@@ -438,36 +438,36 @@ export default function LoginPage() {
             <form onSubmit={handleOwnerSubmit} className="space-y-4">
               {formMode === "register" && (
                 <div className="space-y-1.5 animate-in slide-in-from-top duration-250">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                     Full Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                    <User className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                     <input
                       type="text"
                       required
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
                       placeholder="Devender Sharma"
-                      className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                      className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                     />
                   </div>
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                  <Mail className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                   <input
                     type="email"
                     required
                     value={ownerEmail}
                     onChange={(e) => setOwnerEmail(e.target.value)}
                     placeholder="owner@salonsflow.com"
-                    className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -475,35 +475,35 @@ export default function LoginPage() {
               {formMode === "register" && (
                 <>
                   <div className="space-y-1.5 animate-in slide-in-from-top duration-250">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                       Salon Brand Name
                     </label>
                     <div className="relative">
-                      <Building2 className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                      <Building2 className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                       <input
                         type="text"
                         required
                         value={ownerSalonName}
                         onChange={(e) => setOwnerSalonName(e.target.value)}
                         placeholder="Elegance Barber & Spa"
-                        className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                        className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1.5 animate-in slide-in-from-top duration-250">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                       WhatsApp Operations Number
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                      <Phone className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                       <input
                         type="text"
                         required
                         value={ownerWhatsapp}
                         onChange={(e) => setOwnerWhatsapp(e.target.value)}
                         placeholder="+919999999999"
-                        className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                        className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                       />
                     </div>
                   </div>
@@ -511,36 +511,36 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {formMode === "change-password" ? "Old Password" : "Password"}
                 </label>
                 <div className="relative">
-                  <Key className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                  <Key className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                   <input
                     type="password"
                     required
                     value={ownerPassword}
                     onChange={(e) => setOwnerPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                    className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                   />
                 </div>
               </div>
 
               {formMode === "change-password" && (
                 <div className="space-y-1.5 animate-in slide-in-from-top duration-200">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                     New Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-purple-300/40" />
+                    <Lock className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-slate-400" />
                     <input
                       type="password"
                       required
                       value={ownerNewPassword}
                       onChange={(e) => setOwnerNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full h-11 bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-purple-200/20 transition-all font-semibold"
+                      className="w-full h-11 bg-white border border-slate-200 rounded-2xl pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 placeholder-slate-400 transition-all font-semibold"
                     />
                   </div>
                 </div>
@@ -550,7 +550,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 bg-purple-600 hover:bg-purple-550 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all duration-200 cursor-pointer active:scale-98"
+                  className="w-full h-11 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all duration-200 cursor-pointer active:scale-98 border-0"
                 >
                   {loading ? (
                     <span className="h-4.5 w-4.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
@@ -577,7 +577,7 @@ export default function LoginPage() {
                         setError(null);
                         setSuccessMessage(null);
                       }}
-                      className="text-purple-300/50 hover:text-white transition-colors cursor-pointer font-bold uppercase tracking-wider underline"
+                      className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
                     >
                       Create Owner Account (Register)
                     </button>
@@ -588,7 +588,7 @@ export default function LoginPage() {
                         setError(null);
                         setSuccessMessage(null);
                       }}
-                      className="text-purple-300/50 hover:text-white transition-colors cursor-pointer font-bold uppercase tracking-wider underline"
+                      className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
                     >
                       Change Owner Password
                     </button>
@@ -601,7 +601,7 @@ export default function LoginPage() {
                       setError(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-purple-300/50 hover:text-white transition-colors cursor-pointer font-bold uppercase tracking-wider underline"
+                    className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
                   >
                     Back to Owner Login
                   </button>

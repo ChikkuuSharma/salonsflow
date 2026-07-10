@@ -1,11 +1,21 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
   --card: #ffffff;
   --card-foreground: #0f172a;
   --border: #e2e8f0;
+}
+
+.dark {
+  --background: #09090b; /* zinc-950 */
+  --foreground: #fafafa; /* zinc-50 */
+  --card: #18181b; /* zinc-900 */
+  --card-foreground: #fafafa; /* zinc-50 */
+  --border: #27272a; /* zinc-800 */
 }
 
 @theme inline {
@@ -19,8 +29,14 @@
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: #f8fafc; /* Force light slate-50 background globally to prevent OS/Clerk theme mismatches */
+  color: #0f172a; /* Force dark slate-900 text globally */
+}
+
+/* Global Selection Color */
+::selection {
+  background-color: rgba(16, 185, 129, 0.3); /* emerald-500/30 */
+  color: #34d399; /* emerald-400 */
 }
 
 /* Custom premium styles and micro-animations */
@@ -36,22 +52,22 @@ body {
 
 /* Premium Glassmorphism Cards */
 .glass-card {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(24, 24, 27, 0.6);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card-glow {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(24, 24, 27, 0.6);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(139, 92, 246, 0.15);
-  box-shadow: 0 8px 30px -10px rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 8px 30px -10px rgba(16, 185, 129, 0.15);
 }
 
 .glass-header {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(9, 9, 11, 0.7);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Custom Scrollbars */
@@ -61,7 +77,7 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -117,5 +133,13 @@ body {
   background: linear-gradient(135deg, #34d399 0%, #14b8a6 50%, #10b981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Hover scale transition helper */
+.hover-scale {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-scale:hover {
+  transform: scale(1.02);
 }
 

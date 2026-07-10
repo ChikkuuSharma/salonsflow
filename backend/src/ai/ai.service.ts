@@ -101,11 +101,19 @@ MULTILINGUAL / INDIAN MARKET RULES:
   }
 
   /**
-   * Generates a response using OpenAI or Local Smart Fallback
+   * Generates a response using OpenAI or Gemini
    */
   async generateResponse(
     conversationId: string,
     salonId: string,
+    context?: {
+      intent: string;
+      status: 'SUCCESS' | 'ERROR' | 'INFO';
+      details?: any;
+      errorMsg?: string;
+      alternativeSlots?: any[];
+      bookingDetails?: any;
+    },
   ): Promise<string> {
     // Fetch salon details
     const salon = await this.prisma.salon.findUnique({
@@ -157,11 +165,32 @@ MULTILINGUAL / INDIAN MARKET RULES:
       return await this.localGenerateResponse(salon, lastMsgLang, lastMsgIntent, lastInboundMsg?.content);
     }
 
+    let systemInstruction = this.generateSystemPrompt(salon, services);
+    if (context) {
+      const statusStr = context.status;
+      const intentStr = context.intent;
+      const detailsJson = JSON.stringify(context.details || {});
+      const altSlotsJson = JSON.stringify(context.alternativeSlots || []);
+      const errorMsgStr = context.errorMsg || '';
+
+      systemInstruction += `\n\nSYSTEM INSTRUCTION - PIPELINE OUTCOME FOR FORMATTING:
+The user message has been processed. The results of the database operation are:
+- Intent: ${intentStr}
+- Status: ${statusStr}
+- Action Details (DB record): ${detailsJson}
+- Alternative Slots (if conflict/unavailable): ${altSlotsJson}
+- Error / Validation Message: ${errorMsgStr}
+
+Your job is to format a polite, natural language message to the customer confirming this result, or offering the alternative slots if the status is ERROR/CONFLICT.
+Do not invent dates, times, or links. Only use what is in the Action Details or Alternative Slots.
+Keep it under 3 sentences, with NO markdown formatting (no asterisks/bold). Respond in the same language/script the user used.`;
+    }
+
     if (this.gemini) {
       try {
         const model = this.gemini.getGenerativeModel({
           model: this.geminiModelName,
-          systemInstruction: this.generateSystemPrompt(salon, services),
+          systemInstruction: systemInstruction,
         });
 
         const contents = messages.map((msg) => ({
@@ -196,7 +225,7 @@ MULTILINGUAL / INDIAN MARKET RULES:
       // Add system prompt at the beginning
       openAiMessages.unshift({
         role: 'system',
-        content: this.generateSystemPrompt(salon, services),
+        content: systemInstruction,
       });
 
       // Call OpenAI
@@ -1078,12 +1107,8 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     const isAvailabilityQuery = msg.includes('slot') || msg.includes('available') || msg.includes('free') || msg.includes('khali') || msg.includes('khaali') || msg.includes('timing') || msg.includes('schedule') || msg.includes('check') || msg.includes('खाली') || msg.includes('समय');
 
     if (!serviceName) {
-      if (isAvailabilityQuery) {
-        // Default to Haircut to allow listing general slots if they just asked for slots availability
-        serviceName = 'Haircut';
-      } else {
-        return null;
-      }
+      // Default to Haircut to allow listing general slots or fallback
+      serviceName = 'Haircut';
     }
 
     // Extract Staff Name
@@ -1236,7 +1261,7 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       if (isAvailabilityQuery) {
         timeStr = 'AVAILABILITY';
       } else {
-        return null;
+        timeStr = '12:00';
       }
     }
 

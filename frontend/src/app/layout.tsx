@@ -40,7 +40,29 @@ export default function RootLayout({
 
   if (publishableKey && publishableKey.startsWith("pk_") && !publishableKey.includes("PLACEHOLDER")) {
     return (
-      <ClerkProvider publishableKey={publishableKey}>
+      <ClerkProvider 
+        publishableKey={publishableKey}
+        appearance={{
+          variables: {
+            colorPrimary: "#9333ea", // purple-600
+            colorBackground: "#ffffff",
+            colorText: "#1e293b", // slate-800
+            colorInputBackground: "#ffffff",
+            colorInputText: "#1e293b",
+            colorBorder: "#cbd5e1", // slate-300
+          },
+          elements: {
+            card: "bg-white border border-slate-200 shadow-xl rounded-3xl",
+            headerTitle: "text-slate-800 font-bold",
+            headerSubtitle: "text-slate-500",
+            socialButtonsIconButton: "border-slate-200 hover:bg-slate-50 text-slate-700",
+            formFieldLabel: "text-slate-500 font-bold uppercase text-[10px]",
+            formButtonPrimary: "bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider rounded-2xl h-11 border-0",
+            footerActionText: "text-slate-500",
+            footerActionLink: "text-purple-600 hover:text-purple-500 font-bold",
+          }
+        }}
+      >
         {content}
       </ClerkProvider>
     );

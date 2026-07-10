@@ -46,7 +46,7 @@ export function LanguageMetricsCharts({
     { name: "Hinglish (Demo)", value: 20 },
   ];
 
-  const COLORS = ["#6366f1", "#ec4899", "#3b82f6"]; // Purple/Indigo, Pink, Blue
+  const COLORS = ["#10b981", "#6366f1", "#3b82f6"]; // Emerald, Indigo, Blue
 
   // Prep data for Bar Chart
   const barData = [
@@ -66,9 +66,9 @@ export function LanguageMetricsCharts({
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 col-span-7 mt-6">
       {/* Language Distribution */}
-      <Card className="lg:col-span-3 border-slate-200 rounded-3xl overflow-hidden bg-white hover:translate-y-[-2px] transition-all duration-300 flex flex-col shadow-sm">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 flex-shrink-0">
-          <CardTitle className="text-base font-bold text-slate-800 font-display">Language Distribution</CardTitle>
+      <Card className="lg:col-span-3 border-zinc-800 rounded-3xl overflow-hidden bg-zinc-900/60 hover-scale flex flex-col shadow-sm backdrop-blur-md">
+        <CardHeader className="border-b border-zinc-800 bg-zinc-900/50 flex-shrink-0">
+          <CardTitle className="text-base font-bold text-zinc-100 font-display">Language Distribution</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center p-6 flex-1 min-h-[300px]">
           <div className="w-full h-[220px]">
@@ -88,19 +88,19 @@ export function LanguageMetricsCharts({
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#0f172a' }}
+                  contentStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '12px', color: '#fafafa' }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="flex gap-4 mt-2 justify-center text-xs font-bold flex-wrap">
             {displayPieData.map((entry, idx) => (
-              <div key={entry.name} className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200">
+              <div key={entry.name} className="flex items-center gap-1.5 bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
                 <span 
                   className="w-2.5 h-2.5 rounded-full" 
                   style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                 />
-                <span className="text-slate-600">{entry.name}: {entry.value}</span>
+                <span className="text-zinc-300">{entry.name}: {entry.value}</span>
               </div>
             ))}
           </div>
@@ -108,9 +108,9 @@ export function LanguageMetricsCharts({
       </Card>
 
       {/* Booking Conversion Rate by Language */}
-      <Card className="lg:col-span-4 border-slate-200 rounded-3xl overflow-hidden bg-white hover:translate-y-[-2px] transition-all duration-300 flex flex-col shadow-sm">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 flex-shrink-0">
-          <CardTitle className="text-base font-bold text-slate-800 font-display">Conversion Rate by Language</CardTitle>
+      <Card className="lg:col-span-4 border-zinc-800 rounded-3xl overflow-hidden bg-zinc-900/60 hover-scale flex flex-col shadow-sm backdrop-blur-md">
+        <CardHeader className="border-b border-zinc-800 bg-zinc-900/50 flex-shrink-0">
+          <CardTitle className="text-base font-bold text-zinc-100 font-display">Conversion Rate by Language</CardTitle>
         </CardHeader>
         <CardContent className="p-6 flex-1 flex flex-col justify-between min-h-[300px]">
           <div className="w-full h-[220px] pt-2">
@@ -120,29 +120,29 @@ export function LanguageMetricsCharts({
                   dataKey="name" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fill: "#64748b", fontWeight: 'bold' }}
+                  tick={{ fontSize: 11, fill: "#a1a1aa", fontWeight: 'bold' }}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fill: "#64748b", fontWeight: 'bold' }}
+                  tick={{ fontSize: 11, fill: "#a1a1aa", fontWeight: 'bold' }}
                   tickFormatter={(val) => `${val}%`}
                   domain={[0, 100]}
                 />
                 <Tooltip 
-                  contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#0f172a' }}
+                  contentStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '12px', color: '#fafafa' }}
                   formatter={(val: any) => [`${val}%`, 'Conversion Rate']}
                 />
                 <Bar 
                   dataKey="rate" 
-                  fill="#8b5cf6" 
+                  fill="#10b981" 
                   radius={[6, 6, 0, 0]}
                   maxBarSize={40}
                 >
                   {displayBarData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={entry.name.startsWith('Hinglish') ? '#8b5cf6' : entry.name.startsWith('Hindi') ? '#ec4899' : '#3b82f6'} 
+                      fill={entry.name.startsWith('Hinglish') ? '#10b981' : entry.name.startsWith('Hindi') ? '#ec4899' : '#3b82f6'} 
                     />
                   ))}
                 </Bar>
@@ -151,13 +151,13 @@ export function LanguageMetricsCharts({
           </div>
 
           {/* Top Phrases Section */}
-          <div className="mt-6 border-t border-slate-100 pt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-wider mr-2">Top Keywords:</span>
+          <div className="mt-6 border-t border-zinc-800 pt-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-black text-zinc-400 uppercase tracking-wider mr-2">Top Keywords:</span>
             {topPhrases && topPhrases.length > 0 ? (
               topPhrases.map((phrase, idx) => (
                 <span 
                   key={idx} 
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/30"
                 >
                   #{phrase}
                 </span>
@@ -165,11 +165,10 @@ export function LanguageMetricsCharts({
             ) : (
               ["haircut", "kal", "price", "aaj", "appointment"].map((phrase, idx) => {
                 const colors = [
-                  "bg-purple-50 text-purple-700 border-purple-200",
-                  "bg-pink-50 text-pink-700 border-pink-200",
-                  "bg-blue-50 text-blue-700 border-blue-200",
-                  "bg-indigo-50 text-indigo-700 border-indigo-200",
-                  "bg-slate-100 text-slate-700 border-slate-200"
+                  "bg-emerald-950/40 text-emerald-400 border-emerald-900/30",
+                  "bg-indigo-950/40 text-indigo-400 border-indigo-900/30",
+                  "bg-teal-950/40 text-teal-400 border-teal-900/30",
+                  "bg-zinc-800/40 text-zinc-350 border-zinc-700/30"
                 ];
                 return (
                   <span 

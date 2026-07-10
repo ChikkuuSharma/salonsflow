@@ -11,10 +11,10 @@ export default function Page() {
   }, [router]);
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-[#070519] text-white">
+    <div className="flex h-screen w-full items-center justify-center bg-slate-50 text-slate-800 font-sans">
       <div className="flex flex-col items-center space-y-4">
-        <div className="h-8 w-8 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
-        <p className="text-xs text-purple-200 font-semibold uppercase tracking-wider">Redirecting to Secure Register Gateway...</p>
+        <div className="h-8 w-8 border-4 border-purple-200 border-t-purple-650 rounded-full animate-spin"></div>
+        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Redirecting to Secure Register Gateway...</p>
       </div>
     </div>
   );
