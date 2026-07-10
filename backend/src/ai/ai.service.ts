@@ -1134,9 +1134,8 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       }
     }
 
-    // Default dates
-    const today = new Date();
-    let dateStr = today.toISOString().split('T')[0];
+    // Default dates (empty by default to require confirmation if date/time are missing)
+    let dateStr = '';
     let timeStr: string | null = null;
 
     // 1. Date extraction
@@ -1269,7 +1268,17 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       if (isAvailabilityQuery) {
         timeStr = 'AVAILABILITY';
       } else {
-        timeStr = '12:00';
+        timeStr = ''; // Do NOT default to 12:00!
+      }
+    }
+
+    if (!dateStr) {
+      if (timeStr && timeStr !== 'AVAILABILITY') {
+        // If time was specified but no date, default date to today
+        const d = new Date();
+        dateStr = d.toISOString().split('T')[0];
+      } else {
+        dateStr = '';
       }
     }
 

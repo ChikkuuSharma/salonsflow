@@ -34,7 +34,7 @@ export const getInitialMockDb = () => {
     salon: {
       id: "demo-salon-id",
       name: "Demo Salon Flow",
-      whatsappNumber: "+919999999999",
+      whatsappNumber: "+918169775932",
       address: "123 Main St, Connaught Place, New Delhi",
       ownerName: "Demo Owner",
       isProfileComplete: true,
