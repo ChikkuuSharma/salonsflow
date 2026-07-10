@@ -107,6 +107,20 @@ export class ClerkAuthGuard implements CanActivate {
           where: { clerkId },
         });
 
+        if (dbUser) {
+          // Verify if the salon associated with the user still exists in the database
+          const salonExists = await this.prisma.salon.findUnique({
+            where: { id: dbUser.salonId },
+          });
+          if (!salonExists) {
+            this.logger.warn(`Stale user found for non-existent salon ID ${dbUser.salonId}. Recreating user...`);
+            await this.prisma.user.delete({
+              where: { id: dbUser.id },
+            });
+            dbUser = null;
+          }
+        }
+
         if (!dbUser) {
           try {
             // Find default salon first

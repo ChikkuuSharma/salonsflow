@@ -249,13 +249,17 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         const whatsappNumber = '+' + userJid;
         this.logger.log(`WhatsApp QR session connected successfully for salon ${salonId} (${whatsappNumber})`);
 
-        await this.prisma.salon.update({
-          where: { id: salonId },
-          data: {
-            whatsappNumber,
-            whatsappPhoneNumberId: 'qr-linked-' + userJid,
-          },
-        });
+        try {
+          await this.prisma.salon.update({
+            where: { id: salonId },
+            data: {
+              whatsappNumber,
+              whatsappPhoneNumberId: 'qr-linked-' + userJid,
+            },
+          });
+        } catch (err) {
+          this.logger.error(`Failed to update WhatsApp connection fields in Salon table: ${err.message}`);
+        }
 
         this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
       }
@@ -293,13 +297,17 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
             this.logger.log(`Cleared WhatsApp session from DB for salon ${salonId} due to logout`);
 
             // Clear Salon table connection fields on logout
-            await this.prisma.salon.update({
-              where: { id: salonId },
-              data: {
-                whatsappNumber: '+919876543210-disconnected-' + salonId,
-                whatsappPhoneNumberId: null,
-              },
-            });
+            try {
+              await this.prisma.salon.update({
+                where: { id: salonId },
+                data: {
+                  whatsappNumber: '+919876543210-disconnected-' + salonId,
+                  whatsappPhoneNumberId: null,
+                },
+              });
+            } catch (err) {
+              this.logger.error(`Failed to clear WhatsApp connection fields in Salon table on logout: ${err.message}`);
+            }
             this.logger.log(`Cleared WhatsApp connection fields from Salon table for ${salonId} due to logout`);
           } catch (err) {
             this.logger.error(`Failed to clear WhatsApp session on logout: ${err.message}`);
