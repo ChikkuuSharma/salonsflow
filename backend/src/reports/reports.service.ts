@@ -201,7 +201,7 @@ export class ReportsService {
 
     try {
       this.logger.log(`Dispatching report ${reportId} to owner phone: ${targetPhone}`);
-      await this.whatsappService.sendMessage(targetPhone, report.content);
+      await this.whatsappService.sendMessage(targetPhone, report.content, undefined, report.salonId);
 
       return await this.prisma.businessReport.update({
         where: { id: reportId },

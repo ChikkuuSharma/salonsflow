@@ -69,7 +69,7 @@ export class CampaignsService {
     await Promise.all(
       customers.map(async (customer) => {
         try {
-          await this.whatsappService.sendMessage(customer.phone, content);
+          await this.whatsappService.sendMessage(customer.phone, content, undefined, salonId);
         } catch (error) {
           this.logger.error(
             `Failed to broadcast message to customer ${customer.id} (${customer.phone}): ${error.message}`,

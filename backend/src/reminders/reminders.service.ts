@@ -59,6 +59,8 @@ export class RemindersService {
         await this.whatsappService.sendMessage(
           appointment.customer.phone,
           message,
+          undefined,
+          appointment.salonId,
         );
 
         await this.prisma.reminder.create({
@@ -114,6 +116,8 @@ export class RemindersService {
         await this.whatsappService.sendMessage(
           appointment.customer.phone,
           message,
+          undefined,
+          appointment.salonId,
         );
         this.logger.log(`Sent follow-up to ${appointment.customer.phone}`);
       }
