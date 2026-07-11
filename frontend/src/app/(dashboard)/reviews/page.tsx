@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Star, 
@@ -224,7 +225,19 @@ export default function ReviewsPage() {
     }
   });
 
-  const waNumber = salonData?.whatsappNumber ? salonData.whatsappNumber.replace(/[^0-9]/g, "") : "919999999999";
+  const isWhatsappConnected = !!(
+    salonData?.whatsappNumber &&
+    !salonData.whatsappNumber.includes("disconnected") &&
+    !salonData.whatsappNumber.includes("9999999999") &&
+    !salonData.whatsappNumber.includes("9876543210")
+  );
+
+  const rawNumber = salonData?.whatsappNumber || "";
+  const cleanNumber = rawNumber.includes("-disconnected-") 
+    ? "" 
+    : rawNumber.replace(/[^0-9]/g, "");
+
+  const waNumber = cleanNumber || "919999999999";
   const salonName = salonData?.name || "Our Salon";
   const prefilledText = `Join Queue`;
   const qrLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(prefilledText)}`;
@@ -873,15 +886,23 @@ export default function ReviewsPage() {
                   <p>AI books them, tags the session, and triggers post-visit feedback loops upon POS checkout.</p>
                 </div>
               </div>
-
               <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handlePrintQR}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-2.5 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
-                >
-                  <Printer className="h-4 w-4" /> Print Setup Poster
-                </button>
+                {isWhatsappConnected ? (
+                  <button
+                    type="button"
+                    onClick={handlePrintQR}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-2.5 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                  >
+                    <Printer className="h-4 w-4" /> Print Setup Poster
+                  </button>
+                ) : (
+                  <Link
+                    href="/settings/ai"
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-350 border-slate-300 rounded-lg py-2.5 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <LinkIcon className="h-4 w-4 text-slate-500" /> Link WhatsApp to Print
+                  </Link>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -892,38 +913,58 @@ export default function ReviewsPage() {
             <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full blur-2xl"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
 
-            <div className="border-2 border-slate-200 border-dashed rounded-3xl p-6 w-full max-w-sm flex flex-col items-center bg-slate-50/50 shadow-sm">
-              <span className="text-[10px] font-black uppercase text-green-600 tracking-widest bg-green-50 border border-green-200/50 px-3 py-1 rounded-full mb-1">
-                Scan to Book
-              </span>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">{salonName}</h3>
-              <p className="text-slate-500 text-[11px] font-semibold mt-1 max-w-[220px]">
-                WhatsApp Walk-In Booking Autopilot
-              </p>
+            {isWhatsappConnected ? (
+              <div className="border-2 border-slate-200 border-dashed rounded-3xl p-6 w-full max-w-sm flex flex-col items-center bg-slate-50/50 shadow-sm">
+                <span className="text-[10px] font-black uppercase text-green-600 tracking-widest bg-green-50 border border-green-200/50 px-3 py-1 rounded-full mb-1">
+                  Scan to Book
+                </span>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">{salonName}</h3>
+                <p className="text-slate-550 text-[11px] font-semibold mt-1 max-w-[220px]">
+                  WhatsApp Walk-In Booking Autopilot
+                </p>
 
-              {/* QR display block */}
-              <div className="bg-white border-4 border-slate-100 rounded-2xl p-4 my-5 shadow-inner">
-                <img 
-                  src={qrImgUrl} 
-                  alt="WhatsApp QR Code" 
-                  className="w-40 h-40 object-contain"
-                />
-              </div>
+                {/* QR display block */}
+                <div className="bg-white border-4 border-slate-100 rounded-2xl p-4 my-5 shadow-inner">
+                  <img 
+                    src={qrImgUrl} 
+                    alt="WhatsApp QR Code" 
+                    className="w-40 h-40 object-contain"
+                  />
+                </div>
 
-              <p className="text-slate-600 text-xs font-bold leading-relaxed max-w-[250px]">
-                Scan QR code with your phone camera to start instant booking. No app installation needed.
-              </p>
-              
-              <div className="border-t border-slate-200/80 pt-3.5 mt-4 w-full flex justify-around text-[10px] font-bold text-slate-400">
-                <span>1. Scan QR</span>
-                <span>2. Chat & Book</span>
-                <span>3. Enjoy Service</span>
+                <p className="text-slate-600 text-xs font-bold leading-relaxed max-w-[250px]">
+                  Scan QR code with your phone camera to start instant booking. No app installation needed.
+                </p>
+                
+                <div className="border-t border-slate-200/80 pt-3.5 mt-4 w-full flex justify-around text-[10px] font-bold text-slate-400">
+                  <span>1. Scan QR</span>
+                  <span>2. Chat & Book</span>
+                  <span>3. Enjoy Service</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="border-2 border-rose-205 border-rose-200 border-dashed rounded-3xl p-8 w-full max-w-sm flex flex-col items-center bg-rose-50/20 shadow-sm">
+                <div className="mx-auto h-12 w-12 bg-rose-100 text-rose-800 rounded-full flex items-center justify-center font-bold mb-3 border border-rose-200 shadow-sm">
+                  <QrCode className="h-6 w-6 text-rose-500" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">WhatsApp Channel Disconnected</h3>
+                <p className="text-slate-500 text-xs font-medium mt-2 max-w-[240px] leading-relaxed">
+                  Your WhatsApp business line is not connected. Connect your phone under AI Settings to activate walk-in bookings.
+                </p>
+                <Link
+                  href="/settings/ai"
+                  className="mt-5 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 py-2.5 font-bold text-xs shadow-md transition-all active:scale-95 duration-200"
+                >
+                  <LinkIcon className="h-4 w-4" /> Connect WhatsApp Channel
+                </Link>
+              </div>
+            )}
             
-            <p className="text-[10px] text-slate-400 font-semibold mt-4">
-              QR Endpoint URL: <span className="font-mono bg-slate-100 border px-1.5 py-0.5 rounded select-all">{qrLink}</span>
-            </p>
+            {isWhatsappConnected && (
+              <p className="text-[10px] text-slate-400 font-semibold mt-4">
+                QR Endpoint URL: <span className="font-mono bg-slate-100 border px-1.5 py-0.5 rounded select-all">{qrLink}</span>
+              </p>
+            )}
           </Card>
         </div>
       )}
