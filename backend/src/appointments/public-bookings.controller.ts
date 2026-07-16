@@ -104,7 +104,7 @@ export class PublicBookingsController {
     };
 
     const slots: string[] = [];
-    const intervalMinutes = 30; // 30-minute interval slots
+    const intervalMinutes = 15; // 15-minute interval slots
 
     let currentHour = openH;
     let currentMinute = openM;
