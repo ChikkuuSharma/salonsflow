@@ -57,6 +57,8 @@ export default function BookingsPage() {
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [serviceList, setServiceList] = useState<Service[]>([]);
   const [customerList, setCustomerList] = useState<Customer[]>([]);
+  const [openingHour, setOpeningHour] = useState(9);
+  const [closingHour, setClosingHour] = useState(20);
   
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ export default function BookingsPage() {
       const dy = currentDate.getDate().toString().padStart(2, '0');
       const formattedDate = `${y}-${mo}-${dy}`;
       
-      const [apptsRes, staffRes, servicesRes, customersRes] = await Promise.all([
+      const [apptsRes, staffRes, servicesRes, customersRes, salonRes] = await Promise.all([
         fetch(`${apiUrl}/api/v1/appointments?date=${formattedDate}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
@@ -107,6 +109,9 @@ export default function BookingsPage() {
         }),
         fetch(`${apiUrl}/api/v1/customers`, {
           headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${apiUrl}/api/v1/salons/me`, {
+          headers: { Authorization: `Bearer ${token}` }
         })
       ]);
 
@@ -114,6 +119,18 @@ export default function BookingsPage() {
       if (staffRes.ok) setStaffList(await staffRes.json());
       if (servicesRes.ok) setServiceList(await servicesRes.json());
       if (customersRes.ok) setCustomerList(await customersRes.json());
+      
+      if (salonRes.ok) {
+        const salonData = await salonRes.json();
+        if (salonData.openingTime) {
+          const [h] = salonData.openingTime.split(":").map(Number);
+          setOpeningHour(isNaN(h) ? 9 : h);
+        }
+        if (salonData.closingTime) {
+          const [h] = salonData.closingTime.split(":").map(Number);
+          setClosingHour(isNaN(h) ? 20 : h);
+        }
+      }
     } catch (err) {
       console.error("Error loading calendar data:", err);
       setToast({ message: "Failed to load calendar data.", type: "error" });
@@ -236,7 +253,10 @@ export default function BookingsPage() {
   };
 
   // Hours to show in calendar grids (e.g. 09:00 to 20:00)
-  const hours = Array.from({ length: 12 }, (_, i) => i + 9);
+  const hours = Array.from(
+    { length: Math.max(1, closingHour - openingHour) }, 
+    (_, i) => i + openingHour
+  );
 
   return (
     <div className="space-y-6 relative max-w-[1400px] mx-auto pb-12 text-slate-800">
