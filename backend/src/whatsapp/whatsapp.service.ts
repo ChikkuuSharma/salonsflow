@@ -24,6 +24,26 @@ export class WhatsappService {
     private readonly waitingListService: WaitingListService,
   ) {}
 
+  private findMatchingService(text: string, services: any[]): any | null {
+    const incomingText = text.toLowerCase().trim();
+    for (const s of services) {
+      const sName = s.name.toLowerCase();
+      const userWords = incomingText.split(/\s+/).filter((w: string) => w.length > 2);
+      const serviceWords = sName.split(/\s+/).filter((w: string) => w.length > 2);
+      const hasOverlap = userWords.some((uw: string) => serviceWords.some((sw: string) => sw.includes(uw) || uw.includes(sw)));
+
+      if (
+        incomingText === sName ||
+        incomingText.includes(sName) ||
+        sName.includes(incomingText) ||
+        hasOverlap
+      ) {
+        return s;
+      }
+    }
+    return null;
+  }
+
   /**
    * Parse incoming webhook payload to extract relevant message data
    */
@@ -504,24 +524,7 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
       }
 
       if (isWalkInCustomer) {
-        let matchedService = null;
-        const incomingText = parsed.text.toLowerCase().trim();
-        for (const s of activeServicesList) {
-          const sName = s.name.toLowerCase();
-          const userWords = incomingText.split(/\s+/).filter((w: string) => w.length > 2);
-          const serviceWords = sName.split(/\s+/).filter((w: string) => w.length > 2);
-          const hasOverlap = userWords.some((uw: string) => serviceWords.some((sw: string) => sw.includes(uw) || uw.includes(sw)));
-
-          if (
-            incomingText === sName ||
-            incomingText.includes(sName) ||
-            sName.includes(incomingText) ||
-            hasOverlap
-          ) {
-            matchedService = s;
-            break;
-          }
-        }
+        const matchedService = this.findMatchingService(parsed.text, activeServicesList);
 
         if (matchedService) {
           try {
@@ -576,14 +579,7 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
         }
 
         if (isWalkIn) {
-          let serviceToBook = null;
-          const msgText = parsed.text.toLowerCase();
-          for (const s of activeServicesList) {
-            if (msgText.includes(s.name.toLowerCase())) {
-              serviceToBook = s;
-              break;
-            }
-          }
+          const serviceToBook = this.findMatchingService(parsed.text, activeServicesList);
 
           if (serviceToBook) {
             try {

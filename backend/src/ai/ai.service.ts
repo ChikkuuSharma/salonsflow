@@ -1449,6 +1449,72 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
       }
     }
 
+    if (intentUpper === 'WAITLIST_ADD') {
+      const details = context?.details || {};
+      const service = details.serviceName || selectedService || 'service';
+      const queueNumber = details.queueNumber;
+      const waitMins = details.expectedWaitMinutes;
+      const date = details.date || 'today';
+      const time = details.time || '';
+
+      if (queueNumber !== undefined) {
+        // Walk-in queue booking
+        if (lang === 'HINDI') {
+          return `आपको "${service}" के लिए कतार में जोड़ दिया गया है। आपका कतार नंबर ${queueNumber} है। अनुमानित प्रतीक्षा समय ${waitMins} मिनट है।`;
+        } else if (lang === 'HINGLISH') {
+          return `Aapko "${service}" ki queue me add kar diya gaya hai. Aapka queue number ${queueNumber} hai. Expected wait time ${waitMins} minutes hai.`;
+        } else {
+          return `You have been added to the queue for "${service}". Your queue number is ${queueNumber}. Estimated wait time is ${waitMins} minutes.`;
+        }
+      } else {
+        // Scheduled waitlist
+        if (lang === 'HINDI') {
+          return `हमने आपको ${date} को ${time} बजे "${service}" के लिए प्रतीक्षा सूची में जोड़ दिया है। स्लॉट खाली होने पर हम आपको तुरंत सूचित करेंगे।`;
+        } else if (lang === 'HINGLISH') {
+          return `Humne aapko ${date} ko ${time} baje "${service}" ki waiting list me add kar diya hai. Slot khali hote hi hum aapko notify karenge.`;
+        } else {
+          return `We have added you to the waiting list for "${service}" on ${date} at ${time}. We will notify you if a slot opens up.`;
+        }
+      }
+    }
+
+    if (intentUpper === 'WAITLIST_CONFIRM') {
+      const details = context?.details || {};
+      const service = details.serviceName || selectedService || 'service';
+      const time = details.startTime || '';
+
+      if (lang === 'HINDI') {
+        return `आपका "${service}" के लिए प्रतीक्षा सूची अपॉइंटमेंट ${time} बजे पक्का हो गया है। आपसे मिलकर खुशी होगी!`;
+      } else if (lang === 'HINGLISH') {
+        return `Aapka "${service}" ka waiting list appointment confirm ho gaya hai ${time} ke liye. Milte hain!`;
+      } else {
+        return `Your waiting list hold for "${service}" is confirmed for ${time}. We look forward to seeing you!`;
+      }
+    }
+
+    if (intentUpper === 'WAITLIST_SERVICE_NOT_FOUND') {
+      const details = context?.details || {};
+      const service = details.serviceName || '';
+
+      if (lang === 'HINDI') {
+        return `क्षमा करें, हमें "${service}" से मिलती-जुलती कोई सेवा नहीं मिली। हमारी सेवाएँ हैं: ${servicesListString || 'कोई सेवा उपलब्ध नहीं है'}।`;
+      } else if (lang === 'HINGLISH') {
+        return `Sorry, hume "${service}" naam ki koi service nahi mili. Humari services hain: ${servicesListString || 'none'}.`;
+      } else {
+        return `Sorry, we couldn't find a service matching "${service}". Our services are: ${servicesListString || 'none'}.`;
+      }
+    }
+
+    if (intentUpper === 'WAITLIST_MISSING_DETAILS') {
+      if (lang === 'HINDI') {
+        return `प्रतीक्षा सूची में शामिल होने के लिए, कृपया हमें अपनी पसंदीदा सेवा, तारीख और समय बताएं।`;
+      } else if (lang === 'HINGLISH') {
+        return `Waiting list me add karne ke liye please mujhe batayein ki aapko kaunsi service chahiye, kis date aur time par.`;
+      } else {
+        return `To join the waiting list, please let me know the service you want, date, and preferred time.`;
+      }
+    }
+
     // 1. Check if the message is a specific service price inquiry
     let matchedServiceName = selectedService;
     let matchedServicePrice = 0;
