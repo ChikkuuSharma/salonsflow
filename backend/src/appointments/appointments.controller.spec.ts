@@ -49,10 +49,9 @@ describe('AppointmentsController', () => {
 
   describe('findAll', () => {
     it('should list all appointments for active salon', async () => {
-      const mockReq = { user: { salonId: 'salon-1' } };
       mockAppointmentsService.findAll.mockResolvedValue([{ id: 'a-1' }]);
 
-      const result = await controller.findAll(mockReq);
+      const result = await controller.findAll('salon-1');
       expect(result).toEqual([{ id: 'a-1' }]);
       expect(mockAppointmentsService.findAll).toHaveBeenCalledWith(
         'salon-1',
@@ -61,10 +60,9 @@ describe('AppointmentsController', () => {
     });
 
     it('should support listing appointments with date filter', async () => {
-      const mockReq = { user: { salonId: 'salon-1' } };
       mockAppointmentsService.findAll.mockResolvedValue([]);
 
-      await controller.findAll(mockReq, '2026-06-01');
+      await controller.findAll('salon-1', '2026-06-01');
       expect(mockAppointmentsService.findAll).toHaveBeenCalledWith(
         'salon-1',
         '2026-06-01',
@@ -74,7 +72,6 @@ describe('AppointmentsController', () => {
 
   describe('create', () => {
     it('should create dynamic appointments using the service', async () => {
-      const mockReq = { user: { salonId: 'salon-1' } };
       const body = {
         customerId: 'c-1',
         serviceId: 's-1',
@@ -93,7 +90,7 @@ describe('AppointmentsController', () => {
         id: 'new-appt',
       });
 
-      const result = await controller.create(mockReq, body);
+      const result = await controller.create('salon-1', body);
       expect(result).toEqual({ id: 'new-appt' });
       expect(mockAppointmentsService.createAppointment).toHaveBeenCalledWith({
         salonId: 'salon-1',
@@ -105,7 +102,6 @@ describe('AppointmentsController', () => {
     });
 
     it('should throw BadRequestException if customer ID is invalid', async () => {
-      const mockReq = { user: { salonId: 'salon-1' } };
       const body = {
         customerId: 'c-1',
         serviceId: 's-1',
@@ -118,13 +114,12 @@ describe('AppointmentsController', () => {
         salonId: 'salon-1',
       });
 
-      await expect(controller.create(mockReq, body)).rejects.toThrow(
+      await expect(controller.create('salon-1', body)).rejects.toThrow(
         BadRequestException,
       );
     });
 
     it('should throw BadRequestException if service ID belongs to a different salon', async () => {
-      const mockReq = { user: { salonId: 'salon-1' } };
       const body = {
         customerId: 'c-1',
         serviceId: 's-1',
@@ -140,15 +135,14 @@ describe('AppointmentsController', () => {
         salonId: 'salon-2',
       });
 
-      await expect(controller.create(mockReq, body)).rejects.toThrow(
+      await expect(controller.create('salon-1', body)).rejects.toThrow(
         BadRequestException,
       );
     });
 
     it('should throw BadRequestException if required arguments are missing', async () => {
-      const mockReq = { user: { salonId: 'salon-1' } };
       await expect(
-        controller.create(mockReq, {
+        controller.create('salon-1', {
           customerId: '',
           serviceId: '',
           startTime: '',
@@ -159,7 +153,6 @@ describe('AppointmentsController', () => {
 
   describe('update', () => {
     it('should successfully update appointment timings and duration', async () => {
-      const mockReq = { user: { salonId: 'salon-1' } };
       const body = {
         startTime: '2026-06-01T16:00:00Z',
         durationMins: 45,
@@ -167,7 +160,7 @@ describe('AppointmentsController', () => {
 
       mockAppointmentsService.updateAppointment.mockResolvedValue({ id: 'appt-1', durationMins: 45 });
 
-      const result = await controller.update(mockReq, 'appt-1', body);
+      const result = await controller.update('salon-1', 'appt-1', body);
       expect(result).toEqual({ id: 'appt-1', durationMins: 45 });
       expect(mockAppointmentsService.updateAppointment).toHaveBeenCalledWith(
         'appt-1',

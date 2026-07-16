@@ -66,6 +66,8 @@ describe('RemindersService', () => {
       expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
         '+919999999999',
         expect.stringContaining('friendly reminder from Elegance Salon'),
+        undefined,
+        undefined,
       );
 
       expect(mockPrismaService.reminder.create).toHaveBeenCalledWith({
@@ -123,6 +125,8 @@ describe('RemindersService', () => {
       expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
         '+918888888888',
         expect.stringContaining('thank you for visiting Elegance Salon today!'),
+        undefined,
+        undefined,
       );
     });
   });

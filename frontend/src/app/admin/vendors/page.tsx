@@ -459,7 +459,7 @@ export default function AdminVendorsPage() {
 
                         {/* Column 5: Estimated Profit */}
                         <td className="px-6 py-4 text-center">
-                          <span className={`font-mono font-extrabold text-sm ${salon.costs.estimatedProfit >= 0 ? "text-emerald-650" : "text-red-600"}`}>
+                          <span className={`font-mono font-extrabold text-sm ${salon.costs.estimatedProfit >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                             ₹{salon.costs.estimatedProfit.toFixed(0)}
                           </span>
                         </td>
@@ -646,7 +646,7 @@ export default function AdminVendorsPage() {
               {/* Actions details warning */}
               {subAction === "SUSPEND" && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex gap-2">
-                  <AlertTriangle className="h-4.5 w-4.5 text-red-650 shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-4.5 w-4.5 text-red-600 shrink-0 mt-0.5" />
                   <span className="text-[10px] text-red-600 leading-normal">
                     <strong>WARNING:</strong> Suspending this salon instantly disables the AI Receptionist, WhatsApp message routing, and campaign broadcasts. Dashboard warnings are activated.
                   </span>
@@ -654,7 +654,7 @@ export default function AdminVendorsPage() {
               )}
 
               {/* Submit Buttons */}
-              <div className="flex gap-3 pt-4 border-t border-slate-250/50">
+              <div className="flex gap-3 pt-4 border-t border-slate-200/50">
                 <button
                   type="button"
                   onClick={() => setActionModalOpen(false)}

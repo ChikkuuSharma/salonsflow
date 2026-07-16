@@ -30,9 +30,6 @@ describe('MissedCallController', () => {
       create: jest.fn(),
     },
     logSecurityEvent: jest.fn(),
-    user: {
-      findUnique: jest.fn(),
-    },
   };
 
   const mockWhatsappService = {
@@ -99,15 +96,9 @@ describe('MissedCallController', () => {
 
   describe('getMissedCalls', () => {
     it('should return list of missed calls for the salon', async () => {
-      const mockReq = {
-        user: {
-          salonId: 'salon_123',
-        },
-      };
-
       mockPrismaService.missedCall.findMany.mockResolvedValue([{ id: 'mc_1' }]);
 
-      const result = await controller.getMissedCalls(mockReq);
+      const result = await controller.getMissedCalls('salon_123');
 
       expect(mockPrismaService.missedCall.findMany).toHaveBeenCalledWith({
         where: { salonId: 'salon_123' },

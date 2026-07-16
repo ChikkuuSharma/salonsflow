@@ -44,13 +44,7 @@ describe('SalonsController', () => {
   });
 
   describe('getMe', () => {
-    it('should return salon profile with subscription details using salonId from request user context', async () => {
-      const mockReq = {
-        user: {
-          salonId: 'salon_123',
-        },
-      };
-
+    it('should return salon profile with subscription details using salonId', async () => {
       const mockSalon = {
         id: 'salon_123',
         name: 'Demo Salon',
@@ -58,60 +52,41 @@ describe('SalonsController', () => {
       };
       mockSalonsService.getSalonWithSubscription.mockResolvedValue(mockSalon);
 
-      const result = await controller.getMe(mockReq);
+      const result = await controller.getMe('salon_123');
 
       expect(service.getSalonWithSubscription).toHaveBeenCalledWith(
         'salon_123',
       );
       expect(result).toEqual(mockSalon);
     });
+  });
 
-    it('should fall back to fetch user from DB if req.user has no salonId', async () => {
-      const mockReq = {
-        user: {
-          sub: 'clerk_123',
-        },
+  describe('getMeUser', () => {
+    it('should return user profile using database userId', async () => {
+      const mockUser = {
+        id: 'user_123',
+        name: 'Devender Sharma',
       };
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
 
-      mockPrismaService.user.findUnique.mockResolvedValue({
-        salonId: 'salon_from_db',
-      });
-      mockSalonsService.getSalonWithSubscription.mockResolvedValue({
-        id: 'salon_from_db',
-      });
-
-      await controller.getMe(mockReq);
+      const result = await controller.getMeUser('user_123');
 
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { clerkId: 'clerk_123' },
+        where: { id: 'user_123' },
       });
-      expect(service.getSalonWithSubscription).toHaveBeenCalledWith(
-        'salon_from_db',
-      );
+      expect(result).toEqual(mockUser);
     });
 
-    it('should throw UnauthorizedException if fallback user cannot be found', async () => {
-      const mockReq = {
-        user: {
-          sub: 'clerk_123',
-        },
-      };
-
+    it('should throw UnauthorizedException if database user does not exist', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(controller.getMe(mockReq)).rejects.toThrow(
+      await expect(controller.getMeUser('user_123')).rejects.toThrow(
         UnauthorizedException,
       );
     });
   });
 
   describe('updateMe', () => {
-    const mockReq = {
-      user: {
-        salonId: 'salon_123',
-      },
-    };
-
     it('should allow modifying business name and address and new WhatsApp fields even on FREE subscription plan', async () => {
       mockSalonsService.updateSalon.mockResolvedValue({
         id: 'salon_123',
@@ -119,28 +94,20 @@ describe('SalonsController', () => {
       });
 
       const result = await controller.updateMe(
-        mockReq,
-        'New Name',
-        'New Address',
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        'phone_id_123',
-        'token_123',
-        'waba_id_123',
-        undefined,
-        undefined,
-        true,
+        'salon_123',
+        {
+          name: 'New Name',
+          address: 'New Address',
+          whatsappPhoneNumberId: 'phone_id_123',
+          whatsappAccessToken: 'token_123',
+          whatsappBusinessAccountId: 'waba_id_123',
+          isProfileComplete: true,
+        },
       );
 
       expect(service.updateSalon).toHaveBeenCalledWith('salon_123', {
         name: 'New Name',
         address: 'New Address',
-        aiPrompt: undefined,
-        googleReviewLink: undefined,
-        reviewDelayMins: undefined,
-        rebookingAutoSend: undefined,
         whatsappPhoneNumberId: 'phone_id_123',
         whatsappAccessToken: 'token_123',
         whatsappBusinessAccountId: 'waba_id_123',
@@ -160,10 +127,10 @@ describe('SalonsController', () => {
 
       await expect(
         controller.updateMe(
-          mockReq,
-          undefined,
-          undefined,
-          'New AI Personality Prompt',
+          'salon_123',
+          {
+            aiPrompt: 'New AI Personality Prompt',
+          },
         ),
       ).rejects.toThrow(ForbiddenException);
 
@@ -181,10 +148,10 @@ describe('SalonsController', () => {
 
       await expect(
         controller.updateMe(
-          mockReq,
-          undefined,
-          undefined,
-          'New AI Personality Prompt',
+          'salon_123',
+          {
+            aiPrompt: 'New AI Personality Prompt',
+          },
         ),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -202,7 +169,7 @@ describe('SalonsController', () => {
         aiPrompt: 'Custom Prompt',
       });
 
-      await controller.updateMe(mockReq, undefined, undefined, 'Custom Prompt');
+      await controller.updateMe('salon_123', { aiPrompt: 'Custom Prompt' });
 
       expect(service.updateSalon).toHaveBeenCalledWith('salon_123', expect.objectContaining({
         aiPrompt: 'Custom Prompt',
@@ -222,7 +189,7 @@ describe('SalonsController', () => {
         aiPrompt: 'Custom Prompt',
       });
 
-      await controller.updateMe(mockReq, undefined, undefined, 'Custom Prompt');
+      await controller.updateMe('salon_123', { aiPrompt: 'Custom Prompt' });
 
       expect(service.updateSalon).toHaveBeenCalledWith('salon_123', expect.objectContaining({
         aiPrompt: 'Custom Prompt',

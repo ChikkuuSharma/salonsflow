@@ -3,7 +3,6 @@ import {
   Get,
   Put,
   Body,
-  Req,
   UseGuards,
   ForbiddenException,
   UnauthorizedException,
@@ -13,6 +12,8 @@ import { SalonsService } from './salons.service';
 import { ClerkAuthGuard } from '../auth/clerk-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import { SalonId } from '../auth/salon-id.decorator';
+import { UserId } from '../auth/user-id.decorator';
 
 @Controller('api/v1/salons')
 @UseGuards(ClerkAuthGuard)
@@ -24,33 +25,15 @@ export class SalonsController {
     private readonly prisma: PrismaService,
   ) {}
 
-  /**
-   * Helper to extract active tenant salonId securely from the session token
-   */
-  private async getSalonId(req: any): Promise<string> {
-    let salonId = req.user?.salonId;
-    if (!salonId) {
-      const dbUser = await this.prisma.user.findUnique({
-        where: { clerkId: req.user.sub },
-      });
-      if (!dbUser) {
-        throw new UnauthorizedException('User record not found in database.');
-      }
-      salonId = dbUser.salonId;
-    }
-    return salonId;
-  }
-
   @Get('me')
-  async getMe(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async getMe(@SalonId() salonId: string) {
     return this.salonsService.getSalonWithSubscription(salonId);
   }
 
   @Get('me/user')
-  async getMeUser(@Req() req: any) {
+  async getMeUser(@UserId() userId: string) {
     const dbUser = await this.prisma.user.findUnique({
-      where: { clerkId: req.user.sub },
+      where: { id: userId },
     });
     if (!dbUser) {
       throw new UnauthorizedException('User record not found in database.');
@@ -60,25 +43,28 @@ export class SalonsController {
 
   @Put('me')
   async updateMe(
-    @Req() req: any,
-    @Body('name') name?: string,
-    @Body('address') address?: string,
-    @Body('whatsappNumber') whatsappNumber?: string,
-    @Body('homeBookingFee') homeBookingFee?: number,
-    @Body('aiPrompt') aiPrompt?: string,
-    @Body('googleReviewLink') googleReviewLink?: string,
-    @Body('reviewDelayMins') reviewDelayMins?: number,
-    @Body('rebookingAutoSend') rebookingAutoSend?: boolean,
-    @Body('whatsappPhoneNumberId') whatsappPhoneNumberId?: string,
-    @Body('whatsappAccessToken') whatsappAccessToken?: string,
-    @Body('whatsappBusinessAccountId') whatsappBusinessAccountId?: string,
-    @Body('instagramPageId') instagramPageId?: string,
-    @Body('instagramAccessToken') instagramAccessToken?: string,
-    @Body('isProfileComplete') isProfileComplete?: boolean,
-    @Body('openingTime') openingTime?: string,
-    @Body('closingTime') closingTime?: string,
+    @SalonId() salonId: string,
+    @Body()
+    body: {
+      name?: string;
+      address?: string;
+      whatsappNumber?: string;
+      homeBookingFee?: number;
+      aiPrompt?: string;
+      googleReviewLink?: string;
+      reviewDelayMins?: number;
+      rebookingAutoSend?: boolean;
+      whatsappPhoneNumberId?: string;
+      whatsappAccessToken?: string;
+      whatsappBusinessAccountId?: string;
+      instagramPageId?: string;
+      instagramAccessToken?: string;
+      isProfileComplete?: boolean;
+      openingTime?: string;
+      closingTime?: string;
+    },
   ) {
-    const salonId = await this.getSalonId(req);
+    const { aiPrompt } = body;
 
     // Gating check if modifying aiPrompt
     if (aiPrompt !== undefined) {
@@ -100,23 +86,6 @@ export class SalonsController {
       }
     }
 
-    return this.salonsService.updateSalon(salonId, {
-      name,
-      address,
-      whatsappNumber,
-      homeBookingFee,
-      aiPrompt,
-      googleReviewLink,
-      reviewDelayMins,
-      rebookingAutoSend,
-      whatsappPhoneNumberId,
-      whatsappAccessToken,
-      whatsappBusinessAccountId,
-      instagramPageId,
-      instagramAccessToken,
-      isProfileComplete,
-      openingTime,
-      closingTime,
-    });
+    return this.salonsService.updateSalon(salonId, body);
   }
 }

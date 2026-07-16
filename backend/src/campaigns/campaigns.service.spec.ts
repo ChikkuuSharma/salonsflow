@@ -108,11 +108,15 @@ describe('CampaignsService', () => {
         1,
         '+1234567890',
         campaignContent,
+        undefined,
+        'salon-123',
       );
       expect(mockWhatsappService.sendMessage).toHaveBeenNthCalledWith(
         2,
         '+9876543210',
         campaignContent,
+        undefined,
+        'salon-123',
       );
 
       expect(result).toEqual(mockCampaign);

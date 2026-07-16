@@ -186,7 +186,10 @@ export class AuthController {
 
   @Post('demo/login')
   async demoLogin() {
-    await this.appService.resetAndSeedDemoSalon();
+    const isSeeded = await this.appService.isDemoSalonSeeded();
+    if (!isSeeded) {
+      await this.appService.resetAndSeedDemoSalon();
+    }
     return { token: 'dev-bypass-token-demo' };
   }
 

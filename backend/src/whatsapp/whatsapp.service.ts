@@ -809,7 +809,7 @@ async processParsedMessage(parsed: any, salon: any): Promise<void> {
             (m) => this.aiService.localDetermineIntent(m.content) === 'OTHER',
           ).length;
 
-          const isDev = process.env.NODE_ENV !== 'production' || salon.id === 'd5e27d13-135c-4068-9ced-8f0bfddc9f4d';
+          const isDev = (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') || salon.id === 'd5e27d13-135c-4068-9ced-8f0bfddc9f4d';
           if (!isDev && nonBookingCount > 5) {
             this.logger.log(`Conversation cap reached (> 5 non-booking messages today) for customer ${customer.id}. Silencing bot.`);
             return;

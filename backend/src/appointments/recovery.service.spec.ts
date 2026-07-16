@@ -8,6 +8,9 @@ describe('RecoveryService', () => {
   let prisma: PrismaService;
 
   const mockPrismaService = {
+    salon: {
+      findUnique: jest.fn(),
+    },
     service: {
       findFirst: jest.fn(),
     },
@@ -50,6 +53,11 @@ describe('RecoveryService', () => {
 
   describe('getAlternativeSlots', () => {
     it('should return alternative slots when requested slot is busy', async () => {
+      mockPrismaService.salon.findUnique.mockResolvedValue({
+        openingTime: '10:00',
+        closingTime: '20:00',
+      });
+
       mockPrismaService.service.findFirst.mockResolvedValue({
         id: 'srv-1',
         durationMins: 60,

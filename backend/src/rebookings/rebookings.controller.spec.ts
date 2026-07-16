@@ -43,21 +43,15 @@ describe('RebookingsController', () => {
     jest.clearAllMocks();
   });
 
-  const mockReq = {
-    user: {
-      salonId: 'salon_123',
-    },
-  };
-
   describe('upsertRule', () => {
     it('should throw BadRequestException if serviceId is missing', async () => {
-      await expect(controller.upsertRule(mockReq, '', 30)).rejects.toThrow(
+      await expect(controller.upsertRule('salon_123', '', 30)).rejects.toThrow(
         BadRequestException,
       );
     });
 
     it('should throw BadRequestException if intervalDays is invalid', async () => {
-      await expect(controller.upsertRule(mockReq, 'srv_1', -5)).rejects.toThrow(
+      await expect(controller.upsertRule('salon_123', 'srv_1', -5)).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -65,7 +59,7 @@ describe('RebookingsController', () => {
     it('should call service upsertRule if input is valid', async () => {
       mockRebookingsService.upsertRule.mockResolvedValue({ id: 'rule_1' });
 
-      const result = await controller.upsertRule(mockReq, 'srv_1', 45);
+      const result = await controller.upsertRule('salon_123', 'srv_1', 45);
 
       expect(service.upsertRule).toHaveBeenCalledWith('salon_123', 'srv_1', 45);
       expect(result).toEqual({ id: 'rule_1' });
@@ -76,7 +70,7 @@ describe('RebookingsController', () => {
     it('should return service rules list', async () => {
       mockRebookingsService.getRules.mockResolvedValue([{ id: 'rule_1' }]);
 
-      const result = await controller.getRules(mockReq);
+      const result = await controller.getRules('salon_123');
 
       expect(service.getRules).toHaveBeenCalledWith('salon_123');
       expect(result).toEqual([{ id: 'rule_1' }]);
@@ -89,7 +83,7 @@ describe('RebookingsController', () => {
         { id: 'rec_1' },
       ]);
 
-      const result = await controller.getRecommendations(mockReq);
+      const result = await controller.getRecommendations('salon_123');
 
       expect(service.getRecommendations).toHaveBeenCalledWith('salon_123');
       expect(result).toEqual([{ id: 'rec_1' }]);
@@ -102,7 +96,7 @@ describe('RebookingsController', () => {
         success: true,
       });
 
-      const result = await controller.approveRecommendation(mockReq, 'rec_1');
+      const result = await controller.approveRecommendation('salon_123', 'rec_1');
 
       expect(service.approveRecommendation).toHaveBeenCalledWith(
         'salon_123',
@@ -116,7 +110,7 @@ describe('RebookingsController', () => {
     it('should call prisma.service.findMany', async () => {
       mockPrismaService.service.findMany.mockResolvedValue([{ id: 'srv_1' }]);
 
-      const result = await controller.getServices(mockReq);
+      const result = await controller.getServices('salon_123');
 
       expect(prisma.service.findMany).toHaveBeenCalledWith({
         where: { salonId: 'salon_123' },
@@ -127,7 +121,7 @@ describe('RebookingsController', () => {
 
   describe('updateService', () => {
     it('should throw BadRequestException if durationMins is invalid', async () => {
-      await expect(controller.updateService(mockReq, 'srv_1', -5)).rejects.toThrow(
+      await expect(controller.updateService('salon_123', 'srv_1', -5)).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -136,7 +130,7 @@ describe('RebookingsController', () => {
       mockPrismaService.service.findUnique.mockResolvedValue({ id: 'srv_1', salonId: 'salon_123' });
       mockPrismaService.service.update.mockResolvedValue({ id: 'srv_1', durationMins: 45 });
 
-      const result = await controller.updateService(mockReq, 'srv_1', 45);
+      const result = await controller.updateService('salon_123', 'srv_1', 45);
       expect(result).toEqual({ id: 'srv_1', durationMins: 45 });
       expect(mockPrismaService.service.update).toHaveBeenCalledWith({
         where: { id: 'srv_1' },

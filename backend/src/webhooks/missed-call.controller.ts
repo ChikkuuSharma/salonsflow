@@ -16,6 +16,7 @@ import * as express from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { ClerkAuthGuard } from '../auth/clerk-auth.guard';
+import { SalonId } from '../auth/salon-id.decorator';
 
 @Controller('api/v1/webhooks/missed-call')
 export class MissedCallController {
@@ -156,17 +157,7 @@ export class MissedCallController {
 
   @Get()
   @UseGuards(ClerkAuthGuard)
-  async getMissedCalls(@Req() req: any) {
-    let salonId = req.user?.salonId;
-    if (!salonId) {
-      const dbUser = await this.prisma.user.findUnique({
-        where: { clerkId: req.user.sub },
-      });
-      if (!dbUser) {
-        throw new UnauthorizedException('User record not found in database.');
-      }
-      salonId = dbUser.salonId;
-    }
+  async getMissedCalls(@SalonId() salonId: string) {
     return this.prisma.missedCall.findMany({
       where: { salonId },
       orderBy: { createdAt: 'desc' },

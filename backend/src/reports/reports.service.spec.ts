@@ -162,6 +162,8 @@ describe('ReportsService', () => {
       expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
         '9999999999',
         expect.stringContaining('Daily Report'),
+        undefined,
+        'salon_123',
       );
       expect(result.status).toEqual(ReportStatus.SENT);
     });

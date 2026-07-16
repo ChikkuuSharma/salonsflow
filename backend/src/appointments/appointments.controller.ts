@@ -5,16 +5,15 @@ import {
   Patch,
   Delete,
   Body,
-  Req,
   Param,
   Query,
   UseGuards,
-  UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClerkAuthGuard } from '../auth/clerk-auth.guard';
+import { SalonId } from '../auth/salon-id.decorator';
 
 @Controller('api/v1/appointments')
 @UseGuards(ClerkAuthGuard)
@@ -25,33 +24,15 @@ export class AppointmentsController {
   ) {}
 
   /**
-   * Securely extract SalonId with User fallback lookup
-   */
-  private async getSalonId(req: any): Promise<string> {
-    let salonId = req.user?.salonId;
-    if (!salonId) {
-      const dbUser = await this.prisma.user.findUnique({
-        where: { clerkId: req.user.sub },
-      });
-      if (!dbUser)
-        throw new UnauthorizedException('User record not found in database.');
-      salonId = dbUser.salonId;
-    }
-    return salonId;
-  }
-
-  /**
    * Fetch scheduled appointments, with optional date filtering
    */
   @Get()
-  async findAll(@Req() req: any, @Query('date') date?: string) {
-    const salonId = await this.getSalonId(req);
+  async findAll(@SalonId() salonId: string, @Query('date') date?: string) {
     return this.appointmentsService.findAll(salonId, date);
   }
 
   @Get('staff')
-  async getStaff(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async getStaff(@SalonId() salonId: string) {
     return this.prisma.staff.findMany({
       where: { salonId },
       include: {
@@ -66,10 +47,9 @@ export class AppointmentsController {
 
   @Post('staff')
   async createStaff(
-    @Req() req: any,
+    @SalonId() salonId: string,
     @Body() body: { name: string; isAvailable?: boolean },
   ) {
-    const salonId = await this.getSalonId(req);
     if (!body.name) {
       throw new BadRequestException('Name is required.');
     }
@@ -84,11 +64,10 @@ export class AppointmentsController {
 
   @Patch('staff/:id')
   async updateStaff(
-    @Req() req: any,
+    @SalonId() salonId: string,
     @Param('id') id: string,
     @Body() body: { name?: string; isAvailable?: boolean },
   ) {
-    const salonId = await this.getSalonId(req);
     const staff = await this.prisma.staff.findFirst({
       where: { id, salonId },
     });
@@ -105,8 +84,7 @@ export class AppointmentsController {
   }
 
   @Delete('staff/:id')
-  async deleteStaff(@Req() req: any, @Param('id') id: string) {
-    const salonId = await this.getSalonId(req);
+  async deleteStaff(@SalonId() salonId: string, @Param('id') id: string) {
     const staff = await this.prisma.staff.findFirst({
       where: { id, salonId },
     });
@@ -145,8 +123,7 @@ export class AppointmentsController {
   }
 
   @Get('staff/:id/services')
-  async getStaffServices(@Req() req: any, @Param('id') id: string) {
-    const salonId = await this.getSalonId(req);
+  async getStaffServices(@SalonId() salonId: string, @Param('id') id: string) {
     const staff = await this.prisma.staff.findFirst({
       where: { id, salonId },
     });
@@ -161,11 +138,10 @@ export class AppointmentsController {
 
   @Post('staff/:id/services')
   async updateStaffServices(
-    @Req() req: any,
+    @SalonId() salonId: string,
     @Param('id') id: string,
     @Body() body: { serviceIds: string[] },
   ) {
-    const salonId = await this.getSalonId(req);
     const staff = await this.prisma.staff.findFirst({
       where: { id, salonId },
     });
@@ -204,7 +180,7 @@ export class AppointmentsController {
    */
   @Post()
   async create(
-    @Req() req: any,
+    @SalonId() salonId: string,
     @Body()
     body: {
       customerId: string;
@@ -214,8 +190,6 @@ export class AppointmentsController {
       durationMins?: number;
     },
   ) {
-    const salonId = await this.getSalonId(req);
-
     if (!body.customerId || !body.serviceId || !body.startTime) {
       throw new BadRequestException(
         'Missing customerId, serviceId, or startTime parameter.',
@@ -258,7 +232,7 @@ export class AppointmentsController {
 
   @Patch(':id')
   async update(
-    @Req() req: any,
+    @SalonId() salonId: string,
     @Param('id') id: string,
     @Body()
     body: {
@@ -267,7 +241,6 @@ export class AppointmentsController {
       staffId?: string | null;
     },
   ) {
-    const salonId = await this.getSalonId(req);
     const startTimeDate = body.startTime ? new Date(body.startTime) : undefined;
 
     return this.appointmentsService.updateAppointment(id, salonId, {

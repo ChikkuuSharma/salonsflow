@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Logo Brand */}
       <div className="p-6 border-b border-purple-950/40 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 bg-gradient-to-tr from-purple-650 to-pink-550 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-purple-900/40">
+          <div className="h-9 w-9 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-purple-900/40">
             SF
           </div>
           <div>
@@ -141,7 +141,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   : "text-purple-300/60 hover:bg-white/5 hover:text-white border border-transparent"
               }`}
             >
-              <item.icon className={`h-4.5 w-4.5 ${isActive ? "text-purple-400" : "text-purple-300/65"}`} />
+              <item.icon className={`h-4.5 w-4.5 ${isActive ? "text-purple-400" : "text-purple-300/70"}`} />
               {item.name}
             </Link>
           );

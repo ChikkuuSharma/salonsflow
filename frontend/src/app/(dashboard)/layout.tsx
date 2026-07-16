@@ -11,25 +11,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark for regular accounts
+  const [isDarkMode, setIsDarkMode] = useState(false); // Default to light to match homepage
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("auth_token");
-      const isDemo = token === "dev-bypass-token-demo" || (token && token.startsWith("dev-bypass-token-user-")) || token === "dev-bypass-token";
-      if (isDemo) {
-        setIsDarkMode(false); // Light theme for demo sandbox
-      }
-    }
   }, []);
 
   if (!mounted) {
     return (
-      <div className="flex h-screen bg-zinc-950 text-zinc-100 overflow-hidden dark">
+      <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden">
         <div className="flex-1 p-6 flex items-center justify-center">
-          <span className="text-sm font-semibold">Loading workspace...</span>
+          <span className="text-sm font-semibold text-slate-500">Loading workspace...</span>
         </div>
       </div>
     );

@@ -271,18 +271,18 @@ export default function AISettingsPage() {
   const isActive = subscription?.status === "ACTIVE";
 
   return (
-    <div className="space-y-6 text-zinc-100">
+    <div className="space-y-6 text-slate-800">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-100 font-display">AI Receptionist Settings</h2>
-          <p className="text-sm text-zinc-400 font-semibold">Configure how SalonsFlow's AI interacts with your customers on WhatsApp.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-zinc-100 font-display">AI Receptionist Settings</h2>
+          <p className="text-sm text-slate-500 font-semibold">Configure how SalonsFlow's AI interacts with your customers on WhatsApp.</p>
         </div>
 
         {/* Subscription Plan Badge */}
         <div className={`flex items-center gap-2 border px-4 py-2 rounded-full font-semibold text-sm shadow-sm ${
           isPremium && isActive
-            ? "bg-emerald-950/40 border-emerald-900/30 text-emerald-400"
-            : "bg-zinc-950 border-zinc-800 text-zinc-400"
+            ? "bg-purple-50 border-purple-100 text-purple-600"
+            : "bg-slate-100 border-slate-200 text-slate-500"
         }`}>
           <Bot className="h-4 w-4 text-emerald-450 animate-pulse text-emerald-450" />
           <span>Plan: {subscription?.plan} ({isActive ? "Active" : "Inactive"})</span>
@@ -379,12 +379,12 @@ export default function AISettingsPage() {
             <CardContent className="space-y-6 pt-5 pb-6 text-center">
               {qrStatus === 'CONNECTED' && (
                 <div className="space-y-5 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="mx-auto h-16 w-16 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-455 rounded-full flex items-center justify-center border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
+                  <div className="mx-auto h-16 w-16 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
                     <CheckCircle2 className="h-8 w-8 text-emerald-500 dark:text-emerald-400" />
                   </div>
                   <div>
                     <h4 className="text-base font-bold text-slate-900 dark:text-zinc-100 font-display">WhatsApp Linked & Live</h4>
-                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">Connected Number: <span className="font-mono font-bold bg-emerald-50 dark:bg-emerald-950 border border-emerald-250 dark:border-emerald-900/40 px-2 py-0.5 rounded text-emerald-600 dark:text-emerald-400">{whatsappNumber || "Loading..."}</span></p>
+                    <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">Connected Number: <span className="font-mono font-bold bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900/40 px-2 py-0.5 rounded text-emerald-600 dark:text-emerald-400">{whatsappNumber || "Loading..."}</span></p>
                     <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-2 font-medium max-w-xs mx-auto leading-relaxed">
                       Your custom WhatsApp business number is active. All inbound booking messages will receive instant AI replies.
                     </p>
@@ -392,17 +392,17 @@ export default function AISettingsPage() {
                   <button
                     type="button"
                     onClick={disconnectWhatsapp}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-455 text-rose-400 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 duration-200"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 duration-200"
                   >
                     Disconnect Channel
                   </button>
 
                   {/* Test Walk-in QR Code helper */}
                   <div className="border-t border-slate-200 dark:border-zinc-800 pt-6 mt-4 text-center">
-                    <span className="text-[10px] font-black uppercase text-emerald-650 dark:text-emerald-400 tracking-wider bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900/30 px-3 py-1 rounded-full">
+                    <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900/30 px-3 py-1 rounded-full">
                       Test Walk-In QR
                     </span>
-                    <p className="text-slate-550 dark:text-zinc-400 text-[11px] font-semibold mt-3 max-w-[280px] mx-auto leading-relaxed">
+                    <p className="text-slate-500 dark:text-zinc-400 text-[11px] font-semibold mt-3 max-w-[280px] mx-auto leading-relaxed">
                       Scan this testing QR code to try your new live Walk-In Queue Booking flow:
                     </p>
                     <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 inline-block my-4">
@@ -524,7 +524,7 @@ export default function AISettingsPage() {
         <Card className="bg-white dark:bg-zinc-900/60 border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col h-full min-h-[500px] overflow-hidden rounded-3xl backdrop-blur-md">
           <CardHeader className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/40">
             <CardTitle className="text-lg font-bold text-slate-900 dark:text-zinc-100 font-display flex items-center gap-2">
-              <Bot className="h-5 w-5 text-emerald-650 dark:text-emerald-400" /> AI Receptionist Simulator
+              <Bot className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> AI Receptionist Simulator
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 p-0 flex flex-col justify-between">
@@ -534,7 +534,7 @@ export default function AISettingsPage() {
                   key={idx}
                   className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-xs leading-relaxed font-semibold ${
                     msg.sender === "user"
-                      ? "self-end bg-slate-100 dark:bg-zinc-800 text-slate-805 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 rounded-br-none"
+                      ? "self-end bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 rounded-br-none"
                       : "self-start bg-gradient-to-r from-emerald-50 to-emerald-100/50 dark:from-emerald-950/60 dark:to-teal-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40 rounded-bl-none"
                   }`}
                 >

@@ -3,16 +3,15 @@ import {
   Get,
   Post,
   Body,
-  Req,
   UseGuards,
   BadRequestException,
-  UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
 import { CampaignsService } from './campaigns.service';
 import { ClerkAuthGuard } from '../auth/clerk-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import { SalonId } from '../auth/salon-id.decorator';
 
 @Controller('api/v1/campaigns')
 @UseGuards(ClerkAuthGuard)
@@ -22,32 +21,13 @@ export class CampaignsController {
     private readonly prisma: PrismaService,
   ) {}
 
-  /**
-   * Helper to extract active tenant salonId securely from the session token
-   */
-  private async getSalonId(req: any): Promise<string> {
-    let salonId = req.user?.salonId;
-    if (!salonId) {
-      const dbUser = await this.prisma.user.findUnique({
-        where: { clerkId: req.user.sub },
-      });
-      if (!dbUser) {
-        throw new UnauthorizedException('User record not found in database.');
-      }
-      salonId = dbUser.salonId;
-    }
-    return salonId;
-  }
-
   @Post()
   async create(
-    @Req() req: any,
+    @SalonId() salonId: string,
     @Body('name') name: string,
     @Body('content') content: string,
     @Body('targetSegment') targetSegment: string,
   ) {
-    const salonId = await this.getSalonId(req);
-
     // Gating check
     const subscription = await this.prisma.subscription.findUnique({
       where: { salonId },
@@ -90,8 +70,7 @@ export class CampaignsController {
   }
 
   @Get()
-  async findAll(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async findAll(@SalonId() salonId: string) {
     return this.campaignsService.findAll(salonId);
   }
 }

@@ -5,7 +5,6 @@ import {
   Post,
   Body,
   Param,
-  Req,
   UseGuards,
   UnauthorizedException,
   NotFoundException,
@@ -16,6 +15,7 @@ import { ClerkAuthGuard } from '../auth/clerk-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReportsService } from './reports.service';
 import { ReportType } from '@prisma/client';
+import { SalonId } from '../auth/salon-id.decorator';
 
 @Controller('api/v1/reports')
 @UseGuards(ClerkAuthGuard)
@@ -28,28 +28,10 @@ export class ReportsController {
   ) {}
 
   /**
-   * Helper to extract active tenant salonId securely from the session token
-   */
-  private async getSalonId(req: any): Promise<string> {
-    let salonId = req.user?.salonId;
-    if (!salonId) {
-      const dbUser = await this.prisma.user.findUnique({
-        where: { clerkId: req.user.sub },
-      });
-      if (!dbUser) {
-        throw new UnauthorizedException('User record not found in database.');
-      }
-      salonId = dbUser.salonId;
-    }
-    return salonId;
-  }
-
-  /**
    * Get all reports for the current salon
    */
   @Get()
-  async getReports(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async getReports(@SalonId() salonId: string) {
     return this.prisma.businessReport.findMany({
       where: { salonId },
       orderBy: { date: 'desc' },
@@ -60,8 +42,7 @@ export class ReportsController {
    * Get report preferences settings
    */
   @Get('settings')
-  async getSettings(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async getSettings(@SalonId() salonId: string) {
     const salon = await this.prisma.salon.findUnique({
       where: { id: salonId },
       select: {
@@ -81,14 +62,12 @@ export class ReportsController {
    */
   @Put('settings')
   async updateSettings(
-    @Req() req: any,
+    @SalonId() salonId: string,
     @Body('dailyReportTime') dailyReportTime?: string,
     @Body('dailyReportsEnabled') dailyReportsEnabled?: boolean,
     @Body('weeklyReportsEnabled') weeklyReportsEnabled?: boolean,
     @Body('monthlyReportsEnabled') monthlyReportsEnabled?: boolean,
   ) {
-    const salonId = await this.getSalonId(req);
-
     if (dailyReportTime && !/^\d{2}:\d{2}$/.test(dailyReportTime)) {
       throw new BadRequestException('dailyReportTime must be in HH:MM format');
     }
@@ -114,9 +93,7 @@ export class ReportsController {
    * Trigger immediate generation and delivery of a report for testing/troubleshooting
    */
   @Post('trigger/:type')
-  async triggerReport(@Req() req: any, @Param('type') type: string) {
-    const salonId = await this.getSalonId(req);
-    
+  async triggerReport(@SalonId() salonId: string, @Param('type') type: string) {
     const uppercaseType = type.toUpperCase();
     if (![ReportType.DAILY, ReportType.WEEKLY, ReportType.MONTHLY].includes(uppercaseType as any)) {
       throw new BadRequestException('Invalid report type. Must be DAILY, WEEKLY, or MONTHLY');
@@ -169,9 +146,7 @@ export class ReportsController {
    * Manually retry delivery of a failed report
    */
   @Post('retry/:reportId')
-  async retryReport(@Req() req: any, @Param('reportId') reportId: string) {
-    const salonId = await this.getSalonId(req);
-
+  async retryReport(@SalonId() salonId: string, @Param('reportId') reportId: string) {
     const report = await this.prisma.businessReport.findUnique({
       where: { id: reportId },
     });

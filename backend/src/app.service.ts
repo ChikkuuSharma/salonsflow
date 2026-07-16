@@ -19,6 +19,27 @@ export class AppService {
     return 'Hello World!';
   }
 
+  async isDemoSalonSeeded(): Promise<boolean> {
+    try {
+      const salon = await this.prisma.salon.findFirst({
+        where: { whatsappNumber: '+919999999999' },
+      });
+      if (!salon) return false;
+
+      const serviceCount = await this.prisma.service.count({
+        where: { salonId: salon.id },
+      });
+      const staffCount = await this.prisma.staff.count({
+        where: { salonId: salon.id },
+      });
+
+      return serviceCount > 0 && staffCount > 0;
+    } catch (err) {
+      this.logger.error('Error checking if demo salon is seeded:', err);
+      return false;
+    }
+  }
+
   async resetAndSeedDemoSalon() {
     this.logger.log('Resetting and seeding Demo Salon data...');
 

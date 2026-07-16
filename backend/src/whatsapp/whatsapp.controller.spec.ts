@@ -6,6 +6,7 @@ import { AppointmentsService } from '../appointments/appointments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RecoveryService } from '../appointments/recovery.service';
 import { WaitingListService } from '../appointments/waiting-list.service';
+import { WhatsappGatewayService } from './whatsapp-gateway.service';
 import { HttpStatus } from '@nestjs/common';
 import * as express from 'express';
 import * as crypto from 'crypto';
@@ -19,10 +20,30 @@ describe('WhatsappController', () => {
   let recoveryService: RecoveryService;
   let waitingListService: WaitingListService;
 
+  const mockGatewayService = {
+    getSessionStatus: jest.fn(),
+    initializeSession: jest.fn(),
+    disconnectSession: jest.fn(),
+  };
+
   const mockWhatsappService = {
     parseMessage: jest.fn(),
     saveIncomingMessage: jest.fn(),
     sendMessage: jest.fn(),
+    processParsedMessage: jest.fn().mockImplementation(async (parsed, salon) => {
+      const context = {
+        prisma: mockPrismaService,
+        gatewayService: mockGatewayService,
+        aiService: mockAiService,
+        appointmentsService: mockAppointmentsService,
+        recoveryService: mockRecoveryService,
+        waitingListService: mockWaitingListService,
+        logger: { log: jest.fn(), warn: jest.fn(), error: jest.fn() },
+        saveIncomingMessage: mockWhatsappService.saveIncomingMessage,
+        sendMessage: mockWhatsappService.sendMessage,
+      };
+      return WhatsappService.prototype.processParsedMessage.call(context as any, parsed, salon);
+    }),
   };
 
   const mockAiService = {
@@ -58,6 +79,7 @@ describe('WhatsappController', () => {
     },
     service: {
       findFirst: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
     staff: {
       findFirst: jest.fn(),
@@ -97,6 +119,7 @@ describe('WhatsappController', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: RecoveryService, useValue: mockRecoveryService },
         { provide: WaitingListService, useValue: mockWaitingListService },
+        { provide: WhatsappGatewayService, useValue: mockGatewayService },
       ],
     }).compile();
 
@@ -114,6 +137,8 @@ describe('WhatsappController', () => {
     mockPrismaService.reviewCampaign.findFirst.mockResolvedValue(null);
 
     jest.clearAllMocks();
+    mockPrismaService.conversation.findFirst.mockResolvedValue(null);
+    mockAiService.detectLanguage.mockResolvedValue('ENGLISH');
   });
 
   describe('verifyWebhook', () => {
@@ -244,6 +269,10 @@ describe('WhatsappController', () => {
       expect(mockAiService.generateResponse).toHaveBeenCalledWith(
         'conv-1',
         'salon-1',
+        expect.objectContaining({
+          intent: 'FAQ',
+          status: 'INFO',
+        }),
       );
       expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
         '+919876543210',
@@ -252,7 +281,7 @@ describe('WhatsappController', () => {
       );
     });
 
-    it('should successfully book an appointment when intent is BOOKING and extraction works', async () => {
+    it('should respond with a booking link when intent is BOOKING', async () => {
       mockWhatsappService.parseMessage.mockReturnValue({
         fromPhone: '+919876543210',
         customerName: 'Devender',
@@ -260,86 +289,63 @@ describe('WhatsappController', () => {
       });
 
       mockAiService.determineIntent.mockResolvedValue('BOOKING');
-      mockAiService.extractBookingDetails.mockResolvedValue({
-        date: '2026-06-01',
-        time: '15:00',
-        serviceName: 'Premium Haircut',
-      });
-
-      mockAppointmentsService.createBookingTransaction.mockResolvedValue({
-        id: 'appt-1',
-        startTime: new Date('2026-06-01T15:00:00Z'),
-        service: { name: 'Premium Haircut' },
-      });
 
       await controller.handleIncomingMessage({}, '', mockReq, mockRes);
 
       expect(mockRes.sendStatus).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(
-        mockAppointmentsService.createBookingTransaction,
-      ).toHaveBeenCalledWith({
+      expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
+        '+919876543210',
+        expect.stringContaining('booking link'),
+        'conv-1',
+      );
+    });
+
+    it('should respond with a Hinglish booking link when language is HINGLISH', async () => {
+      mockAiService.detectLanguage.mockResolvedValue('HINGLISH');
+      mockPrismaService.conversation.findFirst.mockResolvedValue({
+        id: 'conv-1',
+        language: 'HINGLISH',
         salonId: 'salon-1',
-        customerId: 'cust-1',
-        serviceName: 'Premium Haircut',
-        startTime: new Date('2026-06-01T15:00:00Z'),
-        bookingSource: 'ONLINE_WHATSAPP',
-        staffId: undefined,
       });
-      expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
-        '+919876543210',
-        expect.stringContaining(
-          'Success! I have confirmed your appointment for "Premium Haircut"',
-        ),
-        'conv-1',
-      );
-    });
 
-    it('should respond with a helpful failure message if booking transaction fails', async () => {
       mockWhatsappService.parseMessage.mockReturnValue({
         fromPhone: '+919876543210',
         customerName: 'Devender',
-        text: 'Book a premium haircut tomorrow at 3 PM',
+        text: 'appointment link',
       });
 
       mockAiService.determineIntent.mockResolvedValue('BOOKING');
-      mockAiService.extractBookingDetails.mockResolvedValue({
-        date: '2026-06-01',
-        time: '15:00',
-        serviceName: 'Premium Haircut',
-      });
-
-      mockAppointmentsService.createBookingTransaction.mockRejectedValue(
-        new Error('Requested time slot is not available.'),
-      );
 
       await controller.handleIncomingMessage({}, '', mockReq, mockRes);
 
       expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
         '+919876543210',
-        expect.stringContaining(
-          'but could not complete it: Requested time slot is not available.',
-        ),
+        expect.stringContaining('click karein'),
         'conv-1',
       );
     });
 
-    it('should ask for missing details if booking details extraction returns null', async () => {
+    it('should respond with a Hindi booking link when language is HINDI', async () => {
+      mockAiService.detectLanguage.mockResolvedValue('HINDI');
+      mockPrismaService.conversation.findFirst.mockResolvedValue({
+        id: 'conv-1',
+        language: 'HINDI',
+        salonId: 'salon-1',
+      });
+
       mockWhatsappService.parseMessage.mockReturnValue({
         fromPhone: '+919876543210',
         customerName: 'Devender',
-        text: 'I want to make a booking',
+        text: 'book karein',
       });
 
       mockAiService.determineIntent.mockResolvedValue('BOOKING');
-      mockAiService.extractBookingDetails.mockResolvedValue(null);
 
       await controller.handleIncomingMessage({}, '', mockReq, mockRes);
 
       expect(mockWhatsappService.sendMessage).toHaveBeenCalledWith(
         '+919876543210',
-        expect.stringContaining(
-          "I understand you want to book an appointment, but I couldn't extract the exact date, time, or service",
-        ),
+        expect.stringContaining('नमस्ते! अपॉइंटमेंट बुक करने के लिए कृपया नीचे दिए गए लिंक पर जाएँ'),
         'conv-1',
       );
     });
@@ -378,6 +384,7 @@ describe('WhatsappController', () => {
 
       mockAiService.determineIntent.mockResolvedValue('OTHER');
       mockAiService.localDetermineIntent = jest.fn().mockReturnValue('OTHER');
+      mockAiService.generateResponse.mockResolvedValue('We have reached our message limit for today.');
 
       // Mock 5 inbound messages today
       mockPrismaService.message.findMany.mockResolvedValue([

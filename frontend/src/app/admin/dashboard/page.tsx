@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
   if (error) {
     return (
       <div className="p-6 bg-red-50 border border-red-200 rounded-2xl max-w-lg mx-auto text-center space-y-4">
-        <span className="text-red-650 font-bold block">System Offline</span>
+        <span className="text-red-600 font-bold block">System Offline</span>
         <p className="text-xs text-slate-500">{error}</p>
         <button
           onClick={loadStats}

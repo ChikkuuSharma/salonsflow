@@ -35,8 +35,8 @@ body {
 
 /* Global Selection Color */
 ::selection {
-  background-color: rgba(16, 185, 129, 0.3); /* emerald-500/30 */
-  color: #34d399; /* emerald-400 */
+  background-color: rgba(147, 51, 234, 0.3); /* purple-600/30 */
+  color: #a855f7; /* purple-500 */
 }
 
 /* Custom premium styles and micro-animations */
@@ -60,8 +60,8 @@ body {
 .glass-card-glow {
   background: rgba(24, 24, 27, 0.6);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  box-shadow: 0 8px 30px -10px rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(147, 51, 234, 0.25);
+  box-shadow: 0 8px 30px -10px rgba(147, 51, 234, 0.15);
 }
 
 .glass-header {
@@ -130,7 +130,12 @@ body {
 
 /* Gradient text utility */
 .text-gradient-emerald {
-  background: linear-gradient(135deg, #34d399 0%, #14b8a6 50%, #10b981 100%);
+  background: linear-gradient(135deg, #a855f7 0%, #6366f1 55%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-gradient-premium {
+  background: linear-gradient(135deg, #9333ea 0%, #6366f1 50%, #ec4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

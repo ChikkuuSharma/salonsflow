@@ -10,19 +10,18 @@ import {
   Logger,
   BadRequestException,
   UseGuards,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ClerkAuthGuard } from '../auth/clerk-auth.guard';
 import { WhatsappGatewayService } from './whatsapp-gateway.service';
 import * as express from 'express';
 import * as crypto from 'crypto';
-import Stripe from 'stripe';
 import { WhatsappService } from './whatsapp.service';
 import { AiService } from '../ai/ai.service';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RecoveryService } from '../appointments/recovery.service';
 import { WaitingListService } from '../appointments/waiting-list.service';
+import { SalonId } from '../auth/salon-id.decorator';
 
 @Controller('api/v1/webhooks/whatsapp')
 export class WhatsappController {
@@ -153,31 +152,15 @@ export class WhatsappController {
     }
   }
 
-  private async getSalonId(req: any): Promise<string> {
-    let salonId = req.user?.salonId;
-    if (!salonId) {
-      const dbUser = await this.prisma.user.findUnique({
-        where: { clerkId: req.user.sub },
-      });
-      if (!dbUser) {
-        throw new UnauthorizedException('User record not found in database.');
-      }
-      salonId = dbUser.salonId;
-    }
-    return salonId;
-  }
-
   @Get('status')
   @UseGuards(ClerkAuthGuard)
-  async getStatus(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async getStatus(@SalonId() salonId: string) {
     return this.gatewayService.getSessionStatus(salonId);
   }
 
   @Get('qr')
   @UseGuards(ClerkAuthGuard)
-  async getQr(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async getQr(@SalonId() salonId: string) {
     const session = await this.gatewayService.getSessionStatus(salonId);
     if (session.status === 'DISCONNECTED') {
       await this.gatewayService.initializeSession(salonId);
@@ -187,8 +170,7 @@ export class WhatsappController {
 
   @Post('disconnect')
   @UseGuards(ClerkAuthGuard)
-  async disconnect(@Req() req: any) {
-    const salonId = await this.getSalonId(req);
+  async disconnect(@SalonId() salonId: string) {
     return this.gatewayService.disconnectSession(salonId);
   }
 }

@@ -100,6 +100,7 @@ export class ClerkAuthGuard implements CanActivate {
             email: dbUser.email,
             role: dbUser.role,
             salonId: dbUser.salonId,
+            id: dbUser.id,
           };
           return true;
         }
@@ -188,6 +189,7 @@ export class ClerkAuthGuard implements CanActivate {
           email: dbUser.email,
           role: dbUser.role,
           salonId: dbUser.salonId,
+          id: dbUser.id,
         };
 
         return true;
@@ -207,6 +209,16 @@ export class ClerkAuthGuard implements CanActivate {
 
       // Attach user information to the request object
       (request as any).user = payload;
+
+      // Look up and attach database user details (salonId, dbUserId, and role)
+      const dbUser = await this.prisma.user.findUnique({
+        where: { clerkId: payload.sub },
+      });
+      if (dbUser) {
+        (request as any).user.id = dbUser.id;
+        (request as any).user.salonId = dbUser.salonId;
+        (request as any).user.role = dbUser.role;
+      }
 
       return true;
     } catch (err) {
