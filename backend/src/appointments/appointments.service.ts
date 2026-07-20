@@ -3,10 +3,13 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentStatus, SubscriptionStatus } from '@prisma/client';
 import { WaitingListService } from './waiting-list.service';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -15,6 +18,8 @@ export class AppointmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly waitingListService: WaitingListService,
+    @Inject(forwardRef(() => WhatsappService))
+    private readonly whatsappService: WhatsappService,
   ) {}
 
   /**
@@ -477,7 +482,7 @@ export class AppointmentsService {
 
     try {
       // 2. Perform atomic Prisma Transaction to ensure availability check is concurrency-safe
-      return await this.prisma.$transaction(async (tx) => {
+      const created = await this.prisma.$transaction(async (tx) => {
         // Acquire exclusive tenant-level advisory lock on salonId to serialize booking creations and prevent TOCTOU races
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${data.salonId}))`;
 
@@ -549,6 +554,14 @@ export class AppointmentsService {
 
         return appointment;
       });
+
+      if (created && this.whatsappService) {
+        this.whatsappService.sendAppointmentConfirmation(created.id).catch((err) => {
+          this.logger.error(`Failed to send WhatsApp confirmation for appointment ${created.id}: ${err.message}`);
+        });
+      }
+
+      return created;
     } catch (error) {
       this.logger.error(
         `Error in createAppointment transaction: ${error.message}`,
@@ -640,7 +653,7 @@ export class AppointmentsService {
 
     try {
       // 2. Perform atomic Prisma Transaction and do the validation query INSIDE it
-      return await this.prisma.$transaction(async (tx) => {
+      const created = await this.prisma.$transaction(async (tx) => {
         // Acquire exclusive transaction-level advisory lock on salonId
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${data.salonId}))`;
 
@@ -724,6 +737,14 @@ export class AppointmentsService {
 
         return appointment;
       });
+
+      if (created && this.whatsappService) {
+        this.whatsappService.sendAppointmentConfirmation(created.id).catch((err) => {
+          this.logger.error(`Failed to send WhatsApp confirmation for appointment ${created.id}: ${err.message}`);
+        });
+      }
+
+      return created;
     } catch (error) {
       this.logger.error(`Error in createBookingTransaction: ${error.message}`);
       if (

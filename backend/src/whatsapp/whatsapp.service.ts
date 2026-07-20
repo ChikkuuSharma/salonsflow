@@ -279,6 +279,92 @@ export class WhatsappService {
     }
   }
 
+  /**
+   * Automatically send a WhatsApp booking confirmation message to the customer.
+   */
+  async sendAppointmentConfirmation(appointmentId: string): Promise<void> {
+    try {
+      const appointment = await this.prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        include: {
+          customer: true,
+          service: true,
+          staff: true,
+          salon: true,
+        },
+      });
+
+      if (!appointment || !appointment.customer || !appointment.customer.phone) {
+        this.logger.warn(`Cannot send WhatsApp confirmation: appointment or customer phone missing for ID ${appointmentId}`);
+        return;
+      }
+
+      const salon = appointment.salon;
+      const customer = appointment.customer;
+      const service = appointment.service;
+      const staff = appointment.staff;
+
+      // Find or create conversation for this customer
+      let conversation = await this.prisma.conversation.findFirst({
+        where: {
+          salonId: appointment.salonId,
+          customerId: customer.id,
+        },
+      });
+
+      if (!conversation) {
+        conversation = await this.prisma.conversation.create({
+          data: {
+            salonId: appointment.salonId,
+            customerId: customer.id,
+            language: 'ENGLISH',
+          },
+        });
+      }
+
+      // Format start time in 12-hour format IST
+      const startTime = new Date(appointment.startTime);
+      const optionsDate: Intl.DateTimeFormatOptions = {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata',
+      };
+      const optionsTime: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata',
+      };
+
+      const dateFormatted = startTime.toLocaleDateString('en-IN', optionsDate);
+      const timeFormatted = startTime.toLocaleTimeString('en-IN', optionsTime);
+
+      const customerName = customer.name || 'Valued Customer';
+      const salonName = salon?.name || 'Salon';
+      const serviceName = service?.name || 'Service';
+      const staffName = staff?.name ? staff.name : null;
+      const location = salon?.address || 'Our Salon';
+
+      const messageText =
+        `🎉 *Appointment Confirmed!*\n\n` +
+        `Hello *${customerName}*, your appointment at *${salonName}* has been successfully booked!\n\n` +
+        `📋 *Service:* ${serviceName}\n` +
+        `📅 *Date:* ${dateFormatted}\n` +
+        `⏰ *Time:* ${timeFormatted}\n` +
+        (staffName ? `✂️ *Stylist:* ${staffName}\n` : '') +
+        `📍 *Location:* ${location}\n\n` +
+        `Thank you for choosing ${salonName}! If you need to reschedule or cancel, reply to this message anytime.`;
+
+      this.logger.log(`Sending WhatsApp appointment confirmation to ${customer.phone} for appointment ${appointmentId}`);
+
+      await this.sendMessage(customer.phone, messageText, conversation.id, appointment.salonId);
+    } catch (error) {
+      this.logger.error(`Failed to send WhatsApp appointment confirmation for ID ${appointmentId}: ${error.message}`);
+    }
+  }
+
 
 async processParsedMessage(parsed: any, salon: any): Promise<void> {
     let transcript = '';
