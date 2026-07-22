@@ -45,8 +45,39 @@ export class PosController {
   async checkoutAppointment(
     @SalonId() salonId: string,
     @UserId() userId: string,
-    @Body() dto: { appointmentId: string; amountPaid: number; paymentMode: string; notes?: string },
+    @Body() dto: {
+      appointmentId: string;
+      amountPaid: number;
+      paymentMode: string;
+      notes?: string;
+      sendWhatsApp?: boolean;
+    },
   ) {
     return this.posService.checkoutAppointment(salonId, userId, dto);
+  }
+
+  @Post('send-receipt')
+  async sendReceiptToWhatsApp(
+    @SalonId() salonId: string,
+    @Body() dto: { appointmentId: string; customerPhone?: string },
+  ) {
+    return this.posService.sendReceiptToWhatsApp(salonId, dto.appointmentId, dto.customerPhone);
+  }
+
+  @Post('quick-bill')
+  async createQuickBill(
+    @SalonId() salonId: string,
+    @UserId() userId: string,
+    @Body() dto: {
+      customerName: string;
+      customerPhone: string;
+      serviceId: string;
+      amountPaid: number;
+      paymentMode: string;
+      notes?: string;
+      sendWhatsApp?: boolean;
+    },
+  ) {
+    return this.posService.createQuickBill(salonId, userId, dto);
   }
 }

@@ -19,7 +19,8 @@ import {
   CreditCard,
   QrCode,
   Tag,
-  BookOpen
+  BookOpen,
+  MessageSquare
 } from "lucide-react";
 
 export default function POSPage() {
@@ -43,6 +44,8 @@ export default function POSPage() {
   const [paymentMode, setPaymentMode] = useState<"CASH" | "UPI" | "STRIPE">("CASH");
   const [notes, setNotes] = useState("");
   const [amountPaid, setAmountPaid] = useState<number>(0);
+  const [sendWhatsApp, setSendWhatsApp] = useState<boolean>(true);
+  const [sendingWaReceipt, setSendingWaReceipt] = useState<boolean>(false);
 
   // Print state
   const [printReceiptData, setPrintReceiptData] = useState<any | null>(null);
@@ -52,6 +55,16 @@ export default function POSPage() {
   const [drawerActionType, setDrawerActionType] = useState<"OPEN" | "PAYOUT">("OPEN");
   const [drawerAmount, setDrawerAmount] = useState<number>(2000);
   const [drawerNotes, setDrawerNotes] = useState("");
+
+  // Quick Bill States
+  const [showQuickBillModal, setShowQuickBillModal] = useState(false);
+  const [servicesList, setServicesList] = useState<any[]>([]);
+  const [quickCustomerName, setQuickCustomerName] = useState("");
+  const [quickCustomerPhone, setQuickCustomerPhone] = useState("");
+  const [quickServiceId, setQuickServiceId] = useState("");
+  const [quickAmount, setQuickAmount] = useState<number>(0);
+  const [quickPaymentMode, setQuickPaymentMode] = useState<"CASH" | "UPI" | "STRIPE">("CASH");
+  const [quickSendWa, setQuickSendWa] = useState(true);
 
   const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -64,11 +77,14 @@ export default function POSPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [apptRes, summaryRes] = await Promise.all([
+      const [apptRes, summaryRes, servicesRes] = await Promise.all([
         fetch(`${apiUrl}/api/v1/appointments`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch(`${apiUrl}/api/v1/pos/drawer-summary`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${apiUrl}/api/v1/services`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -79,6 +95,9 @@ export default function POSPage() {
 
       setAppointments(await apptRes.json());
       setDrawerSummary(await summaryRes.json());
+      if (servicesRes.ok) {
+        setServicesList(await servicesRes.json());
+      }
     } catch (err: any) {
       console.error(err);
       setError("Error loading POS data. Please make sure the backend is live.");
@@ -113,7 +132,8 @@ export default function POSPage() {
           appointmentId: activeCheckoutAppt.id,
           amountPaid: Number(amountPaid),
           paymentMode,
-          notes: notes
+          notes: notes,
+          sendWhatsApp
         })
       });
 
@@ -127,6 +147,7 @@ export default function POSPage() {
         id: activeCheckoutAppt.id,
         date: new Date(activeCheckoutAppt.startTime).toLocaleString(),
         customer: activeCheckoutAppt.customer.name,
+        phone: activeCheckoutAppt.customer.phone,
         service: activeCheckoutAppt.service.name,
         price: activeCheckoutAppt.service.price,
         amountPaid: Number(amountPaid),
@@ -134,12 +155,110 @@ export default function POSPage() {
         staffName: activeCheckoutAppt.staff?.name || "Unassigned"
       });
 
-      setSuccess("Checkout completed successfully!");
+      setSuccess(
+        sendWhatsApp
+          ? "Checkout completed & Digital Invoice sent to customer's WhatsApp!"
+          : "Checkout completed successfully!"
+      );
       setActiveCheckoutAppt(null);
-      await loadData(); // Reload summary and lists
+      await loadData();
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Error finalizing checkout.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSendWaReceipt = async (appointmentId: string, customerPhone?: string) => {
+    setSendingWaReceipt(true);
+    setSuccess(null);
+    setError(null);
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/pos/send-receipt`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          appointmentId,
+          customerPhone
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send WhatsApp digital invoice.");
+      }
+
+      setSuccess("Digital Invoice sent directly to customer's WhatsApp!");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Error sending WhatsApp invoice.");
+    } finally {
+      setSendingWaReceipt(false);
+    }
+  };
+
+  const handleQuickBillSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickServiceId || !quickCustomerName || !quickCustomerPhone) {
+      setError("Please fill all required customer and service details.");
+      return;
+    }
+    setSubmitting(true);
+    setSuccess(null);
+    setError(null);
+
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/pos/quick-bill`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          customerName: quickCustomerName,
+          customerPhone: quickCustomerPhone,
+          serviceId: quickServiceId,
+          amountPaid: Number(quickAmount),
+          paymentMode: quickPaymentMode,
+          sendWhatsApp: quickSendWa
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to create quick bill.");
+      }
+
+      const createdAppt = await res.json();
+
+      setPrintReceiptData({
+        id: createdAppt.id,
+        date: new Date(createdAppt.startTime).toLocaleString(),
+        customer: createdAppt.customer.name,
+        phone: createdAppt.customer.phone,
+        service: createdAppt.service.name,
+        price: createdAppt.service.price,
+        amountPaid: Number(quickAmount),
+        paymentMode: quickPaymentMode,
+        staffName: "Walk-in Desk"
+      });
+
+      setSuccess(
+        quickSendWa
+          ? "Quick Bill created & Digital Invoice sent to customer's WhatsApp!"
+          : "Quick Bill created successfully!"
+      );
+      setShowQuickBillModal(false);
+      setQuickCustomerName("");
+      setQuickCustomerPhone("");
+      setQuickServiceId("");
+      await loadData();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Error creating quick bill.");
     } finally {
       setSubmitting(false);
     }
@@ -246,7 +365,19 @@ export default function POSPage() {
             <p className="text-sm text-gray-500 mt-1">Manage cash registers, log client checkouts, and print paper invoices.</p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => {
+                setShowQuickBillModal(true);
+                if (servicesList.length > 0) {
+                  setQuickServiceId(servicesList[0].id);
+                  setQuickAmount(servicesList[0].price);
+                }
+              }}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-md shadow-emerald-600/20"
+            >
+              <Receipt className="h-4 w-4" /> + Create Quick Bill
+            </button>
             <button
               onClick={() => {
                 setDrawerActionType("OPEN");
@@ -378,6 +509,14 @@ export default function POSPage() {
                   >
                     <Printer className="h-4 w-4" /> Print Thermal Receipt (80mm)
                   </button>
+                  <button
+                    onClick={() => handleSendWaReceipt(printReceiptData.id, printReceiptData.phone)}
+                    disabled={sendingWaReceipt}
+                    className="flex items-center justify-center gap-2 w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl py-3 font-bold transition-all duration-300 cursor-pointer text-sm shadow-sm disabled:opacity-50"
+                  >
+                    <MessageSquare className="h-4 w-4 text-emerald-600" />
+                    {sendingWaReceipt ? "Sending to WhatsApp..." : "Send Invoice to Customer WhatsApp"}
+                  </button>
                 </div>
               ) : (
                 <div className="text-center text-sm text-gray-500 py-16">
@@ -463,6 +602,19 @@ export default function POSPage() {
                 />
               </div>
 
+              <label className="flex items-center gap-2.5 bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendWhatsApp}
+                  onChange={(e) => setSendWhatsApp(e.target.checked)}
+                  className="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                />
+                <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                  Send Digital Invoice directly to Customer's WhatsApp
+                </span>
+              </label>
+
               <button
                 type="submit"
                 disabled={submitting}
@@ -541,6 +693,128 @@ export default function POSPage() {
                 className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-bold transition-all duration-300 cursor-pointer disabled:bg-emerald-400 text-sm shadow-md flex-shrink-0"
               >
                 {submitting ? "Logging..." : "Commit Transaction"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Quick Bill Walk-in Modal */}
+      {showQuickBillModal && (
+        <div className="print:hidden fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <Receipt className="h-5 w-5" /> Make Quick Bill & Invoice
+              </h3>
+              <button onClick={() => setShowQuickBillModal(false)} className="text-white hover:text-gray-200 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickBillSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Piyush Sharma"
+                  value={quickCustomerName}
+                  onChange={(e) => setQuickCustomerName(e.target.value)}
+                  className="w-full border border-gray-200/80 rounded-xl px-3 py-2.5 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-gray-700 font-bold"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer WhatsApp Number *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. +91 9876543210"
+                  value={quickCustomerPhone}
+                  onChange={(e) => setQuickCustomerPhone(e.target.value)}
+                  className="w-full border border-gray-200/80 rounded-xl px-3 py-2.5 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-gray-700 font-bold"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Select Service *</label>
+                <select
+                  value={quickServiceId}
+                  onChange={(e) => {
+                    setQuickServiceId(e.target.value);
+                    const selected = servicesList.find((s) => s.id === e.target.value);
+                    if (selected) setQuickAmount(selected.price);
+                  }}
+                  className="w-full border border-gray-200/80 rounded-xl px-3 py-2.5 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-gray-700 font-bold"
+                  required
+                >
+                  <option value="" disabled>-- Select Salon Service --</option>
+                  {servicesList.map((svc) => (
+                    <option key={svc.id} value={svc.id}>
+                      {svc.name} (₹{svc.price})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Method</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "CASH", label: "Cash", icon: Coins },
+                    { id: "UPI", label: "UPI QR", icon: QrCode },
+                    { id: "STRIPE", label: "Card", icon: CreditCard }
+                  ].map((mode) => {
+                    const ModeIcon = mode.icon;
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setQuickPaymentMode(mode.id as any)}
+                        className={`border rounded-xl px-3 py-2.5 text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                          quickPaymentMode === mode.id
+                            ? "bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm"
+                            : "border-gray-200/80 hover:bg-gray-50 text-gray-500"
+                        }`}
+                      >
+                        <ModeIcon className="h-4 w-4" />
+                        {mode.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Final Bill Amount (₹)</label>
+                <input
+                  type="number"
+                  value={quickAmount}
+                  onChange={(e) => setQuickAmount(Number(e.target.value))}
+                  className="w-full border border-gray-200/80 rounded-xl px-3 py-2.5 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-gray-700 font-bold"
+                  required
+                />
+              </div>
+
+              <label className="flex items-center gap-2.5 bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={quickSendWa}
+                  onChange={(e) => setQuickSendWa(e.target.checked)}
+                  className="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                />
+                <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                  Send Digital Invoice directly to Customer's WhatsApp
+                </span>
+              </label>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-bold transition-all duration-300 cursor-pointer disabled:bg-emerald-400 text-sm shadow-md flex-shrink-0"
+              >
+                {submitting ? "Generating Bill..." : "Generate Bill & Send WhatsApp Invoice"}
               </button>
             </form>
           </div>
