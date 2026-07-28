@@ -14,6 +14,9 @@ export class WhatsappService {
   private readonly token = process.env.WHATSAPP_TOKEN;
   private readonly phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
+  private processedMessageIds = new Set<string>();
+  private recentTextCache = new Map<string, number>();
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(forwardRef(() => WhatsappGatewayService))
@@ -367,6 +370,38 @@ export class WhatsappService {
 
 
 async processParsedMessage(parsed: any, salon: any): Promise<void> {
+    if (!parsed || !parsed.fromPhone) return;
+
+    // 1. Deduplicate by unique messageId
+    if (parsed.messageId) {
+      if (this.processedMessageIds.has(parsed.messageId)) {
+        this.logger.log(`Skipping duplicate messageId processing: ${parsed.messageId}`);
+        return;
+      }
+      this.processedMessageIds.add(parsed.messageId);
+      if (this.processedMessageIds.size > 5000) {
+        const first = this.processedMessageIds.values().next().value;
+        if (first) this.processedMessageIds.delete(first);
+      }
+    }
+
+    // 2. Fallback deduplicate by Phone + Content within a 3-second window
+    if (parsed.text) {
+      const textKey = `${parsed.fromPhone}:${parsed.text.trim().toLowerCase()}`;
+      const now = Date.now();
+      const lastSeen = this.recentTextCache.get(textKey);
+      if (lastSeen && now - lastSeen < 3000) {
+        this.logger.log(`Skipping rapid duplicate content processing from ${parsed.fromPhone}: "${parsed.text}"`);
+        return;
+      }
+      this.recentTextCache.set(textKey, now);
+      if (this.recentTextCache.size > 2000) {
+        for (const [k, v] of this.recentTextCache.entries()) {
+          if (now - v > 10000) this.recentTextCache.delete(k);
+        }
+      }
+    }
+
     let transcript = '';
     const isVoiceNote = !!parsed.audio;
 
