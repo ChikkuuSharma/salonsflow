@@ -400,7 +400,7 @@ export default function ServicesPage() {
                 <thead className="bg-gray-50 text-gray-600 border-b">
                   <tr>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Service Name</th>
-                    <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Category</th>
+                    <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Target Customer</th>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Price</th>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Duration</th>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider text-center">Status</th>
@@ -424,7 +424,7 @@ export default function ServicesPage() {
                             ? "bg-pink-50 text-pink-700 border-pink-200"
                             : "bg-purple-50 text-purple-700 border-purple-200"
                         }`}>
-                          {svc.gender === "MALE" ? "♂️ Men" : svc.gender === "FEMALE" ? "♀️ Women" : "🚻 Unisex"}
+                          {svc.gender === "MALE" ? "♂️ Male Customers" : svc.gender === "FEMALE" ? "♀️ Female Customers" : "🚻 Both (Unisex)"}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-700 font-bold">
@@ -525,40 +525,40 @@ export default function ServicesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Target Gender / Category *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Available For Customers *</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, gender: "MALE" }))}
-                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.gender === "MALE"
                         ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    ♂️ Men
+                    <span>♂️ Male Only</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, gender: "FEMALE" }))}
-                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.gender === "FEMALE"
                         ? "bg-pink-600 text-white border-pink-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    ♀️ Women
+                    <span>♀️ Female Only</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, gender: "UNISEX" }))}
-                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.gender === "UNISEX"
                         ? "bg-purple-600 text-white border-purple-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    🚻 Unisex
+                    <span>🚻 Both (Unisex)</span>
                   </button>
                 </div>
               </div>
@@ -669,40 +669,40 @@ export default function ServicesPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Target Gender / Category *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Available For Customers *</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, gender: "MALE" }))}
-                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.gender === "MALE"
                         ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    ♂️ Men
+                    <span>♂️ Male Only</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, gender: "FEMALE" }))}
-                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.gender === "FEMALE"
                         ? "bg-pink-600 text-white border-pink-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    ♀️ Women
+                    <span>♀️ Female Only</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, gender: "UNISEX" }))}
-                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.gender === "UNISEX"
                         ? "bg-purple-600 text-white border-purple-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    🚻 Unisex
+                    <span>🚻 Both (Unisex)</span>
                   </button>
                 </div>
               </div>
