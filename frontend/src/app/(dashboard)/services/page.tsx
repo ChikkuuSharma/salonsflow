@@ -14,7 +14,10 @@ import {
   AlertCircle,
   Check,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  FileSpreadsheet,
+  Download,
+  Upload
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -40,7 +43,13 @@ export default function ServicesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPresetsModal, setShowPresetsModal] = useState(false);
+  const [showExcelModal, setShowExcelModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  
+  // Excel / CSV File Parsing States
+  const [parsedExcelServices, setParsedExcelServices] = useState<Array<{ name: string; price: number; durationMins: number; gender: string }>>([]);
+  const [excelFileName, setExcelFileName] = useState<string>("");
+  const [excelError, setExcelError] = useState<string | null>(null);
   
   // Presets State
   const defaultPresets = [
@@ -238,6 +247,128 @@ export default function ServicesPage() {
     }
   };
 
+  const downloadSampleCSV = () => {
+    const csvContent =
+      "Service Name,Price,Duration (Mins),Gender (MALE/FEMALE/UNISEX)\n" +
+      "Classic Haircut & Wash,300,30,MALE\n" +
+      "Beard Styling & Trim,150,15,MALE\n" +
+      "Women's Blowdry & Styling,500,40,FEMALE\n" +
+      "L'Oreal Hair Spa Treatment,800,45,FEMALE\n" +
+      "Head & Shoulder Massage,400,25,UNISEX\n" +
+      "Keratin Hair Treatment,2500,90,UNISEX\n";
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "SalonServices_Sample_Template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExcelFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setExcelFileName(file.name);
+    setExcelError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (!text) throw new Error("File content is empty.");
+
+        const lines = text.split(/\r\n|\n/);
+        const parsed: Array<{ name: string; price: number; durationMins: number; gender: string }> = [];
+
+        // Determine if first row is header
+        let startIdx = 0;
+        const firstLine = lines[0].toLowerCase();
+        if (firstLine.includes("name") || firstLine.includes("service") || firstLine.includes("price")) {
+          startIdx = 1;
+        }
+
+        for (let i = startIdx; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          // Support comma or tab delimiter
+          const parts = line.includes(",") ? line.split(",") : line.split("\t");
+          if (parts.length < 2) continue;
+
+          const name = parts[0]?.trim() || "";
+          const price = parseFloat(parts[1]?.trim() || "0") || 0;
+          const durationMins = parseInt(parts[2]?.trim() || "30") || 30;
+
+          let rawGender = (parts[3]?.trim() || "UNISEX").toUpperCase();
+          let gender = "UNISEX";
+          if (rawGender.includes("MEN") || rawGender.includes("MALE") || rawGender === "M") gender = "MALE";
+          else if (rawGender.includes("WOMEN") || rawGender.includes("FEMALE") || rawGender.includes("LADIES") || rawGender === "F") gender = "FEMALE";
+
+          if (name && price >= 0) {
+            parsed.push({ name, price, durationMins, gender });
+          }
+        }
+
+        if (parsed.length === 0) {
+          throw new Error("No valid service rows found in file. Download the sample CSV template for the exact format.");
+        }
+
+        setParsedExcelServices(parsed);
+      } catch (err: any) {
+        setExcelError(err.message || "Failed to parse file.");
+        setParsedExcelServices([]);
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
+  const handleImportExcelServices = async () => {
+    if (parsedExcelServices.length === 0) {
+      setExcelError("Please upload a valid Excel or CSV file first.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "") : "";
+      const response = await fetch(`${apiUrl}/api/v1/services/bulk`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          services: parsedExcelServices.map(s => ({
+            name: s.name,
+            price: s.price,
+            durationMins: s.durationMins,
+            gender: s.gender,
+            isActive: true,
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to import services from Excel file.");
+      }
+
+      setShowExcelModal(false);
+      setParsedExcelServices([]);
+      setExcelFileName("");
+      setToast({ message: `📊 ${parsedExcelServices.length} Services Imported Live from Excel!`, type: "success" });
+      fetchServices();
+    } catch (err: any) {
+      setExcelError(err.message || "Excel import failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingService) return;
@@ -393,7 +524,13 @@ export default function ServicesPage() {
           <h2 className="text-2xl font-bold tracking-tight">Services Catalog</h2>
           <p className="text-muted-foreground">Manage your salon's service menu with male, female, and unisex categories & pricing.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowExcelModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 border-0 cursor-pointer"
+          >
+            <FileSpreadsheet className="h-4.5 w-4.5" /> 📊 Upload Excel / CSV
+          </button>
           <button
             onClick={() => setShowPresetsModal(true)}
             className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 border-0 cursor-pointer"
@@ -1017,6 +1154,143 @@ export default function ServicesPage() {
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 animate-pulse" />}
                   Import {selectedPresets.length} Services Live
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Excel / CSV File Import Modal */}
+      {showExcelModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-6 w-6" />
+                <div>
+                  <h3 className="font-bold text-lg">Import Services from Excel / CSV</h3>
+                  <p className="text-xs text-emerald-100">Upload your existing Excel spreadsheet or CSV file to bulk import all services.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowExcelModal(false);
+                  setParsedExcelServices([]);
+                  setExcelFileName("");
+                }}
+                className="text-white/80 hover:text-white transition-colors p-1 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              {/* Sample Template Download Bar */}
+              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between flex-wrap gap-3">
+                <div className="space-y-0.5">
+                  <h4 className="text-xs font-black text-emerald-900 uppercase tracking-wider">Need an Excel Template?</h4>
+                  <p className="text-xs text-emerald-700">Download our sample template format to quickly copy-paste your salon menu.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadSampleCSV}
+                  className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-3.5 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  <Download className="h-4 w-4" /> Download Sample CSV Template
+                </button>
+              </div>
+
+              {/* Upload Dropzone */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Upload Excel or CSV File (.csv, .xlsx, .xls)</label>
+                <div className="border-2 border-dashed border-gray-200 hover:border-emerald-500 bg-gray-50/50 hover:bg-emerald-50/30 p-6 rounded-2xl text-center transition-all cursor-pointer relative">
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls,.txt"
+                    onChange={handleExcelFileUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  <Upload className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                  <p className="text-sm font-extrabold text-gray-800">
+                    {excelFileName ? `📄 Selected File: ${excelFileName}` : "Click or drag & drop your Excel/CSV file here"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">Supports standard CSV, TSV, or Excel text exports</p>
+                </div>
+              </div>
+
+              {excelError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-600" />
+                  <span>{excelError}</span>
+                </div>
+              )}
+
+              {/* Parsed Services Preview Table */}
+              {parsedExcelServices.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Check className="h-4 w-4 text-emerald-600 stroke-[3]" />
+                      Found {parsedExcelServices.length} Valid Services in File:
+                    </span>
+                  </div>
+                  <div className="max-h-[220px] overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100 bg-white">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-gray-50 text-gray-600 sticky top-0 border-b">
+                        <tr>
+                          <th className="px-3 py-2 font-extrabold">Service Name</th>
+                          <th className="px-3 py-2 font-extrabold">Price</th>
+                          <th className="px-3 py-2 font-extrabold">Duration</th>
+                          <th className="px-3 py-2 font-extrabold">Category</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {parsedExcelServices.map((svc, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 font-bold text-gray-900">{svc.name}</td>
+                            <td className="px-3 py-2 font-extrabold text-emerald-700">₹{svc.price}</td>
+                            <td className="px-3 py-2 font-medium text-gray-600">{svc.durationMins} mins</td>
+                            <td className="px-3 py-2">
+                              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${
+                                svc.gender === "MALE"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : svc.gender === "FEMALE"
+                                  ? "bg-pink-50 text-pink-700 border-pink-200"
+                                  : "bg-purple-50 text-purple-700 border-purple-200"
+                              }`}>
+                                {svc.gender === "MALE" ? "Men" : svc.gender === "FEMALE" ? "Women" : "Unisex"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+              <span className="text-xs font-bold text-gray-600">
+                Ready to import: <strong className="text-emerald-700">{parsedExcelServices.length} Services</strong>
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowExcelModal(false)}
+                  className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting || parsedExcelServices.length === 0}
+                  onClick={handleImportExcelServices}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+                  Import {parsedExcelServices.length} Services Live
                 </button>
               </div>
             </div>
