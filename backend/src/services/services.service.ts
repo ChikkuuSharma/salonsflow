@@ -7,7 +7,7 @@ export class ServicesService {
 
   async create(
     salonId: string,
-    data: { name: string; price: number; durationMins: number; isActive?: boolean },
+    data: { name: string; price: number; durationMins: number; gender?: string; isActive?: boolean },
   ) {
     if (!data.name || data.price === undefined || data.durationMins === undefined) {
       throw new BadRequestException('Missing name, price, or durationMins parameter.');
@@ -19,6 +19,7 @@ export class ServicesService {
         name: data.name,
         price: data.price,
         durationMins: data.durationMins,
+        gender: data.gender || 'UNISEX',
         isActive: data.isActive ?? true,
       },
     });
@@ -46,7 +47,7 @@ export class ServicesService {
   async update(
     id: string,
     salonId: string,
-    data: { name?: string; price?: number; durationMins?: number; isActive?: boolean },
+    data: { name?: string; price?: number; durationMins?: number; gender?: string; isActive?: boolean },
   ) {
     // Confirm service exists and belongs to the tenant first (IDOR validation)
     await this.findOne(id, salonId);
@@ -57,6 +58,7 @@ export class ServicesService {
         name: data.name,
         price: data.price,
         durationMins: data.durationMins,
+        gender: data.gender,
         isActive: data.isActive,
       },
     });

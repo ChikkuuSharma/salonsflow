@@ -48,7 +48,7 @@ export class AppointmentsController {
   @Post('staff')
   async createStaff(
     @SalonId() salonId: string,
-    @Body() body: { name: string; isAvailable?: boolean },
+    @Body() body: { name: string; isAvailable?: boolean; genderSpecialization?: string },
   ) {
     if (!body.name) {
       throw new BadRequestException('Name is required.');
@@ -58,6 +58,7 @@ export class AppointmentsController {
         salonId,
         name: body.name,
         isAvailable: body.isAvailable ?? true,
+        genderSpecialization: body.genderSpecialization || 'ALL',
       },
     });
   }
@@ -66,7 +67,7 @@ export class AppointmentsController {
   async updateStaff(
     @SalonId() salonId: string,
     @Param('id') id: string,
-    @Body() body: { name?: string; isAvailable?: boolean },
+    @Body() body: { name?: string; isAvailable?: boolean; genderSpecialization?: string },
   ) {
     const staff = await this.prisma.staff.findFirst({
       where: { id, salonId },
@@ -79,6 +80,7 @@ export class AppointmentsController {
       data: {
         name: body.name,
         isAvailable: body.isAvailable,
+        genderSpecialization: body.genderSpecialization,
       },
     });
   }

@@ -22,6 +22,7 @@ interface Service {
   name: string;
   price: number;
   durationMins: number;
+  gender: "MALE" | "FEMALE" | "UNISEX";
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +30,7 @@ interface Service {
 
 export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [genderFilter, setGenderFilter] = useState<"ALL" | "MALE" | "FEMALE" | "UNISEX">("ALL");
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export default function ServicesPage() {
     name: "",
     price: "",
     durationMins: "",
+    gender: "UNISEX" as "MALE" | "FEMALE" | "UNISEX",
     isActive: true,
   });
   const [formError, setFormError] = useState<string | null>(null);
@@ -94,6 +97,7 @@ export default function ServicesPage() {
       name: "",
       price: "",
       durationMins: "",
+      gender: "UNISEX",
       isActive: true,
     });
     setFormError(null);
@@ -106,6 +110,7 @@ export default function ServicesPage() {
       name: service.name,
       price: service.price.toString(),
       durationMins: service.durationMins.toString(),
+      gender: service.gender || "UNISEX",
       isActive: service.isActive,
     });
     setFormError(null);
@@ -136,7 +141,7 @@ export default function ServicesPage() {
       setSubmitting(true);
       setFormError(null);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "") : "";
 
       const response = await fetch(`${apiUrl}/api/v1/services`, {
         method: "POST",
@@ -148,6 +153,7 @@ export default function ServicesPage() {
           name: formData.name,
           price: priceNum,
           durationMins: durationNum,
+          gender: formData.gender,
           isActive: formData.isActive,
         }),
       });
@@ -193,7 +199,7 @@ export default function ServicesPage() {
       setSubmitting(true);
       setFormError(null);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "") : "";
 
       const response = await fetch(`${apiUrl}/api/v1/services/${editingService.id}`, {
         method: "PATCH",
@@ -205,6 +211,7 @@ export default function ServicesPage() {
           name: formData.name,
           price: priceNum,
           durationMins: durationNum,
+          gender: formData.gender,
           isActive: formData.isActive,
         }),
       });
@@ -290,10 +297,12 @@ export default function ServicesPage() {
     }
   };
 
-  // Filter services by search term
-  const filteredServices = services.filter((s) =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter services by search term & gender
+  const filteredServices = services.filter((s) => {
+    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGender = genderFilter === "ALL" || (s.gender || "UNISEX") === genderFilter;
+    return matchesSearch && matchesGender;
+  });
 
   return (
     <div className="space-y-6 relative">
@@ -317,21 +326,21 @@ export default function ServicesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Services Catalog</h2>
-          <p className="text-muted-foreground">Manage your salon's service menu. AI Chatbot fetches pricing and catalog dynamically from here.</p>
+          <p className="text-muted-foreground">Manage your salon's service menu with male, female, and unisex categories & pricing.</p>
         </div>
         <button
           onClick={openAddModal}
           id="btn-add-service"
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-md text-sm font-semibold transition-all shadow-sm active:scale-95"
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 border-0 cursor-pointer"
         >
           <Plus className="h-4.5 w-4.5" /> Add New Service
         </button>
       </div>
 
       {/* Main Services Table card */}
-      <Card className="overflow-hidden border border-gray-100 shadow-sm">
-        <div className="p-4 border-b bg-white flex items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
+      <Card className="overflow-hidden border border-gray-100 shadow-sm rounded-2xl">
+        <div className="p-4 border-b bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md w-full">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input 
               type="text" 
@@ -339,8 +348,30 @@ export default function ServicesPage() {
               placeholder="Search services by name..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border border-gray-200 rounded-md pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
+              className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
             />
+          </div>
+
+          {/* Gender Filter Pills */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl w-full sm:w-auto justify-center">
+            {[
+              { id: "ALL", label: "All" },
+              { id: "MALE", label: "♂️ Men" },
+              { id: "FEMALE", label: "♀️ Women" },
+              { id: "UNISEX", label: "🚻 Unisex" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setGenderFilter(tab.id as any)}
+                className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all border-0 cursor-pointer ${
+                  genderFilter === tab.id
+                    ? "bg-white text-purple-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -351,7 +382,7 @@ export default function ServicesPage() {
               <p className="text-rose-600 font-semibold mb-2">Error: {error}</p>
               <button 
                 onClick={fetchServices} 
-                className="text-sm text-green-600 font-medium hover:underline"
+                className="text-sm text-purple-600 font-medium hover:underline"
               >
                 Try reloading services
               </button>
@@ -360,7 +391,7 @@ export default function ServicesPage() {
 
           {loading && services.length === 0 ? (
             <div className="flex flex-col justify-center items-center py-20 gap-3">
-              <Loader2 className="h-10 w-10 text-green-600 animate-spin" />
+              <Loader2 className="h-10 w-10 text-purple-600 animate-spin" />
               <span className="text-gray-500 text-sm font-medium">Fetching service catalog...</span>
             </div>
           ) : (
@@ -369,6 +400,7 @@ export default function ServicesPage() {
                 <thead className="bg-gray-50 text-gray-600 border-b">
                   <tr>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Service Name</th>
+                    <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Category</th>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Price</th>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider">Duration</th>
                     <th className="px-6 py-3 font-semibold text-xs uppercase tracking-wider text-center">Status</th>
@@ -379,12 +411,23 @@ export default function ServicesPage() {
                   {filteredServices.map((svc) => (
                     <tr key={svc.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4 font-semibold text-gray-900 flex items-center gap-2.5">
-                        <div className="bg-green-50 text-green-700 p-2 rounded-lg">
+                        <div className="bg-purple-50 text-purple-700 p-2 rounded-lg">
                           <Scissors className="h-4 w-4" />
                         </div>
                         <span>{svc.name}</span>
                       </td>
-                      <td className="px-6 py-4 text-gray-700 font-medium">
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-extrabold border uppercase ${
+                          svc.gender === "MALE"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : svc.gender === "FEMALE"
+                            ? "bg-pink-50 text-pink-700 border-pink-200"
+                            : "bg-purple-50 text-purple-700 border-purple-200"
+                        }`}>
+                          {svc.gender === "MALE" ? "♂️ Men" : svc.gender === "FEMALE" ? "♀️ Women" : "🚻 Unisex"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-700 font-bold">
                         ₹{svc.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-6 py-4 text-gray-600 font-medium">
@@ -396,7 +439,7 @@ export default function ServicesPage() {
                           id={`toggle-status-${svc.id}`}
                           title={`Click to ${svc.isActive ? "disable" : "enable"}`}
                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                            svc.isActive ? "bg-green-600" : "bg-gray-200"
+                            svc.isActive ? "bg-purple-600" : "bg-gray-200"
                           }`}
                         >
                           <span
@@ -412,7 +455,7 @@ export default function ServicesPage() {
                           <button
                             onClick={() => openEditModal(svc)}
                             id={`btn-edit-${svc.id}`}
-                            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all border-0 cursor-pointer"
                             title="Edit Service"
                           >
                             <Edit3 className="h-4.5 w-4.5" />
@@ -420,7 +463,7 @@ export default function ServicesPage() {
                           <button
                             onClick={() => handleDelete(svc)}
                             id={`btn-delete-${svc.id}`}
-                            className="p-2 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            className="p-2 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all border-0 cursor-pointer"
                             title="Delete Service"
                           >
                             <Trash2 className="h-4.5 w-4.5" />
@@ -431,8 +474,8 @@ export default function ServicesPage() {
                   ))}
                   {filteredServices.length === 0 && !loading && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium">
-                        No services found. Click "Add New Service" to start building your catalog.
+                      <td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-medium">
+                        No services found. Click "Add New Service" to start building your menu catalog.
                       </td>
                     </tr>
                   )}
@@ -479,6 +522,45 @@ export default function ServicesPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Target Gender / Category *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, gender: "MALE" }))}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.gender === "MALE"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    ♂️ Men
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, gender: "FEMALE" }))}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.gender === "FEMALE"
+                        ? "bg-pink-600 text-white border-pink-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    ♀️ Women
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, gender: "UNISEX" }))}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.gender === "UNISEX"
+                        ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    🚻 Unisex
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -584,6 +666,45 @@ export default function ServicesPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Target Gender / Category *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, gender: "MALE" }))}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.gender === "MALE"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    ♂️ Men
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, gender: "FEMALE" }))}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.gender === "FEMALE"
+                        ? "bg-pink-600 text-white border-pink-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    ♀️ Women
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, gender: "UNISEX" }))}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.gender === "UNISEX"
+                        ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    🚻 Unisex
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

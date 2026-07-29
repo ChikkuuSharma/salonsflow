@@ -31,6 +31,7 @@ interface Staff {
   id: string;
   name: string;
   isAvailable: boolean;
+  genderSpecialization?: "MALE_ONLY" | "FEMALE_ONLY" | "ALL";
   staffServices: StaffService[];
 }
 
@@ -50,6 +51,7 @@ export default function StaffPage() {
   const [formData, setFormData] = useState({
     name: "",
     isAvailable: true,
+    genderSpecialization: "ALL" as "MALE_ONLY" | "FEMALE_ONLY" | "ALL",
   });
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -242,7 +244,7 @@ export default function StaffPage() {
         </div>
         <button
           onClick={() => {
-            setFormData({ name: "", isAvailable: true });
+            setFormData({ name: "", isAvailable: true, genderSpecialization: "ALL" });
             setFormError(null);
             setShowAddModal(true);
           }}
@@ -271,7 +273,19 @@ export default function StaffPage() {
                       </div>
                       <div>
                         <h3 className="font-extrabold text-gray-900 text-base">{staff.name}</h3>
-                        <p className="text-xs text-gray-400 font-bold uppercase mt-0.5">Stylist</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs text-gray-400 font-bold uppercase">Stylist</span>
+                          <span className="text-gray-300">•</span>
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${
+                            staff.genderSpecialization === "MALE_ONLY"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : staff.genderSpecialization === "FEMALE_ONLY"
+                              ? "bg-pink-50 text-pink-700 border-pink-200"
+                              : "bg-purple-50 text-purple-700 border-purple-200"
+                          }`}>
+                            {staff.genderSpecialization === "MALE_ONLY" ? "♂️ Men's Spec" : staff.genderSpecialization === "FEMALE_ONLY" ? "♀️ Ladies Spec" : "🚻 Unisex Spec"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     
@@ -366,6 +380,45 @@ export default function StaffPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Gender Specialization *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "MALE_ONLY" }))}
+                    className={`py-2 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.genderSpecialization === "MALE_ONLY"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    ♂️ Men Spec
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "FEMALE_ONLY" }))}
+                    className={`py-2 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.genderSpecialization === "FEMALE_ONLY"
+                        ? "bg-pink-600 text-white border-pink-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    ♀️ Ladies Spec
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "ALL" }))}
+                    className={`py-2 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.genderSpecialization === "ALL"
+                        ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    🚻 Unisex / All
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-2">

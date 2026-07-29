@@ -20,6 +20,7 @@ function BookingContent() {
   // Form selections
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [genderPreference, setGenderPreference] = useState<"MALE" | "FEMALE" | "ALL">("MALE");
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   
@@ -236,29 +237,97 @@ function BookingContent() {
 
           {/* Step 2: Select Service */}
           <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">2. Select Service</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {salonInfo?.services?.map((serv: any) => (
-                <div
-                  key={serv.id}
-                  onClick={() => setSelectedService(serv)}
-                  className={`p-4 rounded-2xl border text-left cursor-pointer transition-all hover:scale-[1.01] ${
-                    selectedService?.id === serv.id
-                      ? "bg-indigo-950/40 border-indigo-500/60 text-indigo-300"
-                      : "bg-slate-950/60 border-slate-800 text-slate-300"
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">2. Select Service</h3>
+            </div>
+
+            {/* Who is this booking for */}
+            <div className="space-y-1.5 bg-slate-950/80 p-3 rounded-2xl border border-slate-800/80">
+              <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block">Who is this appointment for?</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGenderPreference("MALE");
+                    setSelectedService(null);
+                  }}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    genderPreference === "MALE"
+                      ? "bg-blue-600/90 text-white border-blue-500 shadow-md"
+                      : "bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800"
                   }`}
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-extrabold text-xs text-slate-100">{serv.name}</p>
-                      <p className="text-[10px] text-slate-500 mt-1 flex items-center gap-1 font-mono">
-                        <Clock className="h-3 w-3" /> {serv.durationMins} mins
-                      </p>
+                  ♂️ Men / Gents
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGenderPreference("FEMALE");
+                    setSelectedService(null);
+                  }}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    genderPreference === "FEMALE"
+                      ? "bg-pink-600/90 text-white border-pink-500 shadow-md"
+                      : "bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800"
+                  }`}
+                >
+                  ♀️ Ladies / Women
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGenderPreference("ALL");
+                    setSelectedService(null);
+                  }}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    genderPreference === "ALL"
+                      ? "bg-purple-600/90 text-white border-purple-500 shadow-md"
+                      : "bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800"
+                  }`}
+                >
+                  🚻 All Services
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {salonInfo?.services
+                ?.filter((serv: any) => {
+                  if (genderPreference === "ALL") return true;
+                  return serv.gender === genderPreference || serv.gender === "UNISEX" || !serv.gender;
+                })
+                .map((serv: any) => (
+                  <div
+                    key={serv.id}
+                    onClick={() => setSelectedService(serv)}
+                    className={`p-4 rounded-2xl border text-left cursor-pointer transition-all hover:scale-[1.01] ${
+                      selectedService?.id === serv.id
+                        ? "bg-indigo-950/40 border-indigo-500/60 text-indigo-300 shadow-sm"
+                        : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-extrabold text-xs text-slate-100">{serv.name}</p>
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${
+                            serv.gender === "MALE"
+                              ? "bg-blue-950 text-blue-300 border-blue-800"
+                              : serv.gender === "FEMALE"
+                              ? "bg-pink-950 text-pink-300 border-pink-800"
+                              : "bg-purple-950 text-purple-300 border-purple-800"
+                          }`}>
+                            {serv.gender === "MALE" ? "Men" : serv.gender === "FEMALE" ? "Women" : "Unisex"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-1 flex items-center gap-1 font-mono">
+                          <Clock className="h-3 w-3" /> {serv.durationMins} mins
+                        </p>
+                      </div>
+                      <p className="font-black text-xs text-indigo-400 font-mono">₹{serv.price}</p>
                     </div>
-                    <p className="font-black text-xs text-indigo-400 font-mono">₹{serv.price}</p>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 
@@ -318,7 +387,7 @@ function BookingContent() {
             </div>
 
             {/* Stylist Select */}
-            <div className="space-y-3">
+            <div className="space-y-3 col-span-1 md:col-span-2">
               <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">4. Preferred Stylist</h3>
               <select
                 value={selectedStaff?.id || ""}
@@ -328,10 +397,22 @@ function BookingContent() {
                 }}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500/50 font-semibold"
               >
-                <option value="">Any Available Stylist</option>
-                {salonInfo?.staff?.map((st: any) => (
-                  <option key={st.id} value={st.id}>{st.name}</option>
-                ))}
+                <option value="">Any Available Qualified Stylist</option>
+                {salonInfo?.staff
+                  ?.filter((st: any) => {
+                    if (genderPreference === "MALE") {
+                      return st.genderSpecialization === "MALE_ONLY" || st.genderSpecialization === "ALL" || !st.genderSpecialization;
+                    }
+                    if (genderPreference === "FEMALE") {
+                      return st.genderSpecialization === "FEMALE_ONLY" || st.genderSpecialization === "ALL" || !st.genderSpecialization;
+                    }
+                    return true;
+                  })
+                  .map((st: any) => (
+                    <option key={st.id} value={st.id}>
+                      {st.name} {st.genderSpecialization === "MALE_ONLY" ? "(Men's Specialist)" : st.genderSpecialization === "FEMALE_ONLY" ? "(Ladies Specialist)" : "(Unisex)"}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
