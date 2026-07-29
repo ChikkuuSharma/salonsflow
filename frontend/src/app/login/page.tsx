@@ -161,9 +161,18 @@ export default function LoginPage() {
 
       if (response.ok) {
         if (formMode === "register") {
-          setSuccessMessage("Owner account registered successfully! You can now log in.");
-          setFormMode("login");
-          setOwnerPassword("");
+          const data = await response.json();
+          if (data.token) {
+            localStorage.setItem("auth_token", data.token);
+            setSuccessMessage("Owner account created successfully! Redirecting to your dashboard...");
+            setTimeout(() => {
+              window.location.href = "/dashboard";
+            }, 800);
+          } else {
+            setSuccessMessage("Owner account registered successfully! You can now log in.");
+            setFormMode("login");
+            setOwnerPassword("");
+          }
         } else if (formMode === "change-password") {
           setSuccessMessage("Owner password updated successfully! You can now log in.");
           setFormMode("login");

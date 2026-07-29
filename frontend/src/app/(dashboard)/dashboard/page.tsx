@@ -112,7 +112,7 @@ export default function DashboardPage() {
     const checkProfile = async () => {
       try {
         const storedToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-        if (storedToken && storedToken.startsWith("dev-bypass-token")) {
+        if (storedToken === "dev-bypass-token-demo") {
           return;
         }
         const response = await fetch(`${apiUrl}/api/v1/salons/me`, {

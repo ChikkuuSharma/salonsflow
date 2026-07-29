@@ -39,6 +39,10 @@ export function ClientInitializer() {
 
         // Mock Database handler
         const handleMockDatabase = (reqUrl: string, method: string, reqBody?: any): Response | null => {
+          const activeToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+          if (activeToken && (activeToken.startsWith("dev-bypass-token-user-") || activeToken.startsWith("dev-bypass-token-impersonate-"))) {
+            return null;
+          }
           try {
             const dbStr = localStorage.getItem("mock_db") || JSON.stringify(getInitialMockDb());
             const db = JSON.parse(dbStr);
@@ -347,7 +351,7 @@ export function ClientInitializer() {
 
         // Check if we should directly intercept (e.g. demo token/login)
         const storedToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-        const isDemoToken = storedToken === "dev-bypass-token-demo" || (storedToken && storedToken.startsWith("dev-bypass-token-user-"));
+        const isDemoToken = storedToken === "dev-bypass-token-demo";
         const isDemoLoginAttempt = url.includes("/api/v1/auth/demo/login");
 
         if (url.includes("/api/v1/")) {
