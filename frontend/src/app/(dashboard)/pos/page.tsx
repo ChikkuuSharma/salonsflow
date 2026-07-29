@@ -61,8 +61,10 @@ export default function POSPage() {
   const [servicesList, setServicesList] = useState<any[]>([]);
   const [quickCustomerName, setQuickCustomerName] = useState("");
   const [quickCustomerPhone, setQuickCustomerPhone] = useState("");
-  const [quickServiceId, setQuickServiceId] = useState("");
-  const [quickAmount, setQuickAmount] = useState<number>(0);
+  const [quickServiceIds, setQuickServiceIds] = useState<string[]>([]);
+  const [quickDiscountType, setQuickDiscountType] = useState<"FLAT" | "PERCENT">("FLAT");
+  const [quickDiscountVal, setQuickDiscountVal] = useState<number>(0);
+  const [quickDiscountReason, setQuickDiscountReason] = useState<string>("");
   const [quickPaymentMode, setQuickPaymentMode] = useState<"CASH" | "UPI" | "STRIPE">("CASH");
   const [quickSendWa, setQuickSendWa] = useState(true);
 
@@ -202,10 +204,22 @@ export default function POSPage() {
 
   const handleQuickBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!quickServiceId || !quickCustomerName || !quickCustomerPhone) {
-      setError("Please fill all required customer and service details.");
+    if (quickServiceIds.length === 0 || !quickCustomerName || !quickCustomerPhone) {
+      setError("Please fill all required customer details and select at least one service.");
       return;
     }
+
+    const selectedServicesData = servicesList.filter(s => quickServiceIds.includes(s.id));
+    const grossSubtotal = selectedServicesData.reduce((sum, s) => sum + (s.price || 0), 0);
+
+    let calculatedDiscount = 0;
+    if (quickDiscountType === "PERCENT") {
+      calculatedDiscount = Math.round((grossSubtotal * (quickDiscountVal || 0)) / 100);
+    } else {
+      calculatedDiscount = Number(quickDiscountVal || 0);
+    }
+    const netAmount = Math.max(0, grossSubtotal - calculatedDiscount);
+
     setSubmitting(true);
     setSuccess(null);
     setError(null);
@@ -220,8 +234,10 @@ export default function POSPage() {
         body: JSON.stringify({
           customerName: quickCustomerName,
           customerPhone: quickCustomerPhone,
-          serviceId: quickServiceId,
-          amountPaid: Number(quickAmount),
+          serviceIds: quickServiceIds,
+          amountPaid: netAmount,
+          discountAmount: calculatedDiscount,
+          discountReason: quickDiscountReason || undefined,
           paymentMode: quickPaymentMode,
           sendWhatsApp: quickSendWa
         })
@@ -239,9 +255,10 @@ export default function POSPage() {
         date: new Date(createdAppt.startTime).toLocaleString(),
         customer: createdAppt.customer.name,
         phone: createdAppt.customer.phone,
-        service: createdAppt.service.name,
-        price: createdAppt.service.price,
-        amountPaid: Number(quickAmount),
+        service: selectedServicesData.map(s => s.name).join(", "),
+        price: grossSubtotal,
+        amountPaid: netAmount,
+        discountAmount: calculatedDiscount,
         paymentMode: quickPaymentMode,
         staffName: "Walk-in Desk"
       });
@@ -254,7 +271,9 @@ export default function POSPage() {
       setShowQuickBillModal(false);
       setQuickCustomerName("");
       setQuickCustomerPhone("");
-      setQuickServiceId("");
+      setQuickServiceIds([]);
+      setQuickDiscountVal(0);
+      setQuickDiscountReason("");
       await loadData();
     } catch (err: any) {
       console.error(err);
@@ -370,8 +389,7 @@ export default function POSPage() {
               onClick={() => {
                 setShowQuickBillModal(true);
                 if (servicesList.length > 0) {
-                  setQuickServiceId(servicesList[0].id);
-                  setQuickAmount(servicesList[0].price);
+                  setQuickServiceIds([servicesList[0].id]);
                 }
               }}
               className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer shadow-md shadow-emerald-600/20"
@@ -736,27 +754,101 @@ export default function POSPage() {
                 />
               </div>
 
+              {/* Service Selection Checklist */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Select Service *</label>
-                <select
-                  value={quickServiceId}
-                  onChange={(e) => {
-                    setQuickServiceId(e.target.value);
-                    const selected = servicesList.find((s) => s.id === e.target.value);
-                    if (selected) setQuickAmount(selected.price);
-                  }}
-                  className="w-full border border-gray-200/80 rounded-xl px-3 py-2.5 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-gray-700 font-bold"
-                  required
-                >
-                  <option value="" disabled>-- Select Salon Service --</option>
-                  {servicesList.map((svc) => (
-                    <option key={svc.id} value={svc.id}>
-                      {svc.name} (₹{svc.price})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Select Services *</label>
+                  <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    {quickServiceIds.length} Selected
+                  </span>
+                </div>
+                <div className="max-h-[180px] overflow-y-auto border border-gray-200/80 rounded-xl divide-y divide-gray-100 p-1 bg-white">
+                  {servicesList.map((svc) => {
+                    const isChecked = quickServiceIds.includes(svc.id);
+                    return (
+                      <div
+                        key={svc.id}
+                        onClick={() => {
+                          setQuickServiceIds(prev =>
+                            prev.includes(svc.id) ? prev.filter(id => id !== svc.id) : [...prev, svc.id]
+                          );
+                        }}
+                        className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors ${
+                          isChecked ? "bg-emerald-50/70 text-emerald-900" : "hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center transition-all ${
+                            isChecked ? "bg-emerald-600 border-emerald-600 text-white" : "border-gray-300 bg-white"
+                          }`}>
+                            {isChecked && <CheckCircle2 className="h-3.5 w-3.5 stroke-[3]" />}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold">{svc.name}</p>
+                            <span className="text-[10px] text-gray-400 font-medium">{svc.durationMins || 30} mins</span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-black text-gray-900">₹{svc.price}</span>
+                      </div>
+                    );
+                  })}
+                  {servicesList.length === 0 && (
+                    <p className="text-center text-xs text-gray-400 py-4">No services in catalog.</p>
+                  )}
+                </div>
               </div>
 
+              {/* Offer & Discount Section */}
+              <div className="space-y-2 bg-slate-50 border border-slate-200/70 p-3.5 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1">
+                    <Tag className="h-3.5 w-3.5 text-emerald-600" /> Apply Offer / Discount
+                  </label>
+                  <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setQuickDiscountType("FLAT")}
+                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold transition-all ${
+                        quickDiscountType === "FLAT" ? "bg-emerald-600 text-white shadow-xs" : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      ₹ Flat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQuickDiscountType("PERCENT")}
+                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold transition-all ${
+                        quickDiscountType === "PERCENT" ? "bg-emerald-600 text-white shadow-xs" : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      % Percent
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <input
+                      type="number"
+                      placeholder={quickDiscountType === "PERCENT" ? "Discount % (e.g. 10)" : "Discount ₹ (e.g. 100)"}
+                      value={quickDiscountVal || ""}
+                      onChange={(e) => setQuickDiscountVal(Number(e.target.value))}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none text-gray-700 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Offer Code / Reason (e.g. FESTIVE20)"
+                      value={quickDiscountReason}
+                      onChange={(e) => setQuickDiscountReason(e.target.value)}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none text-gray-700 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Method</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -785,16 +877,37 @@ export default function POSPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Final Bill Amount (₹)</label>
-                <input
-                  type="number"
-                  value={quickAmount}
-                  onChange={(e) => setQuickAmount(Number(e.target.value))}
-                  className="w-full border border-gray-200/80 rounded-xl px-3 py-2.5 text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-gray-700 font-bold"
-                  required
-                />
-              </div>
+              {/* Live Price Calculation Summary */}
+              {(() => {
+                const selectedServicesData = servicesList.filter(s => quickServiceIds.includes(s.id));
+                const grossSubtotal = selectedServicesData.reduce((sum, s) => sum + (s.price || 0), 0);
+                let calculatedDiscount = 0;
+                if (quickDiscountType === "PERCENT") {
+                  calculatedDiscount = Math.round((grossSubtotal * (quickDiscountVal || 0)) / 100);
+                } else {
+                  calculatedDiscount = Number(quickDiscountVal || 0);
+                }
+                const netAmount = Math.max(0, grossSubtotal - calculatedDiscount);
+
+                return (
+                  <div className="bg-emerald-950 text-emerald-50 p-4 rounded-2xl space-y-2 border border-emerald-900">
+                    <div className="flex justify-between items-center text-xs font-semibold text-emerald-300">
+                      <span>Services Subtotal ({selectedServicesData.length})</span>
+                      <span>₹{grossSubtotal}</span>
+                    </div>
+                    {calculatedDiscount > 0 && (
+                      <div className="flex justify-between items-center text-xs font-semibold text-rose-300">
+                        <span>Discount / Offer ({quickDiscountReason || "Applied"})</span>
+                        <span>- ₹{calculatedDiscount}</span>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t border-emerald-800/80 flex justify-between items-center">
+                      <span className="font-extrabold text-xs uppercase tracking-wider text-emerald-400">Total Payable</span>
+                      <span className="font-black text-lg text-white">₹{netAmount}</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <label className="flex items-center gap-2.5 bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl cursor-pointer">
                 <input
@@ -811,8 +924,8 @@ export default function POSPage() {
 
               <button
                 type="submit"
-                disabled={submitting}
-                className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-bold transition-all duration-300 cursor-pointer disabled:bg-emerald-400 text-sm shadow-md flex-shrink-0"
+                disabled={submitting || quickServiceIds.length === 0}
+                className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-bold transition-all duration-300 cursor-pointer disabled:bg-gray-300 disabled:text-gray-500 text-sm shadow-md flex-shrink-0"
               >
                 {submitting ? "Generating Bill..." : "Generate Bill & Send WhatsApp Invoice"}
               </button>

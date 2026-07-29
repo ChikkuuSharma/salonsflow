@@ -21,7 +21,7 @@ function BookingContent() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [genderPreference, setGenderPreference] = useState<"MALE" | "FEMALE" | "ALL">("MALE");
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   
   // Default date format YYYY-MM-DD
@@ -47,7 +47,7 @@ function BookingContent() {
         const data = await res.json();
         setSalonInfo(data);
         if (data.services?.length > 0) {
-          setSelectedService(data.services[0]);
+          setSelectedServices([data.services[0]]);
         }
       } catch (err: any) {
         console.error(err);
@@ -59,15 +59,30 @@ function BookingContent() {
     fetchSalonDetails();
   }, [salonId]);
 
+  const handleToggleService = (serv: any) => {
+    setSelectedServices(prev => {
+      const exists = prev.some(s => s.id === serv.id);
+      if (exists) {
+        if (prev.length === 1) return prev; // Keep at least 1 service selected
+        return prev.filter(s => s.id !== serv.id);
+      }
+      return [...prev, serv];
+    });
+  };
+
+  const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price || 0), 0);
+  const totalDuration = selectedServices.reduce((sum, s) => sum + (s.durationMins || 30), 0);
+  const primaryService = selectedServices[0] || null;
+
   // Fetch available slots when service, date, or staff changes
   useEffect(() => {
-    if (!selectedService || !selectedDate) return;
+    if (!primaryService || !selectedDate) return;
 
     const fetchAvailableSlots = async () => {
       try {
         setSlotsLoading(true);
         setSelectedSlot(null);
-        let url = `${apiUrl}/api/v1/public/appointments/slots?salonId=${salonId}&serviceId=${selectedService.id}&date=${selectedDate}`;
+        let url = `${apiUrl}/api/v1/public/appointments/slots?salonId=${salonId}&serviceId=${primaryService.id}&date=${selectedDate}`;
         if (selectedStaff) {
           url += `&staffId=${selectedStaff.id}`;
         }
@@ -82,7 +97,7 @@ function BookingContent() {
       }
     };
     fetchAvailableSlots();
-  }, [selectedService, selectedDate, selectedStaff, salonId]);
+  }, [primaryService?.id, selectedDate, selectedStaff, salonId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,8 +109,8 @@ function BookingContent() {
       setError("Mobile Number is required. Please enter your mobile number.");
       return;
     }
-    if (!selectedService) {
-      setError("Please select a service.");
+    if (selectedServices.length === 0) {
+      setError("Please select at least one service.");
       return;
     }
     if (!selectedSlot) {
@@ -111,7 +126,8 @@ function BookingContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           salonId,
-          serviceId: selectedService.id,
+          serviceId: primaryService.id,
+          serviceIds: selectedServices.map(s => s.id),
           date: selectedDate,
           time: selectedSlot,
           staffId: selectedStaff?.id || undefined,
@@ -154,14 +170,15 @@ function BookingContent() {
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-bold tracking-tight">Booking Confirmed!</h2>
-            <p className="text-sm text-slate-400">Thank you, {customerName}. Your appointment for {selectedService?.name} is successfully scheduled.</p>
+            <p className="text-sm text-slate-400">Thank you, {customerName}. Your appointment for {selectedServices.map(s => s.name).join(", ")} is successfully scheduled.</p>
           </div>
           <div className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-left font-mono text-xs text-slate-300 space-y-2">
-            <p><span className="text-slate-500">Service:</span> {selectedService?.name}</p>
+            <p><span className="text-slate-500">Services ({selectedServices.length}):</span> {selectedServices.map(s => s.name).join(", ")}</p>
             <p><span className="text-slate-500">Stylist:</span> {selectedStaff?.name || "Any Available Stylist"}</p>
             <p><span className="text-slate-500">Date:</span> {new Date(selectedDate).toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric' })}</p>
             <p><span className="text-slate-500">Time:</span> {selectedSlot}</p>
-            <p><span className="text-slate-500">Price:</span> ₹{selectedService?.price}</p>
+            <p><span className="text-slate-500">Total Duration:</span> {totalDuration} mins</p>
+            <p><span className="text-slate-500">Total Price:</span> ₹{totalPrice}</p>
           </div>
           <p className="text-xs text-slate-500">You can close this tab now. We have saved your appointment details.</p>
         </div>
@@ -235,10 +252,13 @@ function BookingContent() {
             </div>
           </div>
 
-          {/* Step 2: Select Service */}
+          {/* Step 2: Select Services */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">2. Select Service</h3>
+              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">2. Select Services (Multiple Allowed)</h3>
+              <span className="text-[10px] font-bold text-indigo-400 bg-indigo-950/80 px-2.5 py-1 rounded-full border border-indigo-800/60">
+                {selectedServices.length} Selected
+              </span>
             </div>
 
             {/* Who is this booking for */}
@@ -249,7 +269,6 @@ function BookingContent() {
                   type="button"
                   onClick={() => {
                     setGenderPreference("MALE");
-                    setSelectedService(null);
                   }}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     genderPreference === "MALE"
@@ -263,7 +282,6 @@ function BookingContent() {
                   type="button"
                   onClick={() => {
                     setGenderPreference("FEMALE");
-                    setSelectedService(null);
                   }}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     genderPreference === "FEMALE"
@@ -277,7 +295,6 @@ function BookingContent() {
                   type="button"
                   onClick={() => {
                     setGenderPreference("ALL");
-                    setSelectedService(null);
                   }}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     genderPreference === "ALL"
@@ -296,39 +313,67 @@ function BookingContent() {
                   if (genderPreference === "ALL") return true;
                   return serv.gender === genderPreference || serv.gender === "UNISEX" || !serv.gender;
                 })
-                .map((serv: any) => (
-                  <div
-                    key={serv.id}
-                    onClick={() => setSelectedService(serv)}
-                    className={`p-4 rounded-2xl border text-left cursor-pointer transition-all hover:scale-[1.01] ${
-                      selectedService?.id === serv.id
-                        ? "bg-indigo-950/40 border-indigo-500/60 text-indigo-300 shadow-sm"
-                        : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <p className="font-extrabold text-xs text-slate-100">{serv.name}</p>
-                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${
-                            serv.gender === "MALE"
-                              ? "bg-blue-950 text-blue-300 border-blue-800"
-                              : serv.gender === "FEMALE"
-                              ? "bg-pink-950 text-pink-300 border-pink-800"
-                              : "bg-purple-950 text-purple-300 border-purple-800"
+                .map((serv: any) => {
+                  const isSelected = selectedServices.some(s => s.id === serv.id);
+                  return (
+                    <div
+                      key={serv.id}
+                      onClick={() => handleToggleService(serv)}
+                      className={`p-4 rounded-2xl border text-left cursor-pointer transition-all hover:scale-[1.01] relative ${
+                        isSelected
+                          ? "bg-indigo-950/60 border-indigo-500 text-indigo-200 shadow-md ring-1 ring-indigo-500/50"
+                          : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-2.5">
+                          <div className={`h-5 w-5 rounded-md border flex items-center justify-center transition-all mt-0.5 ${
+                            isSelected ? "bg-indigo-600 border-indigo-500 text-white" : "border-slate-700 bg-slate-900"
                           }`}>
-                            {serv.gender === "MALE" ? "Men" : serv.gender === "FEMALE" ? "Women" : "Unisex"}
-                          </span>
+                            {isSelected && <CheckCircle className="h-3.5 w-3.5" />}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-extrabold text-xs text-slate-100">{serv.name}</p>
+                              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${
+                                serv.gender === "MALE"
+                                  ? "bg-blue-950 text-blue-300 border-blue-800"
+                                  : serv.gender === "FEMALE"
+                                  ? "bg-pink-950 text-pink-300 border-pink-800"
+                                  : "bg-purple-950 text-purple-300 border-purple-800"
+                              }`}>
+                                {serv.gender === "MALE" ? "Men" : serv.gender === "FEMALE" ? "Women" : "Unisex"}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 mt-1 flex items-center gap-1 font-mono">
+                              <Clock className="h-3 w-3" /> {serv.durationMins} mins
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-1 flex items-center gap-1 font-mono">
-                          <Clock className="h-3 w-3" /> {serv.durationMins} mins
-                        </p>
+                        <p className="font-black text-xs text-indigo-400 font-mono">₹{serv.price}</p>
                       </div>
-                      <p className="font-black text-xs text-indigo-400 font-mono">₹{serv.price}</p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
+
+            {/* Selected Summary Bar */}
+            {selectedServices.length > 0 && (
+              <div className="bg-indigo-950/80 border border-indigo-800/80 rounded-2xl p-3.5 flex items-center justify-between text-xs">
+                <div className="space-y-0.5">
+                  <p className="font-extrabold text-indigo-200">
+                    Selected ({selectedServices.length}): {selectedServices.map(s => s.name).join(", ")}
+                  </p>
+                  <p className="text-[10px] text-indigo-400 font-mono">
+                    Total Estimated Duration: {totalDuration} mins
+                  </p>
+                </div>
+                <div className="text-right pl-3 border-l border-indigo-800/60">
+                  <p className="text-[10px] uppercase font-bold text-slate-400 font-mono">Total Price</p>
+                  <p className="text-base font-black text-white font-mono">₹{totalPrice}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Step 3: Select Date & Stylist */}

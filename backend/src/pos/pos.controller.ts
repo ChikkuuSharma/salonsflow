@@ -71,8 +71,11 @@ export class PosController {
     @Body() dto: {
       customerName: string;
       customerPhone: string;
-      serviceId: string;
+      serviceId?: string;
+      serviceIds?: string[];
       amountPaid: number;
+      discountAmount?: number;
+      discountReason?: string;
       paymentMode: string;
       notes?: string;
       sendWhatsApp?: boolean;

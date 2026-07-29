@@ -182,10 +182,135 @@ export class PosService {
     return updatedAppt;
   }
 
+  async createQuickBill(
+    salonId: string,
+    userId: string,
+    dto: {
+      customerName: string;
+      customerPhone: string;
+      serviceId?: string;
+      serviceIds?: string[];
+      amountPaid: number;
+      discountAmount?: number;
+      discountReason?: string;
+      paymentMode: string;
+      notes?: string;
+      sendWhatsApp?: boolean;
+    },
+  ) {
+    const {
+      customerName,
+      customerPhone,
+      serviceId,
+      serviceIds,
+      amountPaid,
+      discountAmount = 0,
+      discountReason,
+      paymentMode,
+      notes,
+      sendWhatsApp,
+    } = dto;
+
+    let phone = customerPhone.trim().replace(/[^0-9]/g, '');
+    if (!phone.startsWith('+')) {
+      phone = phone.length === 10 ? '+91' + phone : '+' + phone;
+    }
+
+    let customer = await this.prisma.customer.findFirst({
+      where: { salonId, phone },
+    });
+    if (!customer) {
+      customer = await this.prisma.customer.create({
+        data: {
+          salonId,
+          name: customerName,
+          phone,
+          source: 'POS_WALKIN',
+        },
+      });
+    }
+
+    // Resolve list of selected services
+    const targetServiceIds = serviceIds && serviceIds.length > 0 ? serviceIds : (serviceId ? [serviceId] : []);
+    if (targetServiceIds.length === 0) {
+      throw new BadRequestException('At least one service must be selected for billing.');
+    }
+
+    const services = await this.prisma.service.findMany({
+      where: { id: { in: targetServiceIds }, salonId },
+    });
+    if (services.length === 0) throw new BadRequestException('Selected services not found.');
+
+    const primaryService = services[0];
+    const combinedServiceNames = services.map(s => s.name).join(', ');
+    const totalDurationMins = services.reduce((sum, s) => sum + (s.durationMins || 30), 0);
+    const grossSubtotal = services.reduce((sum, s) => sum + (s.price || 0), 0);
+
+    const now = new Date();
+    const endTime = new Date(now.getTime() + totalDurationMins * 60000);
+
+    const fullNotes = [
+      combinedServiceNames ? `Services: ${combinedServiceNames}` : null,
+      grossSubtotal > 0 ? `Subtotal: ₹${grossSubtotal}` : null,
+      discountAmount > 0 ? `Discount: -₹${discountAmount}${discountReason ? ` (${discountReason})` : ''}` : null,
+      notes ? `Notes: ${notes}` : null,
+      `Payment Mode: ${paymentMode}`
+    ].filter(Boolean).join(' | ');
+
+    const appointment = await this.prisma.appointment.create({
+      data: {
+        salonId,
+        customerId: customer.id,
+        serviceId: primaryService.id,
+        startTime: now,
+        endTime,
+        durationMins: totalDurationMins,
+        status: 'COMPLETED',
+        amountPaid: Number(amountPaid),
+        bookingSource: 'POS_WALKIN',
+        notes: fullNotes,
+      },
+      include: {
+        customer: true,
+        service: true,
+        salon: true,
+      },
+    });
+
+    if (paymentMode === 'CASH') {
+      await this.prisma.cashDrawerLog.create({
+        data: {
+          salonId,
+          amount: Number(amountPaid),
+          actionType: 'SALE',
+          notes: `POS Quick Bill Sale: ${appointment.id} (${combinedServiceNames})`,
+          createdById: userId,
+        },
+      });
+    }
+
+    if (sendWhatsApp) {
+      await this.sendReceiptToWhatsApp(salonId, appointment.id, phone, {
+        services,
+        grossSubtotal,
+        discountAmount,
+        discountReason
+      });
+    }
+
+    return appointment;
+  }
+
   async sendReceiptToWhatsApp(
     salonId: string,
     appointmentId: string,
     overridePhone?: string,
+    extraBillingDetails?: {
+      services?: any[];
+      grossSubtotal?: number;
+      discountAmount?: number;
+      discountReason?: string;
+    }
   ) {
     const appointment = await this.prisma.appointment.findFirst({
       where: { id: appointmentId, salonId },
@@ -208,7 +333,7 @@ export class PosService {
 
     const salon = appointment.salon;
     const customer = appointment.customer;
-    const service = appointment.service;
+    const primaryService = appointment.service;
     const staff = appointment.staff;
 
     const dateFormatted = new Date(appointment.startTime).toLocaleString('en-IN', {
@@ -219,25 +344,42 @@ export class PosService {
 
     const customerName = customer?.name || 'Valued Customer';
     const salonName = salon?.name || 'Salon';
-    const serviceName = service?.name || 'Hair & Beauty Service';
-    const price = appointment.amountPaid || service?.price || 0;
-    const paymentMode = appointment.notes?.includes('Payment Mode:')
-      ? appointment.notes.split('Payment Mode:')[1].trim()
-      : 'Completed';
     const staffName = staff?.name || null;
     const location = salon?.address || 'Our Salon';
 
-    const messageText =
+    // Parse services & discount details
+    const servicesList = extraBillingDetails?.services || [primaryService];
+    const netAmount = appointment.amountPaid || primaryService?.price || 0;
+    const discountAmount = extraBillingDetails?.discountAmount || 0;
+    const discountReason = extraBillingDetails?.discountReason || '';
+    const grossSubtotal = extraBillingDetails?.grossSubtotal || (netAmount + discountAmount);
+
+    const paymentMode = appointment.notes?.includes('Payment Mode:')
+      ? appointment.notes.split('Payment Mode:')[1].trim().split('|')[0].trim()
+      : 'Completed';
+
+    let servicesFormatted = servicesList
+      .map((s) => `• ${s.name} - ₹${s.price}`)
+      .join('\n');
+
+    let messageText =
       `🧾 *${salonName.toUpperCase()} - DIGITAL INVOICE*\n` +
       `───────────────────────\n` +
       `Invoice #: *INV-${appointment.id.slice(0, 8).toUpperCase()}*\n` +
       `Date: ${dateFormatted}\n` +
       `Customer: *${customerName}*\n\n` +
-      `📋 *Service Details:*\n` +
-      `• ${serviceName} - ₹${price}\n\n` +
-      (staffName ? `✂️ *Stylist:* ${staffName}\n` : '') +
-      `💰 *Total Amount Paid:* ₹${price}\n` +
+      `📋 *Services Rendered:*\n` +
+      `${servicesFormatted}\n\n`;
+
+    if (discountAmount > 0) {
+      messageText += `💵 *Subtotal:* ₹${grossSubtotal}\n`;
+      messageText += `🏷️ *Discount/Offer${discountReason ? ` (${discountReason})` : ''}:* -₹${discountAmount}\n`;
+    }
+
+    messageText +=
+      `💰 *Net Amount Paid:* ₹${netAmount}\n` +
       `💳 *Payment Mode:* ${paymentMode}\n` +
+      (staffName ? `✂️ *Stylist:* ${staffName}\n` : '') +
       `───────────────────────\n` +
       `📍 *Location:* ${location}\n\n` +
       `Thank you for visiting *${salonName}*! Reply to this message anytime to book your next appointment. ✨`;
@@ -255,86 +397,6 @@ export class PosService {
     }
 
     return { success: true, message: `Invoice sent to WhatsApp (${phone})` };
-  }
-
-  async createQuickBill(
-    salonId: string,
-    userId: string,
-    dto: {
-      customerName: string;
-      customerPhone: string;
-      serviceId: string;
-      amountPaid: number;
-      paymentMode: string;
-      notes?: string;
-      sendWhatsApp?: boolean;
-    },
-  ) {
-    const { customerName, customerPhone, serviceId, amountPaid, paymentMode, notes, sendWhatsApp } = dto;
-
-    let phone = customerPhone.trim().replace(/[^0-9]/g, '');
-    if (!phone.startsWith('+')) {
-      phone = phone.length === 10 ? '+91' + phone : '+' + phone;
-    }
-
-    let customer = await this.prisma.customer.findFirst({
-      where: { salonId, phone },
-    });
-    if (!customer) {
-      customer = await this.prisma.customer.create({
-        data: {
-          salonId,
-          name: customerName,
-          phone,
-          source: 'POS_WALKIN',
-        },
-      });
-    }
-
-    const service = await this.prisma.service.findFirst({
-      where: { id: serviceId, salonId },
-    });
-    if (!service) throw new BadRequestException('Service not found.');
-
-    const now = new Date();
-    const endTime = new Date(now.getTime() + (service.durationMins || 30) * 60000);
-
-    const appointment = await this.prisma.appointment.create({
-      data: {
-        salonId,
-        customerId: customer.id,
-        serviceId: service.id,
-        startTime: now,
-        endTime,
-        status: 'COMPLETED',
-        amountPaid,
-        bookingSource: 'POS_WALKIN',
-        notes: notes ? `${notes} | Payment Mode: ${paymentMode}` : `Payment Mode: ${paymentMode}`,
-      },
-      include: {
-        customer: true,
-        service: true,
-        salon: true,
-      },
-    });
-
-    if (paymentMode === 'CASH') {
-      await this.prisma.cashDrawerLog.create({
-        data: {
-          salonId,
-          amount: amountPaid,
-          actionType: 'SALE',
-          notes: `POS Quick Bill Sale: ${appointment.id}`,
-          createdById: userId,
-        },
-      });
-    }
-
-    if (sendWhatsApp) {
-      await this.sendReceiptToWhatsApp(salonId, appointment.id, phone);
-    }
-
-    return appointment;
   }
 }
 
