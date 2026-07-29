@@ -25,6 +25,28 @@ export class ServicesService {
     });
   }
 
+  async createBulk(
+    salonId: string,
+    services: Array<{ name: string; price: number; durationMins: number; gender?: string; isActive?: boolean }>,
+  ) {
+    if (!services || !Array.isArray(services) || services.length === 0) {
+      throw new BadRequestException('At least one service is required for bulk import.');
+    }
+
+    const dataToCreate = services.map((s) => ({
+      salonId,
+      name: s.name,
+      price: Number(s.price),
+      durationMins: Number(s.durationMins),
+      gender: s.gender || 'UNISEX',
+      isActive: s.isActive ?? true,
+    }));
+
+    return this.prisma.service.createMany({
+      data: dataToCreate,
+    });
+  }
+
   async findAll(salonId: string) {
     return this.prisma.service.findMany({
       where: { salonId },

@@ -13,7 +13,8 @@ import {
   DollarSign, 
   AlertCircle,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -38,8 +39,31 @@ export default function ServicesPage() {
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPresetsModal, setShowPresetsModal] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   
+  // Presets State
+  const defaultPresets = [
+    { name: "Classic Men's Haircut", price: 250, durationMins: 25, gender: "MALE", category: "Men's Barber" },
+    { name: "Beard Trim & Styling", price: 150, durationMins: 15, gender: "MALE", category: "Men's Barber" },
+    { name: "Haircut + Beard Styling Combo", price: 350, durationMins: 35, gender: "MALE", category: "Men's Barber" },
+    { name: "Men's Hair Color & Touchup", price: 400, durationMins: 30, gender: "MALE", category: "Men's Barber" },
+    { name: "Men's Charcoal Face Clean Up", price: 450, durationMins: 30, gender: "MALE", category: "Men's Barber" },
+    { name: "Head Massage & Hair Wash", price: 200, durationMins: 20, gender: "MALE", category: "Men's Barber" },
+    { name: "Women's Haircut & Blowdry", price: 600, durationMins: 45, gender: "FEMALE", category: "Women's Beauty" },
+    { name: "L'Oreal Hair Spa & Wash", price: 800, durationMins: 45, gender: "FEMALE", category: "Women's Beauty" },
+    { name: "Threading (Eyebrows & Upper Lip)", price: 100, durationMins: 15, gender: "FEMALE", category: "Women's Beauty" },
+    { name: "Full Arms & Legs Waxing", price: 700, durationMins: 40, gender: "FEMALE", category: "Women's Beauty" },
+    { name: "O3+ Facial & Glow Treatment", price: 1200, durationMins: 60, gender: "FEMALE", category: "Women's Beauty" },
+    { name: "Classic Pedicure & Manicure", price: 900, durationMins: 50, gender: "FEMALE", category: "Women's Beauty" },
+    { name: "Keratin Smooth Treatment", price: 2500, durationMins: 90, gender: "UNISEX", category: "Unisex & Spa" },
+    { name: "Deep Conditioning Hair Mask", price: 500, durationMins: 30, gender: "UNISEX", category: "Unisex & Spa" },
+    { name: "Head, Neck & Shoulder Relief Massage", price: 400, durationMins: 25, gender: "UNISEX", category: "Unisex & Spa" },
+    { name: "De-Tan Removal Face Pack", price: 350, durationMins: 20, gender: "UNISEX", category: "Unisex & Spa" },
+  ];
+
+  const [selectedPresets, setSelectedPresets] = useState<typeof defaultPresets>(defaultPresets);
+
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -168,6 +192,47 @@ export default function ServicesPage() {
       fetchServices();
     } catch (err: any) {
       setFormError(err.message || "Failed to create service.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleBulkImportPresets = async () => {
+    if (selectedPresets.length === 0) {
+      setToast({ message: "Please select at least one preset to import.", type: "warning" });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "") : "";
+      const response = await fetch(`${apiUrl}/api/v1/services/bulk`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          services: selectedPresets.map(p => ({
+            name: p.name,
+            price: p.price,
+            durationMins: p.durationMins,
+            gender: p.gender,
+            isActive: true,
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to import selected preset catalog.");
+      }
+
+      setShowPresetsModal(false);
+      setToast({ message: `✨ ${selectedPresets.length} Popular Services Imported Live!`, type: "success" });
+      fetchServices();
+    } catch (err: any) {
+      setToast({ message: err.message || "Bulk import failed.", type: "error" });
     } finally {
       setSubmitting(false);
     }
@@ -328,13 +393,21 @@ export default function ServicesPage() {
           <h2 className="text-2xl font-bold tracking-tight">Services Catalog</h2>
           <p className="text-muted-foreground">Manage your salon's service menu with male, female, and unisex categories & pricing.</p>
         </div>
-        <button
-          onClick={openAddModal}
-          id="btn-add-service"
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 border-0 cursor-pointer"
-        >
-          <Plus className="h-4.5 w-4.5" /> Add New Service
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPresetsModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 border-0 cursor-pointer"
+          >
+            <Sparkles className="h-4.5 w-4.5 animate-pulse" /> ✨ 1-Click Popular Presets
+          </button>
+          <button
+            onClick={openAddModal}
+            id="btn-add-service"
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 border-0 cursor-pointer"
+          >
+            <Plus className="h-4.5 w-4.5" /> Add New Service
+          </button>
+        </div>
       </div>
 
       {/* Main Services Table card */}
@@ -769,6 +842,184 @@ export default function ServicesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 1-Click Presets Modal */}
+      {showPresetsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-6 w-6 animate-pulse" />
+                <div>
+                  <h3 className="font-bold text-lg">1-Click Popular Salon Presets</h3>
+                  <p className="text-xs text-amber-100">Select industry-standard services and import your full catalog in 1 second!</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowPresetsModal(false)}
+                className="text-white/80 hover:text-white transition-colors p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {/* Category Quick Select Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Quick Select:</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPresets(defaultPresets)}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold rounded-xl transition-all shadow-xs"
+                  >
+                    Select All (16)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPresets(defaultPresets.filter(p => p.gender === "MALE"))}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl transition-all shadow-xs"
+                  >
+                    ♂️ All Men's
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPresets(defaultPresets.filter(p => p.gender === "FEMALE"))}
+                    className="px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white text-xs font-extrabold rounded-xl transition-all shadow-xs"
+                  >
+                    ♀️ All Women's
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPresets([])}
+                    className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-extrabold rounded-xl transition-all"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+
+              {/* Preset List Grid */}
+              <div className="space-y-3">
+                {["Men's Barber", "Women's Beauty", "Unisex & Spa"].map((cat) => {
+                  const catItems = defaultPresets.filter(p => p.category === cat);
+                  return (
+                    <div key={cat} className="space-y-2">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 font-mono flex items-center gap-1.5">
+                        <Scissors className="h-3.5 w-3.5 text-amber-500" /> {cat}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                        {catItems.map((preset) => {
+                          const isSelected = selectedPresets.some(p => p.name === preset.name);
+                          const currentSelected = selectedPresets.find(p => p.name === preset.name);
+
+                          return (
+                            <div
+                              key={preset.name}
+                              className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-2 ${
+                                isSelected
+                                  ? "bg-amber-50/60 border-amber-300 text-amber-950 shadow-xs"
+                                  : "bg-white border-gray-200 text-gray-500 opacity-60 hover:opacity-100"
+                              }`}
+                            >
+                              <div 
+                                onClick={() => {
+                                  setSelectedPresets(prev => 
+                                    prev.some(p => p.name === preset.name)
+                                      ? prev.filter(p => p.name !== preset.name)
+                                      : [...prev, preset]
+                                  );
+                                }}
+                                className="flex items-center gap-2.5 cursor-pointer flex-1"
+                              >
+                                <div className={`h-5 w-5 rounded-md border flex items-center justify-center transition-all ${
+                                  isSelected ? "bg-amber-600 border-amber-600 text-white" : "border-gray-300 bg-white"
+                                }`}>
+                                  {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-gray-900">{preset.name}</p>
+                                  <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase ${
+                                    preset.gender === "MALE"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : preset.gender === "FEMALE"
+                                      ? "bg-pink-50 text-pink-700 border-pink-200"
+                                      : "bg-purple-50 text-purple-700 border-purple-200"
+                                  }`}>
+                                    {preset.gender === "MALE" ? "Men" : preset.gender === "FEMALE" ? "Women" : "Unisex"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Editable price & duration when selected */}
+                              {isSelected && (
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <div className="space-y-0.5 text-right">
+                                    <span className="text-[9px] font-bold text-gray-400 block uppercase">Price</span>
+                                    <input
+                                      type="number"
+                                      value={currentSelected?.price || preset.price}
+                                      onChange={(e) => {
+                                        const newPrice = Number(e.target.value);
+                                        setSelectedPresets(prev => 
+                                          prev.map(p => p.name === preset.name ? { ...p, price: newPrice } : p)
+                                        );
+                                      }}
+                                      className="w-16 bg-white border border-gray-300 rounded-lg px-1.5 py-0.5 text-xs font-black text-emerald-700 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    />
+                                  </div>
+                                  <div className="space-y-0.5 text-right">
+                                    <span className="text-[9px] font-bold text-gray-400 block uppercase">Mins</span>
+                                    <input
+                                      type="number"
+                                      value={currentSelected?.durationMins || preset.durationMins}
+                                      onChange={(e) => {
+                                        const newMins = Number(e.target.value);
+                                        setSelectedPresets(prev => 
+                                          prev.map(p => p.name === preset.name ? { ...p, durationMins: newMins } : p)
+                                        );
+                                      }}
+                                      className="w-12 bg-white border border-gray-300 rounded-lg px-1.5 py-0.5 text-xs font-bold text-gray-700 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+              <span className="text-xs font-bold text-gray-600">
+                Total Services Selected: <strong className="text-amber-600">{selectedPresets.length}</strong>
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPresetsModal(false)}
+                  className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting || selectedPresets.length === 0}
+                  onClick={handleBulkImportPresets}
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 animate-pulse" />}
+                  Import {selectedPresets.length} Services Live
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

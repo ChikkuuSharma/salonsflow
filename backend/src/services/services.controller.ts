@@ -37,10 +37,28 @@ export class ServicesController {
       name: string;
       price: number;
       durationMins: number;
+      gender?: string;
       isActive?: boolean;
     },
   ) {
     return this.servicesService.create(salonId, body);
+  }
+
+  @Post('bulk')
+  async createBulk(
+    @SalonId() salonId: string,
+    @Body()
+    body: {
+      services: Array<{
+        name: string;
+        price: number;
+        durationMins: number;
+        gender?: string;
+        isActive?: boolean;
+      }>;
+    },
+  ) {
+    return this.servicesService.createBulk(salonId, body.services);
   }
 
   @Patch(':id')
