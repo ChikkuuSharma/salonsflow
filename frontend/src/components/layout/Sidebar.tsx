@@ -19,7 +19,8 @@ import {
   Scissors,
   Briefcase,
   Sparkles,
-  BarChart3
+  BarChart3,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,13 @@ import { X } from "lucide-react";
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("admin_auth_token");
+    localStorage.removeItem("impersonated_salon_name");
+    window.location.href = "/login";
+  };
 
   const SidebarContent = (
     <>
@@ -98,10 +106,16 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           <div className="absolute -right-4 -bottom-4 h-16 w-16 bg-purple-500/10 rounded-full blur-xl"></div>
           <h4 className="text-xs font-bold text-slate-800 dark:text-white">Upgrade to Premium</h4>
           <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 leading-normal">Get unlimited bookings & advanced AI capabilities.</p>
-          <button className="w-full mt-3 py-1.5 px-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-[10px] font-bold shadow-md shadow-purple-950/20 transition-all border-0 cursor-pointer">
+          <Link href="/pricing" className="block w-full mt-3 py-1.5 px-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-[10px] font-bold shadow-md shadow-purple-950/20 transition-all text-center no-underline">
             Go Premium
-          </button>
+          </Link>
         </div>
+        <button 
+          onClick={handleLogout}
+          className="w-full mt-2.5 py-2 px-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold transition-all border border-red-200/80 dark:border-red-900/40 cursor-pointer flex items-center justify-center gap-2"
+        >
+          <LogOut className="h-4 w-4 text-red-500" /> Log Out
+        </button>
       </div>
     </>
   );
