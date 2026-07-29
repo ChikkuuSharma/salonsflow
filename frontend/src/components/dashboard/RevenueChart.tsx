@@ -10,20 +10,25 @@ import {
   CartesianGrid
 } from "recharts";
 
-const data = [
-  { time: "9 AM", revenue: 4200 },
-  { time: "11 AM", revenue: 8400 },
-  { time: "1 PM", revenue: 12500 },
-  { time: "3 PM", revenue: 15300 },
-  { time: "5 PM", revenue: 19800 },
-  { time: "7 PM", revenue: 22100 },
-  { time: "9 PM", revenue: 24350 },
+interface RevenueChartProps {
+  data?: { time: string; revenue: number }[];
+}
+
+const defaultZeroData = [
+  { time: "9 AM", revenue: 0 },
+  { time: "11 AM", revenue: 0 },
+  { time: "1 PM", revenue: 0 },
+  { time: "3 PM", revenue: 0 },
+  { time: "5 PM", revenue: 0 },
+  { time: "7 PM", revenue: 0 },
+  { time: "9 PM", revenue: 0 },
 ];
 
-export function RevenueChart() {
+export function RevenueChart({ data: chartData }: RevenueChartProps) {
+  const activeData = chartData && chartData.length > 0 ? chartData : defaultZeroData;
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={activeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>

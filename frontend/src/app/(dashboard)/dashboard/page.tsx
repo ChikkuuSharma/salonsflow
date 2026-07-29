@@ -60,28 +60,20 @@ export default function DashboardPage() {
 
   // Simulated Chat State for WhatsApp sandbox
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { sender: "customer", text: "Hi, I want to book a hair spa tomorrow.", time: "18:10" },
-    { sender: "ai", text: "Hi! I can definitely help with that. Our Hair Spa is 60 mins (₹1,200). What time works best for you?", time: "18:11" },
-    { sender: "customer", text: "Around 5:00 PM please.", time: "18:11" },
-    { sender: "ai", text: "Perfect! We have an open slot at 5:00 PM tomorrow with Amit Stylist (Senior Stylist). Shall I go ahead and book it?", time: "18:12" }
+    { sender: "ai", text: "Hello! 👋 Welcome to our Salon. How can I assist you with service bookings today?", time: "18:00" }
   ]);
   const [inputText, setInputText] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
 
-  // Simulated Appointment list state
-  const [appointmentsList, setAppointmentsList] = useState([
-    { id: 1, name: "Amit Verma", service: "Premium Haircut", price: 500, time: "17:00", status: "Confirmed" },
-    { id: 2, name: "Neha Singh", service: "Deep Tissue Massage", price: 1500, time: "18:30", status: "Confirmed" },
-    { id: 3, name: "Rohit Kumar", service: "Beard Grooming & Styling", price: 350, time: "19:15", status: "Pending" },
-    { id: 4, name: "Sneha Patel", service: "Hair Coloring Treatment", price: 2200, time: "20:00", status: "Confirmed" }
-  ]);
+  // Appointment list state
+  const [appointmentsList, setAppointmentsList] = useState<any[]>([]);
 
   const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const loadData = async () => {
     try {
-      const [metricsRes, ucisRes, staffRes, recoveryRes] = await Promise.all([
+      const [metricsRes, ucisRes, staffRes, recoveryRes, apptsRes] = await Promise.all([
         fetch(`${apiUrl}/api/v1/analytics/metrics`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
@@ -93,6 +85,9 @@ export default function DashboardPage() {
         }),
         fetch(`${apiUrl}/api/v1/analytics/recovery-metrics`, {
           headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${apiUrl}/api/v1/appointments`, {
+          headers: { Authorization: `Bearer ${token}` }
         })
       ]);
 
@@ -100,6 +95,19 @@ export default function DashboardPage() {
       if (ucisRes.ok) setUcisMetrics(await ucisRes.json());
       if (staffRes.ok) setStaffUtilization(await staffRes.json());
       if (recoveryRes.ok) setRecoveryMetrics(await recoveryRes.json());
+      if (apptsRes.ok) {
+        const apptsData = await apptsRes.json();
+        if (Array.isArray(apptsData)) {
+          setAppointmentsList(apptsData.map((a: any) => ({
+            id: a.id,
+            name: a.customer?.name || "Walk-in Client",
+            service: a.service?.name || "Salon Service",
+            price: a.service?.price || 0,
+            time: new Date(a.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: a.status === 'CONFIRMED' ? 'Confirmed' : 'Pending'
+          })));
+        }
+      }
     } catch (err) {
       console.error("Error loading dashboard metrics:", err);
       setError("Error loading metrics from API.");
@@ -150,7 +158,7 @@ export default function DashboardPage() {
       if (inputText.toLowerCase().includes("yes") || inputText.toLowerCase().includes("book")) {
         aiText = "Wonderful! Your appointment is successfully booked. I've sent the confirmation details to your WhatsApp.";
       } else if (inputText.toLowerCase().includes("price") || inputText.toLowerCase().includes("charge")) {
-        aiText = "Our Premium Haircut is ₹500, Deep Tissue Massage is ₹1,500, and Beard Grooming is ₹350. Standard durations are 45-60 mins.";
+        aiText = "Our services start at standard salon rates. Standard durations are 20-60 mins.";
       }
       setChatMessages((prev) => [...prev, { sender: "ai", text: aiText, time: aiTime }]);
     }, 1500);
@@ -171,12 +179,12 @@ export default function DashboardPage() {
     );
   }
 
-  // Fallback concept values combined with API metrics if available
-  const todayRevenue = metrics?.todayRevenue || 24350;
-  const appointmentsCount = metrics?.appointmentsToday || 32;
-  const newCustomersCount = metrics?.newCustomers || 8;
-  const aiChatsCount = metrics?.aiHandledChats || 128;
-  const activeStaffCount = staffUtilization.filter((s) => s.isAvailable).length || 12;
+  const isDemoSession = token === "dev-bypass-token-demo";
+  const savedRevenue = recoveryMetrics?.savedRevenue ?? metrics?.savedRevenue ?? (isDemoSession ? 8450 : 0);
+  const aiConversionRate = metrics?.aiConversionRate ?? (isDemoSession ? 72 : 0);
+  const appointmentsCount = metrics?.appointmentsToday ?? (isDemoSession ? 32 : appointmentsList.length);
+  const aiChatsCount = metrics?.aiHandledChats ?? (isDemoSession ? 128 : 0);
+  const activeStaffCount = staffUtilization.filter((s) => s.isAvailable).length;
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto pb-12">
@@ -188,14 +196,14 @@ export default function DashboardPage() {
           <div className="flex justify-between items-start">
             <div className="space-y-2">
               <p className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">Revenue Saved by AI</p>
-              <p className="text-3xl font-black text-slate-800 font-display">₹{(recoveryMetrics?.savedRevenue || 8450).toLocaleString()}</p>
+              <p className="text-3xl font-black text-slate-800 font-display">₹{savedRevenue.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl group-hover:scale-110 transition-transform duration-300 border border-purple-100">
               <Bot className="h-6 w-6" />
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-xs text-purple-600 font-bold">
-            <TrendingUp className="h-4 w-4" /> 32.8% AI Autopilot Reservation rate
+            <TrendingUp className="h-4 w-4" /> {savedRevenue > 0 ? "32.8% AI Autopilot Reservation rate" : "0% AI Autopilot Reservation rate"}
           </div>
         </div>
 
@@ -205,14 +213,14 @@ export default function DashboardPage() {
           <div className="flex justify-between items-start">
             <div className="space-y-2">
               <p className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">AI Booking Conversion</p>
-              <p className="text-3xl font-black text-slate-800 font-display">72%</p>
+              <p className="text-3xl font-black text-slate-800 font-display">{aiConversionRate}%</p>
             </div>
             <div className="p-3 bg-pink-50 text-pink-600 rounded-2xl group-hover:scale-110 transition-transform duration-300 border border-pink-100">
               <TrendingUp className="h-6 w-6" />
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-xs text-pink-600 font-bold">
-            <Sparkles className="h-4 w-4" /> Hinglish leads converting highest
+            <Sparkles className="h-4 w-4" /> {aiConversionRate > 0 ? "Converting leads automatically" : "0 AI Handled Leads"}
           </div>
         </div>
 
@@ -229,7 +237,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-xs text-indigo-600 font-bold">
-            <TrendingUp className="h-4 w-4" /> +21% vs yesterday
+            <TrendingUp className="h-4 w-4" /> {appointmentsCount > 0 ? "+21% vs yesterday" : "0 bookings vs yesterday"}
           </div>
         </div>
 
@@ -245,13 +253,20 @@ export default function DashboardPage() {
               <Activity className="h-6 w-6" />
             </div>
           </div>
-          {/* Avatar stacks */}
-          <div className="mt-3 flex items-center -space-x-2.5 overflow-hidden">
-            <div className="h-6 w-6 rounded-full border border-white bg-gradient-to-tr from-purple-500 to-indigo-500 text-[8px] text-white flex items-center justify-center font-bold">RS</div>
-            <div className="h-6 w-6 rounded-full border border-white bg-gradient-to-tr from-pink-500 to-rose-500 text-[8px] text-white flex items-center justify-center font-bold">AS</div>
-            <div className="h-6 w-6 rounded-full border border-white bg-gradient-to-tr from-blue-500 to-teal-500 text-[8px] text-white flex items-center justify-center font-bold">PS</div>
-            <div className="h-6 w-6 rounded-full border border-white bg-gradient-to-tr from-amber-500 to-orange-500 text-[8px] text-white flex items-center justify-center font-bold">VR</div>
-            <div className="h-6 w-6 rounded-full border border-white bg-slate-100 text-[8px] text-slate-500 flex items-center justify-center font-bold">+8</div>
+          <div className="mt-3 flex items-center">
+            {activeStaffCount === 0 ? (
+              <Link href="/staff" className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-1">
+                + Add Staff / Stylists <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            ) : (
+              <div className="flex items-center -space-x-2.5 overflow-hidden">
+                {staffUtilization.filter((s: any) => s.isAvailable).slice(0, 4).map((s: any, idx: number) => (
+                  <div key={idx} className="h-6 w-6 rounded-full border border-white bg-gradient-to-tr from-purple-500 to-indigo-500 text-[8px] text-white flex items-center justify-center font-bold">
+                    {s.staffName ? s.staffName.split(" ").map((n: string) => n[0]).join("") : "ST"}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -279,45 +294,57 @@ export default function DashboardPage() {
               <CardTitle className="text-base font-bold text-slate-800 font-display">Today's Appointments & Confirmations</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="space-y-4">
-                {appointmentsList.map((appt) => (
-                  <div key={appt.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 transition-colors gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border border-purple-100">
-                        {appt.name.split(" ").map(n=>n[0]).join("")}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-xs text-slate-800">{appt.name}</h4>
-                        <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{appt.service} • ₹{appt.price}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-3.5 mt-2 sm:mt-0">
-                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-slate-400" /> {appt.time}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {appt.status === "Pending" ? (
-                          <>
-                            <button 
-                              onClick={() => handleConfirmAppointment(appt.id)}
-                              className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[9px] font-bold shadow-sm transition-colors border-0 cursor-pointer"
-                            >
-                              Confirm
-                            </button>
-                            <button className="px-3 py-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-[9px] font-bold shadow-xs transition-colors cursor-pointer">
-                              Reschedule
-                            </button>
-                          </>
-                        ) : (
-                          <span className="inline-flex items-center gap-0.5 bg-purple-50 text-purple-600 border border-purple-100 px-2.5 py-0.75 rounded-lg text-[9px] font-bold shadow-xs">
-                            <Check className="h-3.5 w-3.5 stroke-[3]" /> Confirmed
-                          </span>
-                        )}
-                      </div>
-                    </div>
+              {appointmentsList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 px-4 text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="h-10 w-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border border-purple-100">
+                    <Calendar className="h-5 w-5" />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-800">No Appointments Scheduled Today</h4>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 max-w-xs">Your calendar is clean. When clients book online or via WhatsApp, appointments will appear here automatically.</p>
+                  </div>
+                  <Link href="/bookings" className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold shadow-xs transition-colors">
+                    + Book First Appointment
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {appointmentsList.map((appt) => (
+                    <div key={appt.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 transition-colors gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border border-purple-100">
+                          {appt.name.split(" ").map((n: string) => n[0]).join("")}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-xs text-slate-800">{appt.name}</h4>
+                          <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{appt.service} • ₹{appt.price}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-end gap-3.5 mt-2 sm:mt-0">
+                        <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-slate-400" /> {appt.time}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {appt.status === "Pending" ? (
+                            <>
+                              <button 
+                                onClick={() => handleConfirmAppointment(appt.id)}
+                                className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[9px] font-bold shadow-sm transition-colors border-0 cursor-pointer"
+                              >
+                                Confirm
+                              </button>
+                            </>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 bg-purple-50 text-purple-600 border border-purple-100 px-2.5 py-0.75 rounded-lg text-[9px] font-bold shadow-xs">
+                              <Check className="h-3.5 w-3.5 stroke-[3]" /> Confirmed
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -426,11 +453,11 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-[9px] text-slate-400 font-bold uppercase">Bookings</p>
-                    <p className="text-sm font-black text-purple-600">42</p>
+                    <p className="text-sm font-black text-purple-600">{appointmentsCount}</p>
                   </div>
                   <div>
                     <p className="text-[9px] text-slate-400 font-bold uppercase">Rate</p>
-                    <p className="text-sm font-black text-purple-600">32.8%</p>
+                    <p className="text-sm font-black text-purple-600">{aiConversionRate}%</p>
                   </div>
                 </div>
               </div>
