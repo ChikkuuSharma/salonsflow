@@ -44,6 +44,8 @@ export default function StaffPage() {
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [qualifiedServiceIds, setQualifiedServiceIds] = useState<string[]>([]);
   
@@ -124,6 +126,53 @@ export default function StaffPage() {
       fetchStaffAndServices();
     } catch (err: any) {
       setFormError(err.message || "Failed to create stylist.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (staff: Staff) => {
+    setEditingStaff(staff);
+    setFormData({
+      name: staff.name,
+      isAvailable: staff.isAvailable,
+      genderSpecialization: staff.genderSpecialization || "ALL",
+    });
+    setFormError(null);
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStaff) return;
+    if (!formData.name) {
+      setFormError("Name is required.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setFormError(null);
+
+      const response = await fetch(`${apiUrl}/api/v1/appointments/staff/${editingStaff.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update stylist details.");
+      }
+
+      setShowEditModal(false);
+      setEditingStaff(null);
+      setToast({ message: `Stylist "${formData.name}" updated successfully!`, type: "success" });
+      fetchStaffAndServices();
+    } catch (err: any) {
+      setFormError(err.message || "Failed to update stylist.");
     } finally {
       setSubmitting(false);
     }
@@ -319,14 +368,20 @@ export default function StaffPage() {
 
                 <div className="flex items-center gap-2 pt-4 border-t border-gray-100/70 mt-6">
                   <button
-                    onClick={() => handleOpenQualifications(staff)}
-                    className="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                    onClick={() => openEditModal(staff)}
+                    className="border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Scissors className="h-4.5 w-4.5 text-gray-400" /> Qualifications
+                    <Edit2 className="h-4 w-4 text-purple-600" /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleOpenQualifications(staff)}
+                    className="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Scissors className="h-4.5 w-4.5 text-gray-400" /> Services
                   </button>
                   <button
                     onClick={() => handleDeleteStaff(staff)}
-                    className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                    className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
                     title="Delete Stylist"
                   >
                     <Trash2 className="h-4.5 w-4.5" />
@@ -383,40 +438,40 @@ export default function StaffPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Gender Specialization *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Serves / Available For Customers *</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "MALE_ONLY" }))}
-                    className={`py-2 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.genderSpecialization === "MALE_ONLY"
                         ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    ♂️ Men Spec
+                    <span>♂️ Men Only</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "FEMALE_ONLY" }))}
-                    className={`py-2 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.genderSpecialization === "FEMALE_ONLY"
                         ? "bg-pink-600 text-white border-pink-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    ♀️ Ladies Spec
+                    <span>♀️ Women Only</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "ALL" }))}
-                    className={`py-2 px-2 rounded-xl border text-[11px] font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       formData.genderSpecialization === "ALL"
                         ? "bg-purple-600 text-white border-purple-600 shadow-sm"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    🚻 Unisex / All
+                    <span>🚻 Both (All)</span>
                   </button>
                 </div>
               </div>
@@ -449,6 +504,122 @@ export default function StaffPage() {
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   Create Stylist
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Modal */}
+      {showEditModal && editingStaff && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5" />
+                <h3 className="font-bold text-lg">Edit Stylist</h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingStaff(null);
+                }}
+                className="text-white/80 hover:text-white transition-colors p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+              {formError && (
+                <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg text-rose-600 text-xs font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Stylist Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 bg-white"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Serves / Available For Customers *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "MALE_ONLY" }))}
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.genderSpecialization === "MALE_ONLY"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>♂️ Men Only</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "FEMALE_ONLY" }))}
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.genderSpecialization === "FEMALE_ONLY"
+                        ? "bg-pink-600 text-white border-pink-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>♀️ Women Only</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, genderSpecialization: "ALL" }))}
+                    className={`py-2 px-1.5 rounded-xl border text-[10px] font-extrabold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                      formData.genderSpecialization === "ALL"
+                        ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>🚻 Both (All)</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="edit-staff-active"
+                  checked={formData.isAvailable}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isAvailable: e.target.checked }))}
+                  className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="edit-staff-active" className="text-sm font-semibold text-gray-700 select-none">
+                  Available for bookings
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingStaff(null);
+                  }}
+                  className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-75 disabled:pointer-events-none"
+                >
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Save Changes
                 </button>
               </div>
             </form>
