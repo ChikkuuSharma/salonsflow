@@ -20,6 +20,7 @@ import {
   Upload
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import * as XLSX from "xlsx";
 
 interface Service {
   id: string;
@@ -277,53 +278,91 @@ export default function ServicesPage() {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const text = event.target?.result as string;
-        if (!text) throw new Error("File content is empty.");
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error("No sheets found in Excel file.");
+        }
 
-        const lines = text.split(/\r\n|\n/);
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Convert sheet to array of rows (header: 1 returns 2D array)
+        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        if (!jsonData || jsonData.length === 0) {
+          throw new Error("The uploaded Excel file appears to be empty.");
+        }
+
         const parsed: Array<{ name: string; price: number; durationMins: number; gender: string }> = [];
 
-        // Determine if first row is header
+        // Auto-detect column indexes dynamically based on header titles
+        let headerRow = jsonData[0] || [];
+        let nameColIdx = 0;
+        let priceColIdx = 1;
+        let durationColIdx = 2;
+        let genderColIdx = 3;
+
+        if (Array.isArray(headerRow)) {
+          headerRow.forEach((colTitle: any, idx: number) => {
+            const titleStr = String(colTitle || "").toLowerCase().trim();
+            if (titleStr.includes("service") || titleStr.includes("name") || titleStr.includes("item")) {
+              nameColIdx = idx;
+            } else if (titleStr.includes("price") || titleStr.includes("rate") || titleStr.includes("cost") || titleStr.includes("amount") || titleStr.includes("rs") || titleStr.includes("₹")) {
+              priceColIdx = idx;
+            } else if (titleStr.includes("duration") || titleStr.includes("min") || titleStr.includes("time")) {
+              durationColIdx = idx;
+            } else if (titleStr.includes("gender") || titleStr.includes("category") || titleStr.includes("type") || titleStr.includes("for")) {
+              genderColIdx = idx;
+            }
+          });
+        }
+
+        // Skip header row if row 0 contains column title strings
         let startIdx = 0;
-        const firstLine = lines[0].toLowerCase();
-        if (firstLine.includes("name") || firstLine.includes("service") || firstLine.includes("price")) {
+        const firstRowName = String(jsonData[0]?.[nameColIdx] || "").toLowerCase();
+        if (firstRowName.includes("service") || firstRowName.includes("name") || isNaN(Number(jsonData[0]?.[priceColIdx]))) {
           startIdx = 1;
         }
 
-        for (let i = startIdx; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
+        for (let i = startIdx; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row || !Array.isArray(row) || row.length === 0) continue;
 
-          // Support comma or tab delimiter
-          const parts = line.includes(",") ? line.split(",") : line.split("\t");
-          if (parts.length < 2) continue;
+          const rawName = String(row[nameColIdx] || "").trim();
+          if (!rawName || rawName.toLowerCase() === "service name") continue;
 
-          const name = parts[0]?.trim() || "";
-          const price = parseFloat(parts[1]?.trim() || "0") || 0;
-          const durationMins = parseInt(parts[2]?.trim() || "30") || 30;
+          const rawPrice = parseFloat(String(row[priceColIdx] || "0").replace(/[^0-9.]/g, "")) || 0;
+          const rawDuration = parseInt(String(row[durationColIdx] || "30").replace(/[^0-9]/g, "")) || 30;
 
-          let rawGender = (parts[3]?.trim() || "UNISEX").toUpperCase();
+          let rawGender = String(row[genderColIdx] || "UNISEX").toUpperCase().trim();
           let gender = "UNISEX";
-          if (rawGender.includes("MEN") || rawGender.includes("MALE") || rawGender === "M") gender = "MALE";
-          else if (rawGender.includes("WOMEN") || rawGender.includes("FEMALE") || rawGender.includes("LADIES") || rawGender === "F") gender = "FEMALE";
-
-          if (name && price >= 0) {
-            parsed.push({ name, price, durationMins, gender });
+          if (rawGender.includes("LADIES") || rawGender.includes("WOMEN") || rawGender.includes("FEMALE") || rawGender === "F") {
+            gender = "FEMALE";
+          } else if (rawGender.includes("MEN") || rawGender.includes("MALE") || rawGender.includes("GENTS") || rawGender === "M") {
+            gender = "MALE";
           }
+
+          parsed.push({
+            name: rawName,
+            price: rawPrice,
+            durationMins: rawDuration,
+            gender,
+          });
         }
 
         if (parsed.length === 0) {
-          throw new Error("No valid service rows found in file. Download the sample CSV template for the exact format.");
+          throw new Error("No valid service rows found in Excel sheet. Please check that columns have Service Name and Price.");
         }
 
         setParsedExcelServices(parsed);
       } catch (err: any) {
-        setExcelError(err.message || "Failed to parse file.");
+        setExcelError(err.message || "Failed to parse Excel file.");
         setParsedExcelServices([]);
       }
     };
 
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
 
   const handleImportExcelServices = async () => {
