@@ -40,7 +40,7 @@ export function ClientInitializer() {
         // Mock Database handler
         const handleMockDatabase = (reqUrl: string, method: string, reqBody?: any): Response | null => {
           const activeToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-          if (activeToken && (activeToken.startsWith("dev-bypass-token-user-") || activeToken.startsWith("dev-bypass-token-impersonate-"))) {
+          if (activeToken !== "dev-bypass-token-demo" && !reqUrl.includes("/api/v1/auth/demo/")) {
             return null;
           }
           try {

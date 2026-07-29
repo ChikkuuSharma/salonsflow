@@ -230,6 +230,10 @@ export class ClerkAuthGuard implements CanActivate {
   }
 
   private async selfHealSalon(salonId: string) {
+    // Only self-heal the official demo salon (do not seed demo data into new user salons)
+    if (salonId !== 'd5e27d13-135c-4068-9ced-8f0bfddc9f4d') {
+      return;
+    }
     try {
       // 1. Verify/seed active PRO subscription
       const sub = await this.prisma.subscription.findUnique({
