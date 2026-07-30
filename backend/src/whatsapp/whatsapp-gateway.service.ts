@@ -147,23 +147,25 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     return { success: true };
   }
 
-  async usePrismaAuthState(salonId: string) {
+  async usePrismaAuthState(salonId: string, forceFresh = false) {
     let creds = initAuthCreds();
 
-    const dbCreds = await this.prisma.whatsAppSession.findUnique({
-      where: {
-        salonId_key: {
-          salonId,
-          key: 'creds',
+    if (!forceFresh) {
+      const dbCreds = await this.prisma.whatsAppSession.findUnique({
+        where: {
+          salonId_key: {
+            salonId,
+            key: 'creds',
+          },
         },
-      },
-    });
+      });
 
-    if (dbCreds) {
-      try {
-        creds = JSON.parse(dbCreds.value, BufferJSON.reviver);
-      } catch (err) {
-        this.logger.error(`Failed to parse credentials from DB for salon ${salonId}: ${err.message}`);
+      if (dbCreds) {
+        try {
+          creds = JSON.parse(dbCreds.value, BufferJSON.reviver);
+        } catch (err) {
+          this.logger.error(`Failed to parse credentials from DB for salon ${salonId}: ${err.message}`);
+        }
       }
     }
 
@@ -292,10 +294,10 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       create: { salonId, key: 'session_status', value: 'QR' },
     });
 
-    const { state, saveCreds } = await this.usePrismaAuthState(salonId);
+    const { state, saveCreds } = await this.usePrismaAuthState(salonId, true);
 
     const sock = makeWASocket({
-      browser: Browsers.macOS('Desktop'),
+      browser: Browsers.ubuntu('Chrome'),
       auth: state,
       printQRInTerminal: false,
       logger: pinoLogger as any,
