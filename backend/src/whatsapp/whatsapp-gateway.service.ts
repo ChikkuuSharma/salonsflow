@@ -263,12 +263,8 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     if (existingSession.status === 'CONNECTED') {
       return existingSession;
     }
-    // Only reuse cached session QR if it's a valid native PNG Base64 Data URL
-    if (existingSession.status === 'QR' && existingSession.qr && existingSession.qr.startsWith('data:image/png;base64,')) {
-      return existingSession;
-    }
 
-    // Wipe stale dummy DB records if present
+    // Always wipe old QR records to guarantee fresh non-expired QR generation
     try {
       await this.prisma.whatsAppSession.deleteMany({
         where: { salonId, key: 'session_status_qr' },

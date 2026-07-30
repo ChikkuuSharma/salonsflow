@@ -187,15 +187,15 @@ export default function AISettingsPage() {
           setQrCode(data.qr);
         }
 
-        // Continuous resilience polling loop every 1.5s until QR image is rendered
+        // Continuous resilience status polling loop every 2s to detect phone scan without destroying active socket
         const startTime = Date.now();
         const pollInterval = setInterval(async () => {
-          if (Date.now() - startTime > 25000) {
+          if (Date.now() - startTime > 45000) {
             clearInterval(pollInterval);
             return;
           }
           try {
-            const pollRes = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
+            const pollRes = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/status`, {
               headers: { Authorization: `Bearer ${activeToken}` }
             });
             if (pollRes.ok) {
@@ -204,14 +204,17 @@ export default function AISettingsPage() {
                 setQrStatus('CONNECTED');
                 setQrCode("");
                 clearInterval(pollInterval);
-              } else if (pollData.qr) {
-                setQrCode(pollData.qr);
-                setQrStatus('QR');
-                clearInterval(pollInterval);
+                const confRes = await fetch(`${apiUrl}/api/v1/salons/me`, {
+                  headers: { Authorization: `Bearer ${activeToken}` }
+                });
+                if (confRes.ok) {
+                  const confData = await confRes.json();
+                  setWhatsappNumber(confData.whatsappNumber || "");
+                }
               }
             }
           } catch (_) {}
-        }, 1500);
+        }, 2000);
       }
     } catch (err) {
       console.error("Failed to load QR code:", err);
