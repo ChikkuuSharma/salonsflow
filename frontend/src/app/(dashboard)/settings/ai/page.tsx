@@ -129,24 +129,26 @@ export default function AISettingsPage() {
 
   const checkQrStatus = async () => {
     try {
+      const activeToken = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
       const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/status`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${activeToken}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setQrStatus(data.status);
-        if (data.qr) {
-          setQrCode(data.qr);
-        }
         if (data.status === 'CONNECTED') {
+          setQrStatus('CONNECTED');
           setQrCode("");
-          // Re-fetch configurations to get updated whatsappNumber
           const confRes = await fetch(`${apiUrl}/api/v1/salons/me`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${activeToken}` }
           });
           if (confRes.ok) {
             const confData = await confRes.json();
             setWhatsappNumber(confData.whatsappNumber || "");
+          }
+        } else if (data.status === 'QR') {
+          setQrStatus('QR');
+          if (data.qr) {
+            setQrCode(data.qr);
           }
         }
       }
