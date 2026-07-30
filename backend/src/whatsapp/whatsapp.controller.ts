@@ -165,6 +165,18 @@ export class WhatsappController {
     return this.gatewayService.generateQrCodeSynchronously(salonId);
   }
 
+  @Post('pairing-code')
+  @UseGuards(ClerkAuthGuard)
+  async getPairingCode(
+    @SalonId() salonId: string,
+    @Body('phoneNumber') phoneNumber: string,
+  ) {
+    if (!phoneNumber) {
+      throw new BadRequestException('Phone number is required');
+    }
+    return this.gatewayService.generatePairingCode(salonId, phoneNumber);
+  }
+
   @Post('disconnect')
   @UseGuards(ClerkAuthGuard)
   async disconnect(@SalonId() salonId: string) {

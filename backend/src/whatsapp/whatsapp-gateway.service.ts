@@ -262,6 +262,87 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  async generatePairingCode(salonId: string, rawPhoneNumber: string): Promise<{ code?: string; error?: string }> {
+    const cleanPhone = rawPhoneNumber.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return { error: 'Invalid phone number format. Please provide full mobile number with country code (e.g. 919876543210).' };
+    }
+
+    const existing = this.sessions.get(salonId);
+    if (existing) {
+      try {
+        if (existing.status === 'CONNECTED') {
+          await existing.socket.logout().catch(() => {});
+        }
+        existing.socket.end(undefined);
+      } catch (_) {}
+      this.sessions.delete(salonId);
+    }
+
+    try {
+      await this.prisma.whatsAppSession.deleteMany({
+        where: { salonId },
+      });
+    } catch (_) {}
+
+    await this.prisma.whatsAppSession.upsert({
+      where: { salonId_key: { salonId, key: 'session_status' } },
+      update: { value: 'QR' },
+      create: { salonId, key: 'session_status', value: 'QR' },
+    });
+
+    const { state, saveCreds } = await this.usePrismaAuthState(salonId, true);
+
+    let version: [number, number, number] = [2, 3000, 1043857760];
+    try {
+      const latest = await fetchLatestBaileysVersion();
+      if (latest && latest.version) {
+        version = latest.version;
+      }
+    } catch (_) {}
+
+    const sock = makeWASocket({
+      version,
+      browser: Browsers.ubuntu('Chrome'),
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
+      auth: state,
+      printQRInTerminal: false,
+      logger: pinoLogger as any,
+    });
+
+    this.sessions.set(salonId, { socket: sock, status: 'QR' });
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('connection.update', async (update) => {
+      const { connection } = update;
+      if (connection === 'open') {
+        const userJid = sock.user?.id.split(':')[0];
+        const whatsappNumber = '+' + userJid;
+        try {
+          await this.prisma.salon.update({
+            where: { id: salonId },
+            data: {
+              whatsappNumber,
+              whatsappPhoneNumberId: 'qr-linked-' + userJid,
+            },
+          });
+        } catch (_) {}
+
+        this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
+      }
+    });
+
+    try {
+      const rawCode = await sock.requestPairingCode(cleanPhone);
+      const formattedCode = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
+      return { code: formattedCode };
+    } catch (err: any) {
+      this.logger.error(`Error requesting pairing code for ${cleanPhone}: ${err.message}`);
+      return { error: err.message || 'Failed to request pairing code from WhatsApp server.' };
+    }
+  }
+
   async generateQrCodeSynchronously(salonId: string): Promise<{ status: 'QR' | 'CONNECTED' | 'DISCONNECTED'; qr?: string }> {
     const existingSession = await this.getSessionStatus(salonId);
     if (existingSession.status === 'CONNECTED') {

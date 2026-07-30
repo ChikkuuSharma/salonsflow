@@ -23,6 +23,13 @@ export default function AISettingsPage() {
   const [qrStatus, setQrStatus] = useState<"QR" | "CONNECTED" | "DISCONNECTED" | "LOADING">("DISCONNECTED");
   const [subscription, setSubscription] = useState<any>(null);
 
+  // 8-digit pairing code state
+  const [pairingPhone, setPairingPhone] = useState("");
+  const [pairingCode, setPairingCode] = useState("");
+  const [pairingCodeLoading, setPairingCodeLoading] = useState(false);
+  const [pairingCodeError, setPairingCodeError] = useState("");
+  const [showPairingForm, setShowPairingForm] = useState(false);
+
   // Chat simulator state
   const [chatMessages, setChatMessages] = useState([
     {
@@ -237,6 +244,37 @@ export default function AISettingsPage() {
       }
     } catch (err) {
       console.error("Failed to disconnect WhatsApp:", err);
+    }
+  };
+
+  const handleRequestPairingCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pairingPhone) return;
+    setPairingCodeLoading(true);
+    setPairingCodeError("");
+    setPairingCode("");
+
+    try {
+      const activeToken = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
+      const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/pairing-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${activeToken}`,
+        },
+        body: JSON.stringify({ phoneNumber: pairingPhone }),
+      });
+      const data = await res.json();
+      if (res.ok && data.code) {
+        setPairingCode(data.code);
+        setQrStatus("QR");
+      } else {
+        setPairingCodeError(data.error || "Failed to generate pairing code.");
+      }
+    } catch (err: any) {
+      setPairingCodeError(err.message || "Failed to connect to backend server.");
+    } finally {
+      setPairingCodeLoading(false);
     }
   };
 
@@ -489,6 +527,23 @@ export default function AISettingsPage() {
                       💡 If WhatsApp shows "Can't link new device", log out of an old linked device under WhatsApp -&gt; Linked Devices first (WhatsApp allows max 4 linked devices per phone number).
                     </p>
                   </div>
+                  {pairingCode && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 p-4 rounded-2xl max-w-sm mx-auto my-3 text-center animate-in fade-in zoom-in-95 duration-200">
+                      <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block mb-1">
+                        🔑 Your 8-Digit WhatsApp Pairing Code
+                      </span>
+                      <div className="text-3xl font-mono font-black text-emerald-700 dark:text-emerald-300 tracking-widest my-2 bg-white dark:bg-zinc-900 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-sm">
+                        {pairingCode}
+                      </div>
+                      <ol className="text-xs font-semibold text-slate-700 dark:text-zinc-300 text-left space-y-1 list-decimal list-inside mt-3">
+                        <li>Open <strong>WhatsApp</strong> on your mobile phone.</li>
+                        <li>Go to <strong>Linked Devices &rarr; Link a Device</strong>.</li>
+                        <li>Tap <strong>"Link with phone number instead"</strong> at the bottom.</li>
+                        <li>Enter 8-digit code: <strong className="font-mono text-emerald-600">{pairingCode}</strong></li>
+                      </ol>
+                    </div>
+                  )}
+
                   {qrCode ? (
                     <div className="bg-white p-3 rounded-2xl shadow-md inline-block mx-auto border border-slate-200">
                       <img 
@@ -530,7 +585,7 @@ export default function AISettingsPage() {
 
               {qrStatus === 'DISCONNECTED' && (
                 <div className="space-y-4 py-4 animate-in fade-in duration-200">
-                  <div className="mx-auto h-12 w-12 bg-slate-100 dark:bg-zinc-950 text-slate-500 dark:text-zinc-400 rounded-full flex items-center justify-center border border-slate-250 border-slate-200 dark:border-zinc-800 shadow-sm">
+                  <div className="mx-auto h-12 w-12 bg-slate-100 dark:bg-zinc-950 text-slate-500 dark:text-zinc-400 rounded-full flex items-center justify-center border border-slate-200 dark:border-zinc-800 shadow-sm">
                     <Bot className="h-6 w-6 text-slate-500 dark:text-zinc-400" />
                   </div>
                   <div>
@@ -539,14 +594,51 @@ export default function AISettingsPage() {
                       Automate booking scheduling, review collection, and rebooking reminders using your own local WhatsApp phone number.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => loadQrCode(false)}
-                    className="inline-flex items-center justify-center gap-1.5 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 duration-200 border-0 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-zinc-950" />
-                    Link via QR Code
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => loadQrCode(false)}
+                      className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 duration-200 border-0 cursor-pointer w-full sm:w-auto"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-zinc-950" />
+                      Link via QR Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPairingForm(!showPairingForm)}
+                      className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-100 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-zinc-700 cursor-pointer w-full sm:w-auto"
+                    >
+                      <span>🔑 Link via 8-Digit Code</span>
+                    </button>
+                  </div>
+
+                  {showPairingForm && (
+                    <form onSubmit={handleRequestPairingCode} className="mt-4 p-4 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-sm mx-auto space-y-3 text-left">
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 block">
+                        Enter Phone Number with Country Code:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="tel"
+                          value={pairingPhone}
+                          onChange={(e) => setPairingPhone(e.target.value)}
+                          placeholder="e.g. 919876543210"
+                          className="flex-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          disabled={pairingCodeLoading}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                        >
+                          {pairingCodeLoading ? "Generating..." : "Get Code"}
+                        </button>
+                      </div>
+                      {pairingCodeError && (
+                        <p className="text-[11px] font-bold text-rose-500">{pairingCodeError}</p>
+                      )}
+                    </form>
+                  )}
                 </div>
               )}
             </CardContent>
