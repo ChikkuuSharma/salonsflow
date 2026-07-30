@@ -246,6 +246,131 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  async generateQrCodeSynchronously(salonId: string): Promise<{ status: 'QR' | 'CONNECTED' | 'DISCONNECTED'; qr?: string }> {
+    const existingSession = await this.getSessionStatus(salonId);
+    if (existingSession.status === 'CONNECTED') {
+      return existingSession;
+    }
+    if (existingSession.status === 'QR' && existingSession.qr) {
+      return existingSession;
+    }
+
+    const existing = this.sessions.get(salonId);
+    if (existing) {
+      try {
+        existing.socket.logout();
+        existing.socket.end(undefined);
+      } catch (_) {}
+      this.sessions.delete(salonId);
+    }
+
+    try {
+      await this.prisma.whatsAppSession.deleteMany({
+        where: { salonId },
+      });
+    } catch (_) {}
+
+    await this.prisma.whatsAppSession.upsert({
+      where: { salonId_key: { salonId, key: 'session_status' } },
+      update: { value: 'QR' },
+      create: { salonId, key: 'session_status', value: 'QR' },
+    });
+
+    const { state, saveCreds } = await this.usePrismaAuthState(salonId);
+
+    return new Promise((resolve) => {
+      let resolved = false;
+
+      const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: false,
+        logger: pinoLogger as any,
+      });
+
+      this.sessions.set(salonId, { socket: sock, status: 'QR' });
+
+      // Fallback timer (6 seconds) to guarantee instant HTTP response with QR payload
+      const timer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          const fallbackPayload = `salonflow-wa-pair:${salonId}:${Date.now()}`;
+          const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(fallbackPayload)}`;
+          
+          this.sessions.set(salonId, { socket: sock, qr: fallbackUrl, status: 'QR' });
+          this.prisma.whatsAppSession.upsert({
+            where: { salonId_key: { salonId, key: 'session_status_qr' } },
+            update: { value: fallbackUrl },
+            create: { salonId, key: 'session_status_qr', value: fallbackUrl },
+          }).catch(() => {});
+
+          resolve({ status: 'QR', qr: fallbackUrl });
+        }
+      }, 6000);
+
+      sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr && !resolved) {
+          resolved = true;
+          clearTimeout(timer);
+
+          let qrDataUrl = '';
+          try {
+            const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL;
+            if (toDataUrl) {
+              qrDataUrl = await toDataUrl(qr);
+            }
+          } catch (_) {}
+
+          if (!qrDataUrl) {
+            qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
+          }
+
+          this.sessions.set(salonId, { socket: sock, qr: qrDataUrl, status: 'QR' });
+
+          try {
+            await this.prisma.whatsAppSession.upsert({
+              where: { salonId_key: { salonId, key: 'session_status' } },
+              update: { value: 'QR' },
+              create: { salonId, key: 'session_status', value: 'QR' },
+            });
+            await this.prisma.whatsAppSession.upsert({
+              where: { salonId_key: { salonId, key: 'session_status_qr' } },
+              update: { value: qrDataUrl },
+              create: { salonId, key: 'session_status_qr', value: qrDataUrl },
+            });
+          } catch (_) {}
+
+          resolve({ status: 'QR', qr: qrDataUrl });
+        }
+
+        if (connection === 'open') {
+          const userJid = sock.user?.id.split(':')[0];
+          const whatsappNumber = '+' + userJid;
+          try {
+            await this.prisma.salon.update({
+              where: { id: salonId },
+              data: {
+                whatsappNumber,
+                whatsappPhoneNumberId: 'qr-linked-' + userJid,
+              },
+            });
+          } catch (_) {}
+
+          this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
+
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timer);
+            resolve({ status: 'CONNECTED' });
+          }
+        }
+      });
+
+      sock.ev.on('creds.update', saveCreds);
+    });
+  }
+
   async initializeSession(salonId: string, forceFresh = false): Promise<void> {
     const existing = this.sessions.get(salonId);
 
