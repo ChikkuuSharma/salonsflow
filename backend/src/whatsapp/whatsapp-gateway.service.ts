@@ -117,10 +117,12 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     const session = this.sessions.get(salonId);
     if (session) {
       try {
-        session.socket.logout();
+        if (session.status === 'CONNECTED') {
+          await session.socket.logout().catch(() => {});
+        }
         session.socket.end(undefined);
       } catch (err) {
-        this.logger.error(`Error logging out session for salon ${salonId}: ${err.message}`);
+        this.logger.error(`Error closing session for salon ${salonId}: ${err.message}`);
       }
       this.sessions.delete(salonId);
     }
@@ -276,7 +278,9 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     const existing = this.sessions.get(salonId);
     if (existing) {
       try {
-        existing.socket.logout();
+        if (existing.status === 'CONNECTED') {
+          await existing.socket.logout().catch(() => {});
+        }
         existing.socket.end(undefined);
       } catch (_) {}
       this.sessions.delete(salonId);
@@ -401,7 +405,9 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     if (existing) {
       try {
-        existing.socket.logout();
+        if (existing.status === 'CONNECTED') {
+          await existing.socket.logout().catch(() => {});
+        }
         existing.socket.end(undefined);
       } catch (_) {}
       this.sessions.delete(salonId);
