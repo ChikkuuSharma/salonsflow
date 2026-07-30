@@ -4,6 +4,8 @@ import makeWASocket, {
   WASocket,
   initAuthCreds,
   BufferJSON,
+  fetchLatestBaileysVersion,
+  Browsers,
 } from '@whiskeysockets/baileys';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -278,10 +280,19 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     const { state, saveCreds } = await this.usePrismaAuthState(salonId);
 
+    let version: [number, number, number] | undefined;
+    try {
+      const latest = await fetchLatestBaileysVersion();
+      version = latest.version;
+      this.logger.log(`Fetched latest WhatsApp Web version: ${version?.join('.')}`);
+    } catch (_) {}
+
     return new Promise((resolve) => {
       let resolved = false;
 
       const sock = makeWASocket({
+        version,
+        browser: Browsers.macOS('Desktop'),
         auth: state,
         printQRInTerminal: false,
         logger: pinoLogger as any,
@@ -396,7 +407,15 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     const { state, saveCreds } = await this.usePrismaAuthState(salonId);
 
+    let version: [number, number, number] | undefined;
+    try {
+      const latest = await fetchLatestBaileysVersion();
+      version = latest.version;
+    } catch (_) {}
+
     const sock = makeWASocket({
+      version,
+      browser: Browsers.macOS('Desktop'),
       auth: state,
       printQRInTerminal: false,
       logger: pinoLogger as any,
