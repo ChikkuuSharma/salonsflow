@@ -167,6 +167,20 @@ export default function AISettingsPage() {
         setQrStatus(data.status);
         if (data.qr) {
           setQrCode(data.qr);
+        } else if (data.status === 'QR') {
+          // Retry fetching QR code once after 1.5 seconds if socket needed extra time
+          setTimeout(async () => {
+            try {
+              const retryRes = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (retryRes.ok) {
+                const retryData = await retryRes.json();
+                setQrStatus(retryData.status);
+                if (retryData.qr) setQrCode(retryData.qr);
+              }
+            } catch (_) {}
+          }, 1500);
         }
       }
     } catch (err) {

@@ -312,53 +312,38 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (connection === 'close') {
-        const shouldReconnect =
-          (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-        this.logger.log(`WhatsApp QR session closed for salon ${salonId}. Reconnect: ${shouldReconnect}`);
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+        this.logger.log(`WhatsApp session closed for salon ${salonId}. StatusCode: ${statusCode}, LoggedOut: ${isLoggedOut}`);
 
-        this.sessions.set(salonId, { socket: sock, status: 'DISCONNECTED' });
-
-        if (shouldReconnect) {
-          const sessionExists = await this.prisma.whatsAppSession.findUnique({
-            where: {
-              salonId_key: {
-                salonId,
-                key: 'creds',
-              },
-            },
-          });
-          if (sessionExists) {
-            this.initializeSession(salonId).catch((err) => {
-              this.logger.error(`Failed to reconnect session for salon ${salonId}: ${err.message}`);
-            });
-          } else {
-            this.logger.log(`Skipping auto-reconnect for salon ${salonId} because credentials do not exist in DB.`);
-            this.sessions.delete(salonId);
-          }
-        } else {
-          this.sessions.delete(salonId);
+        if (isLoggedOut) {
+          this.sessions.set(salonId, { socket: sock, status: 'DISCONNECTED' });
           try {
             await this.prisma.whatsAppSession.deleteMany({
               where: { salonId },
             });
-            this.logger.log(`Cleared WhatsApp session from DB for salon ${salonId} due to logout`);
-
-            // Clear Salon table connection fields on logout
-            try {
-              await this.prisma.salon.update({
-                where: { id: salonId },
-                data: {
-                  whatsappNumber: '+919876543210-disconnected-' + salonId,
-                  whatsappPhoneNumberId: null,
-                },
-              });
-            } catch (err) {
-              this.logger.error(`Failed to clear WhatsApp connection fields in Salon table on logout: ${err.message}`);
-            }
+            await this.prisma.salon.update({
+              where: { id: salonId },
+              data: {
+                whatsappNumber: '+919876543210-disconnected-' + salonId,
+                whatsappPhoneNumberId: null,
+              },
+            });
             this.logger.log(`Cleared WhatsApp connection fields from Salon table for ${salonId} due to logout`);
           } catch (err) {
             this.logger.error(`Failed to clear WhatsApp session on logout: ${err.message}`);
           }
+        } else {
+          // If socket closed temporarily (e.g. 515 restart required), maintain QR status & retry pairing
+          const currentSession = this.sessions.get(salonId);
+          const existingQr = currentSession?.qr;
+          this.sessions.set(salonId, { socket: sock, qr: existingQr, status: 'QR' });
+
+          setTimeout(() => {
+            this.initializeSession(salonId, false).catch((err) => {
+              this.logger.error(`Failed to reconnect session for salon ${salonId}: ${err.message}`);
+            });
+          }, 1000);
         }
       }
     });
