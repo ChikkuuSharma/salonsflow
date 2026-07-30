@@ -40,7 +40,16 @@ export default function AISettingsPage() {
   const [isTyping, setIsTyping] = useState(false);
 
   const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const getApiUrl = () => {
+    if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes("localhost")) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+    if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      return "https://api.salonsflow.in";
+    }
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  };
+  const apiUrl = getApiUrl();
 
   // Load configuration on mount
   useEffect(() => {
