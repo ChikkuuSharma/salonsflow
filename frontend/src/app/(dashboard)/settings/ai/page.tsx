@@ -157,6 +157,7 @@ export default function AISettingsPage() {
 
   const loadQrCode = async () => {
     setQrStatus('LOADING');
+    setQrCode("");
     try {
       const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -199,14 +200,15 @@ export default function AISettingsPage() {
   useEffect(() => {
     let interval: any;
     if (qrStatus === 'QR' || qrStatus === 'LOADING') {
+      // Poll faster (every 1 second) while waiting for QR scan or generation
       interval = setInterval(() => {
         checkQrStatus();
-      }, 3000);
+      }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [qrStatus]);
+  }, [qrStatus, qrCode]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -424,23 +426,33 @@ export default function AISettingsPage() {
               {qrStatus === 'QR' && (
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <div>
-                    <span className="text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase block mb-1">Scan QR Code</span>
-                    <h4 className="text-sm font-bold text-slate-850 text-slate-800 dark:text-zinc-200 leading-normal max-w-xs mx-auto font-sans">
+                    <span className="text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase block mb-1">Scan QR Code to Link WhatsApp</span>
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-200 leading-normal max-w-xs mx-auto font-sans">
                       Open WhatsApp on your phone, go to <strong className="text-emerald-600 dark:text-emerald-400">Linked Devices &rarr; Link a Device</strong>, and scan the code below.
                     </h4>
                   </div>
                   {qrCode ? (
-                    <div className="bg-white p-2 rounded-2xl shadow-inner inline-block mx-auto border border-slate-200">
-                      <img src={qrCode} alt="WhatsApp Web QR Code" className="w-48 h-48 rounded-xl object-contain" />
+                    <div className="bg-white p-3 rounded-2xl shadow-md inline-block mx-auto border border-slate-200">
+                      <img src={qrCode} alt="WhatsApp Web QR Code" className="w-52 h-52 rounded-xl object-contain" />
                     </div>
                   ) : (
-                    <div className="w-48 h-48 mx-auto flex items-center justify-center border border-dashed border-slate-300 dark:border-zinc-800 rounded-2xl bg-slate-50 dark:bg-zinc-950/50">
-                      <RefreshCw className="h-6 w-6 animate-spin text-slate-450 dark:text-zinc-500" />
+                    <div className="w-52 h-52 mx-auto flex flex-col items-center justify-center border border-dashed border-emerald-500/40 rounded-2xl bg-emerald-50/20 dark:bg-emerald-950/20 gap-3">
+                      <RefreshCw className="h-7 w-7 animate-spin text-emerald-500" />
+                      <span className="text-xs font-bold text-slate-600 dark:text-zinc-400">Generating live QR code...</span>
                     </div>
                   )}
-                  <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-semibold max-w-xs mx-auto leading-normal">
-                    This screen will automatically refresh and connect as soon as you scan the QR code.
-                  </p>
+                  <div className="pt-1 flex flex-col items-center gap-2">
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-semibold max-w-xs mx-auto leading-normal">
+                      This screen automatically detects your phone scan and connects.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={loadQrCode}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+                    >
+                      <RefreshCw className="h-3 w-3 text-emerald-500" /> Regenerate QR Code
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -448,8 +460,8 @@ export default function AISettingsPage() {
                 <div className="space-y-4 py-8 animate-pulse">
                   <RefreshCw className="h-8 w-8 animate-spin text-emerald-500 dark:text-emerald-400 mx-auto" />
                   <div>
-                    <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-200">Connecting to WhatsApp gateway...</h4>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 font-semibold">Generating your secure encryption QR scan code...</p>
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-200">Connecting to WhatsApp Gateway...</h4>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 font-semibold">Generating your secure 1-click WhatsApp pairing code...</p>
                   </div>
                 </div>
               )}
