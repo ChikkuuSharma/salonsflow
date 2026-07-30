@@ -314,9 +314,16 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     });
 
     // Generate immediate 5ms protocol-compliant WhatsApp pairing QR payload
+    const toB64 = (val: any) =>
+      Buffer.isBuffer(val)
+        ? val.toString('base64')
+        : val?.data
+        ? Buffer.from(val.data).toString('base64')
+        : Buffer.from(val || []).toString('base64');
+
     const ref = crypto.randomBytes(16).toString('base64');
-    const noiseKey = Buffer.from(state.creds.noiseKey.public).toString('base64');
-    const identityKey = Buffer.from(state.creds.signedIdentityKey.public).toString('base64');
+    const noiseKey = toB64(state.creds.noiseKey?.public);
+    const identityKey = toB64(state.creds.signedIdentityKey?.public);
     const advSecret = (state.creds as any).advSecretKey || (state.creds as any).advSecret || '';
     const rawQrString = `${ref},${noiseKey},${identityKey},${advSecret}`;
 
