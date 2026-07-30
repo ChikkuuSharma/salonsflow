@@ -74,13 +74,31 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getSessionStatus(salonId: string) {
-    const session = this.sessions.get(salonId);
-    if (!session) return { status: 'DISCONNECTED' };
-    return {
-      status: session.status,
-      qr: session.qr,
-    };
+  async getSessionStatus(
+    salonId: string,
+  ): Promise<{ status: 'QR' | 'CONNECTED' | 'DISCONNECTED'; qr?: string }> {
+    const memorySession = this.sessions.get(salonId);
+    if (memorySession && (memorySession.qr || memorySession.status === 'CONNECTED')) {
+      return { status: memorySession.status, qr: memorySession.qr };
+    }
+
+    // Database fallback for multi-pod & serverless deployments
+    try {
+      const statusRecord = await this.prisma.whatsAppSession.findUnique({
+        where: { salonId_key: { salonId, key: 'session_status' } },
+      });
+      const qrRecord = await this.prisma.whatsAppSession.findUnique({
+        where: { salonId_key: { salonId, key: 'session_status_qr' } },
+      });
+
+      const status = (statusRecord?.value as any) || 'DISCONNECTED';
+      return {
+        status: status === 'CONNECTED' ? 'CONNECTED' : (status === 'QR' ? 'QR' : 'DISCONNECTED'),
+        qr: qrRecord?.value || memorySession?.qr,
+      };
+    } catch (err: any) {
+      return { status: memorySession?.status || 'DISCONNECTED', qr: memorySession?.qr };
+    }
   }
 
   async disconnectSession(salonId: string) {
@@ -306,6 +324,22 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
           qr: qrDataUrl,
           status: 'QR',
         });
+
+        // Persist QR status & URL to DB for multi-pod/serverless deployment compatibility
+        try {
+          await this.prisma.whatsAppSession.upsert({
+            where: { salonId_key: { salonId, key: 'session_status' } },
+            update: { value: 'QR' },
+            create: { salonId, key: 'session_status', value: 'QR' },
+          });
+          await this.prisma.whatsAppSession.upsert({
+            where: { salonId_key: { salonId, key: 'session_status_qr' } },
+            update: { value: qrDataUrl },
+            create: { salonId, key: 'session_status_qr', value: qrDataUrl },
+          });
+        } catch (dbErr: any) {
+          this.logger.error(`Failed to persist QR session to DB: ${dbErr.message}`);
+        }
       }
 
       if (connection === 'open') {
@@ -326,6 +360,17 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         }
 
         this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
+
+        try {
+          await this.prisma.whatsAppSession.upsert({
+            where: { salonId_key: { salonId, key: 'session_status' } },
+            update: { value: 'CONNECTED' },
+            create: { salonId, key: 'session_status', value: 'CONNECTED' },
+          });
+          await this.prisma.whatsAppSession.deleteMany({
+            where: { salonId, key: 'session_status_qr' },
+          });
+        } catch (_) {}
       }
 
       if (connection === 'close') {
@@ -336,6 +381,14 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         if (isLoggedOut) {
           this.sessions.set(salonId, { socket: sock, status: 'DISCONNECTED' });
           try {
+            await this.prisma.whatsAppSession.upsert({
+              where: { salonId_key: { salonId, key: 'session_status' } },
+              update: { value: 'DISCONNECTED' },
+              create: { salonId, key: 'session_status', value: 'DISCONNECTED' },
+            });
+            await this.prisma.whatsAppSession.deleteMany({
+              where: { salonId, key: 'session_status_qr' },
+            });
             await this.prisma.whatsAppSession.deleteMany({
               where: { salonId },
             });
