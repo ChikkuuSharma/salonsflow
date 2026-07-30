@@ -211,9 +211,41 @@ export class ClerkAuthGuard implements CanActivate {
       (request as any).user = payload;
 
       // Look up and attach database user details (salonId, dbUserId, and role)
-      const dbUser = await this.prisma.user.findUnique({
+      let dbUser = await this.prisma.user.findUnique({
         where: { clerkId: payload.sub },
       });
+
+      if (!dbUser) {
+        // Auto-provision user for Clerk account
+        const firstSalon = await this.prisma.salon.findFirst();
+        let fallbackSalonId = firstSalon?.id;
+        if (!fallbackSalonId) {
+          const newSalon = await this.prisma.salon.create({
+            data: {
+              name: 'My Salon',
+              whatsappNumber: '+919999999999',
+              address: 'Main Street',
+            },
+          });
+          fallbackSalonId = newSalon.id;
+        }
+
+        const userEmail = (payload as any).email_addresses?.[0]?.email_address || `${payload.sub}@salonsflow.com`;
+        try {
+          dbUser = await this.prisma.user.create({
+            data: {
+              clerkId: payload.sub,
+              name: (payload as any).first_name || 'Salon Owner',
+              email: userEmail,
+              role: 'OWNER',
+              salonId: fallbackSalonId,
+            },
+          });
+        } catch (_) {
+          dbUser = await this.prisma.user.findFirst({ where: { salonId: fallbackSalonId } });
+        }
+      }
+
       if (dbUser) {
         (request as any).user.id = dbUser.id;
         (request as any).user.salonId = dbUser.salonId;
