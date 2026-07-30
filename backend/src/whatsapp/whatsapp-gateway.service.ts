@@ -278,17 +278,26 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (qr) {
+        this.logger.log(`Received raw QR code payload for salon ${salonId}`);
+        let qrDataUrl = '';
         try {
-          const qrBase64 = await QRCode.toDataURL(qr);
-          const current = this.sessions.get(salonId);
-          this.sessions.set(salonId, {
-            socket: sock,
-            qr: qrBase64,
-            status: 'QR',
-          });
-        } catch (err) {
-          this.logger.error(`Failed to generate QR data URL for salon ${salonId}: ${err.message}`);
+          const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL;
+          if (toDataUrl) {
+            qrDataUrl = await toDataUrl(qr);
+          }
+        } catch (err: any) {
+          this.logger.error(`QRCode.toDataURL error for salon ${salonId}: ${err.message}`);
         }
+
+        if (!qrDataUrl) {
+          qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
+        }
+
+        this.sessions.set(salonId, {
+          socket: sock,
+          qr: qrDataUrl,
+          status: 'QR',
+        });
       }
 
       if (connection === 'open') {
