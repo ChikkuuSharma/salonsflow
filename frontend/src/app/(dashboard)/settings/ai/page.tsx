@@ -357,7 +357,7 @@ export default function AISettingsPage() {
     }, 1000);
   };
 
-  if (loading) {
+  if (loading && !salonId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
         <RefreshCw className="h-8 w-8 animate-spin text-emerald-500" />
