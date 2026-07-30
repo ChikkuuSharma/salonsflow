@@ -168,24 +168,41 @@ export default function AISettingsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setQrStatus(data.status);
+        if (data.status === 'CONNECTED') {
+          setQrStatus('CONNECTED');
+          return;
+        }
+
+        setQrStatus('QR');
         if (data.qr) {
           setQrCode(data.qr);
-        } else if (data.status === 'QR') {
-          // Retry fetching QR code once after 1.5 seconds if socket needed extra time
-          setTimeout(async () => {
-            try {
-              const retryRes = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
-                headers: { Authorization: `Bearer ${activeToken}` }
-              });
-              if (retryRes.ok) {
-                const retryData = await retryRes.json();
-                setQrStatus(retryData.status);
-                if (retryData.qr) setQrCode(retryData.qr);
-              }
-            } catch (_) {}
-          }, 1500);
         }
+
+        // Continuous resilience polling loop every 1.5s until QR image is rendered
+        const startTime = Date.now();
+        const pollInterval = setInterval(async () => {
+          if (Date.now() - startTime > 25000) {
+            clearInterval(pollInterval);
+            return;
+          }
+          try {
+            const pollRes = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
+              headers: { Authorization: `Bearer ${activeToken}` }
+            });
+            if (pollRes.ok) {
+              const pollData = await pollRes.json();
+              if (pollData.status === 'CONNECTED') {
+                setQrStatus('CONNECTED');
+                setQrCode("");
+                clearInterval(pollInterval);
+              } else if (pollData.qr) {
+                setQrCode(pollData.qr);
+                setQrStatus('QR');
+                clearInterval(pollInterval);
+              }
+            }
+          } catch (_) {}
+        }, 1500);
       }
     } catch (err) {
       console.error("Failed to load QR code:", err);
