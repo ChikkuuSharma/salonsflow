@@ -94,12 +94,21 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       });
 
       const status = (statusRecord?.value as any) || 'DISCONNECTED';
+      let dbQr = qrRecord?.value;
+      if (dbQr && !dbQr.startsWith('data:image/png;base64,')) {
+        dbQr = undefined;
+        this.prisma.whatsAppSession.deleteMany({ where: { salonId, key: 'session_status_qr' } }).catch(() => {});
+      }
+
+      const memQr = memorySession?.qr && memorySession.qr.startsWith('data:image/png;base64,') ? memorySession.qr : undefined;
+
       return {
         status: status === 'CONNECTED' ? 'CONNECTED' : (status === 'QR' ? 'QR' : 'DISCONNECTED'),
-        qr: qrRecord?.value || memorySession?.qr,
+        qr: dbQr || memQr,
       };
     } catch (err: any) {
-      return { status: memorySession?.status || 'DISCONNECTED', qr: memorySession?.qr };
+      const memQr = memorySession?.qr && memorySession.qr.startsWith('data:image/png;base64,') ? memorySession.qr : undefined;
+      return { status: memorySession?.status || 'DISCONNECTED', qr: memQr };
     }
   }
 
@@ -253,9 +262,17 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     if (existingSession.status === 'CONNECTED') {
       return existingSession;
     }
-    if (existingSession.status === 'QR' && existingSession.qr) {
+    // Only reuse cached session QR if it's a valid native PNG Base64 Data URL
+    if (existingSession.status === 'QR' && existingSession.qr && existingSession.qr.startsWith('data:image/png;base64,')) {
       return existingSession;
     }
+
+    // Wipe stale dummy DB records if present
+    try {
+      await this.prisma.whatsAppSession.deleteMany({
+        where: { salonId, key: 'session_status_qr' },
+      });
+    } catch (_) {}
 
     const existing = this.sessions.get(salonId);
     if (existing) {
