@@ -489,7 +489,7 @@ export default function AISettingsPage() {
                   {qrCode ? (
                     <div className="bg-white p-3 rounded-2xl shadow-md inline-block mx-auto border border-slate-200">
                       <img 
-                        src={qrCode.startsWith("http") || qrCode.startsWith("data:") ? qrCode : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}`} 
+                        src={qrCode.startsWith("data:image/") ? qrCode : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}`} 
                         alt="WhatsApp Web QR Code" 
                         className="w-52 h-52 rounded-xl object-contain" 
                       />
