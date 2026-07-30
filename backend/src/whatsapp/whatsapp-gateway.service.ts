@@ -298,15 +298,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     const { state, saveCreds } = await this.usePrismaAuthState(salonId);
 
-    let version: [number, number, number] | undefined;
-    try {
-      const latest = await fetchLatestBaileysVersion();
-      version = latest.version;
-      this.logger.log(`Fetched latest WhatsApp Web version: ${version?.join('.')}`);
-    } catch (_) {}
-
     const sock = makeWASocket({
-      version,
       browser: Browsers.macOS('Desktop'),
       auth: state,
       printQRInTerminal: false,
@@ -435,14 +427,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     const { state, saveCreds } = await this.usePrismaAuthState(salonId);
 
-    let version: [number, number, number] | undefined;
-    try {
-      const latest = await fetchLatestBaileysVersion();
-      version = latest.version;
-    } catch (_) {}
-
     const sock = makeWASocket({
-      version,
       browser: Browsers.macOS('Desktop'),
       auth: state,
       printQRInTerminal: false,
