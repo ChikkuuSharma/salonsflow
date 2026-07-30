@@ -333,14 +333,34 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       }
     });
 
-    try {
-      const rawCode = await sock.requestPairingCode(cleanPhone);
-      const formattedCode = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
-      return { code: formattedCode };
-    } catch (err: any) {
-      this.logger.error(`Error requesting pairing code for ${cleanPhone}: ${err.message}`);
-      return { error: err.message || 'Failed to request pairing code from WhatsApp server.' };
-    }
+    return new Promise((resolve) => {
+      let isResolved = false;
+      const timeout = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          resolve({ error: 'Pairing code request timed out from WhatsApp server. Please try again.' });
+        }
+      }, 12000);
+
+      sock.ev.on('connection.update', async (update) => {
+        if (update.qr && !isResolved) {
+          try {
+            const rawCode = await sock.requestPairingCode(cleanPhone);
+            const formattedCode = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
+            isResolved = true;
+            clearTimeout(timeout);
+            resolve({ code: formattedCode });
+          } catch (err: any) {
+            this.logger.error(`Error requesting pairing code for ${cleanPhone}: ${err.message}`);
+            if (!isResolved) {
+              isResolved = true;
+              clearTimeout(timeout);
+              resolve({ error: err.message || 'Failed to request pairing code from WhatsApp server.' });
+            }
+          }
+        }
+      });
+    });
   }
 
   async generateQrCodeSynchronously(salonId: string): Promise<{ status: 'QR' | 'CONNECTED' | 'DISCONNECTED'; qr?: string }> {
