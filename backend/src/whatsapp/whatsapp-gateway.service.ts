@@ -307,14 +307,10 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
           let qrDataUrl = '';
           try {
-            const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL;
-            if (toDataUrl) {
-              qrDataUrl = await toDataUrl(qr);
-            }
-          } catch (_) {}
-
-          if (!qrDataUrl) {
-            qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
+            const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
+            qrDataUrl = await toDataUrl(qr, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
+          } catch (qrErr: any) {
+            this.logger.error(`Error generating high-density QR data URL: ${qrErr.message}`);
           }
 
           this.sessions.set(salonId, { socket: sock, qr: qrDataUrl, status: 'QR' });
@@ -431,16 +427,10 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         this.logger.log(`Received raw QR code payload for salon ${salonId}`);
         let qrDataUrl = '';
         try {
-          const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL;
-          if (toDataUrl) {
-            qrDataUrl = await toDataUrl(qr);
-          }
+          const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
+          qrDataUrl = await toDataUrl(qr, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
         } catch (err: any) {
           this.logger.error(`QRCode.toDataURL error for salon ${salonId}: ${err.message}`);
-        }
-
-        if (!qrDataUrl) {
-          qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}`;
         }
 
         this.sessions.set(salonId, {
