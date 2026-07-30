@@ -310,7 +310,9 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     const sock = makeWASocket({
       version,
-      browser: Browsers.ubuntu('Chrome'),
+      browser: Browsers.macOS('Chrome'),
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
       auth: state,
       printQRInTerminal: false,
       logger: pinoLogger as any,

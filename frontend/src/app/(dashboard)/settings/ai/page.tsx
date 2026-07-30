@@ -483,7 +483,10 @@ export default function AISettingsPage() {
                       <li>Scan the QR code below using the in-app scanner.</li>
                     </ol>
                     <p className="text-[10px] text-amber-750 dark:text-amber-300 mt-1.5 font-bold italic">
-                      ⚠️ Do NOT scan with your regular Phone Camera app.
+                      ⚠️ Do NOT scan with regular Phone Camera app.
+                    </p>
+                    <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 font-bold">
+                      💡 If WhatsApp shows "Can't link new device", log out of an old linked device under WhatsApp -&gt; Linked Devices first (WhatsApp allows max 4 linked devices per phone number).
                     </p>
                   </div>
                   {qrCode ? (
