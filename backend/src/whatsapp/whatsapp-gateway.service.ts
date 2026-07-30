@@ -228,7 +228,26 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  async initializeSession(salonId: string): Promise<void> {
+  async initializeSession(salonId: string, forceFresh = false): Promise<void> {
+    if (forceFresh) {
+      const existing = this.sessions.get(salonId);
+      if (existing) {
+        try {
+          existing.socket.logout();
+          existing.socket.end(undefined);
+        } catch (_) {}
+        this.sessions.delete(salonId);
+      }
+      try {
+        await this.prisma.whatsAppSession.deleteMany({
+          where: { salonId },
+        });
+        this.logger.log(`Cleared stale WhatsApp credentials for salon ${salonId} to force fresh QR code generation.`);
+      } catch (err) {
+        this.logger.error(`Error clearing old session keys for ${salonId}: ${err.message}`);
+      }
+    }
+
     const { state, saveCreds } = await this.usePrismaAuthState(salonId);
 
     const sock = makeWASocket({
