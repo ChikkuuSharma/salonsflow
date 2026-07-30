@@ -59,6 +59,7 @@ export class PublicBookingsController {
     @Query('serviceId') serviceId: string,
     @Query('date') dateStr: string, // YYYY-MM-DD
     @Query('staffId') staffId?: string,
+    @Query('detailed') detailed?: string,
   ) {
     const salon = await this.prisma.salon.findUnique({
       where: { id: salonId },
@@ -126,6 +127,8 @@ export class PublicBookingsController {
 
     // Filter slots by checking database availability
     const availableSlots: string[] = [];
+    const detailedSlots: Array<{ time: string; isAvailable: boolean }> = [];
+
     for (const slotStr of slots) {
       const slotTime = parseTime12Hour(slotStr);
       const slotDate = new Date(Date.UTC(yr, mo - 1, dy, slotTime.hour, slotTime.minute) - 5.5 * 60 * 60 * 1000);
@@ -136,9 +139,36 @@ export class PublicBookingsController {
         slotDate,
         staffId || undefined,
       );
+
+      detailedSlots.push({ time: slotStr, isAvailable: isFree });
       if (isFree) {
         availableSlots.push(slotStr);
       }
+    }
+
+    // Calculate queue waiting metrics for today
+    const activeTodayCount = await this.prisma.appointment.count({
+      where: {
+        salonId,
+        status: { in: ['CONFIRMED', 'PENDING'] },
+        startTime: {
+          gte: new Date(Date.UTC(yr, mo - 1, dy, 0, 0, 0) - 5.5 * 60 * 60 * 1000),
+          lte: new Date(Date.UTC(yr, mo - 1, dy, 23, 59, 59) - 5.5 * 60 * 60 * 1000),
+        },
+      },
+    });
+
+    const estimatedWaitMins = activeTodayCount * 15;
+
+    if (detailed === 'true') {
+      return {
+        availableSlots,
+        detailedSlots,
+        queueInfo: {
+          activeAppointmentsAhead: activeTodayCount,
+          estimatedWaitMins,
+        },
+      };
     }
 
     return availableSlots;

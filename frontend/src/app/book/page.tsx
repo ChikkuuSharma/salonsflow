@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Calendar as CalendarIcon, Clock, User, Phone, CheckCircle, AlertCircle, Scissors, Sparkles, MapPin, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Phone, CheckCircle, AlertCircle, Scissors, Sparkles, MapPin, RefreshCw, Lock, Hourglass, Users } from "lucide-react";
 
 function BookingContent() {
   const searchParams = useSearchParams();
@@ -11,6 +11,9 @@ function BookingContent() {
   // Config states
   const [salonInfo, setSalonInfo] = useState<any>(null);
   const [slots, setSlots] = useState<string[]>([]);
+  const [detailedSlots, setDetailedSlots] = useState<Array<{ time: string; isAvailable: boolean }>>([]);
+  const [queueInfo, setQueueInfo] = useState<{ activeAppointmentsAhead: number; estimatedWaitMins: number } | null>(null);
+  const [slotFilter, setSlotFilter] = useState<"ALL" | "AVAILABLE" | "BOOKED">("ALL");
   const [loading, setLoading] = useState(true);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -82,14 +85,22 @@ function BookingContent() {
       try {
         setSlotsLoading(true);
         setSelectedSlot(null);
-        let url = `${apiUrl}/api/v1/public/appointments/slots?salonId=${salonId}&serviceId=${primaryService.id}&date=${selectedDate}`;
+        let url = `${apiUrl}/api/v1/public/appointments/slots?salonId=${salonId}&serviceId=${primaryService.id}&date=${selectedDate}&detailed=true`;
         if (selectedStaff) {
           url += `&staffId=${selectedStaff.id}`;
         }
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to load available slots.");
         const data = await res.json();
-        setSlots(data);
+        
+        if (data.detailedSlots) {
+          setSlots(data.availableSlots || []);
+          setDetailedSlots(data.detailedSlots || []);
+          setQueueInfo(data.queueInfo || null);
+        } else if (Array.isArray(data)) {
+          setSlots(data);
+          setDetailedSlots(data.map((s: string) => ({ time: s, isAvailable: true })));
+        }
       } catch (err: any) {
         console.error(err);
       } finally {
@@ -162,25 +173,50 @@ function BookingContent() {
   }
 
   if (success) {
+    const ticketId = `#SF-${Math.floor(1000 + Math.random() * 9000)}`;
+    const estWait = queueInfo?.estimatedWaitMins || 15;
+    const queuePos = (queueInfo?.activeAppointmentsAhead || 0) + 1;
+
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center space-y-6 shadow-2xl">
-          <div className="h-16 w-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 shadow-md">
+        <div className="max-w-md w-full bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center space-y-6 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-32 w-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div className="h-16 w-16 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400 shadow-md">
             <CheckCircle className="h-8 w-8" />
           </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold tracking-tight">Booking Confirmed!</h2>
-            <p className="text-sm text-slate-400">Thank you, {customerName}. Your appointment for {selectedServices.map(s => s.name).join(", ")} is successfully scheduled.</p>
+
+          <div className="space-y-1">
+            <span className="text-[10px] font-black uppercase text-emerald-400 tracking-widest bg-emerald-950 border border-emerald-800/60 px-3 py-1 rounded-full font-mono">
+              Live Waiting Ticket • {ticketId}
+            </span>
+            <h2 className="text-2xl font-black tracking-tight text-white pt-2">Appointment Confirmed!</h2>
+            <p className="text-xs text-slate-400">Thank you, <strong className="text-white">{customerName}</strong>. Your spot is reserved.</p>
           </div>
+
+          {/* Live Wait Time & Queue Position Box */}
+          <div className="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 grid grid-cols-2 gap-3 text-center">
+            <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Est. Wait Time</span>
+              <p className="text-lg font-black text-emerald-400 mt-0.5">~{estWait} mins</p>
+            </div>
+            <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block font-mono">Queue Position</span>
+              <p className="text-lg font-black text-indigo-400 mt-0.5">#{queuePos} in Line</p>
+            </div>
+          </div>
+
+          {/* Appointment Details */}
           <div className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-left font-mono text-xs text-slate-300 space-y-2">
-            <p><span className="text-slate-500">Services ({selectedServices.length}):</span> {selectedServices.map(s => s.name).join(", ")}</p>
-            <p><span className="text-slate-500">Stylist:</span> {selectedStaff?.name || "Any Available Stylist"}</p>
-            <p><span className="text-slate-500">Date:</span> {new Date(selectedDate).toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-            <p><span className="text-slate-500">Time:</span> {selectedSlot}</p>
-            <p><span className="text-slate-500">Total Duration:</span> {totalDuration} mins</p>
-            <p><span className="text-slate-500">Total Price:</span> ₹{totalPrice}</p>
+            <p className="flex justify-between"><span className="text-slate-500">Salon:</span> <strong className="text-slate-200">{salonInfo?.name || "Salon"}</strong></p>
+            <p className="flex justify-between"><span className="text-slate-500">Services ({selectedServices.length}):</span> <span className="text-indigo-300 font-bold">{selectedServices.map(s => s.name).join(", ")}</span></p>
+            <p className="flex justify-between"><span className="text-slate-500">Stylist:</span> <span className="text-slate-200">{selectedStaff?.name || "Any Stylist"}</span></p>
+            <p className="flex justify-between"><span className="text-slate-500">Date & Slot:</span> <span className="text-emerald-300 font-bold">{selectedDate} ({selectedSlot})</span></p>
+            <p className="flex justify-between"><span className="text-slate-500">Duration:</span> <span className="text-slate-200">{totalDuration} mins</span></p>
+            <p className="flex justify-between border-t border-slate-800 pt-2 text-sm"><span className="text-slate-400 font-bold">Total Price:</span> <strong className="text-white">₹{totalPrice}</strong></p>
           </div>
-          <p className="text-xs text-slate-500">You can close this tab now. We have saved your appointment details.</p>
+
+          <p className="text-[11px] text-slate-500 font-medium">Please show this live ticket at the reception desk when your turn arrives.</p>
         </div>
       </div>
     );
@@ -205,6 +241,34 @@ function BookingContent() {
           </div>
           <div className="h-10 w-10 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400 shadow-sm hidden md:flex">
             <Sparkles className="h-5 w-5 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Live Queue & Waiting Time Banner */}
+        <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border-b border-slate-800 p-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-emerald-500/20 border border-emerald-500/30 rounded-xl flex items-center justify-center text-emerald-400 flex-shrink-0">
+              <Clock className="h-5 w-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-emerald-400 uppercase tracking-wider text-[10px] font-mono">
+                  Live Reception Queue
+                </span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+              </div>
+              <p className="text-slate-100 font-extrabold text-sm mt-0.5">
+                {queueInfo && queueInfo.estimatedWaitMins > 0
+                  ? `~${queueInfo.estimatedWaitMins} mins Current Wait Time`
+                  : "⚡ No Waiting (Immediate Slots Available!)"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-[11px]">
+            <Users className="h-3.5 w-3.5 text-indigo-400" />
+            <span className="text-slate-400 font-medium">Appointments Ahead:</span>
+            <strong className="text-white font-mono">{queueInfo?.activeAppointmentsAhead || 0}</strong>
           </div>
         </div>
 
@@ -462,34 +526,93 @@ function BookingContent() {
             </div>
           </div>
 
-          {/* Step 4: Available Slots */}
+          {/* Step 5: Available & Reserved Time Slots */}
           <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">5. Available Time Slots</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">5. Select Time Slot</h3>
+              
+              {/* Slot Filter Pills */}
+              <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setSlotFilter("ALL")}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
+                    slotFilter === "ALL" ? "bg-indigo-600 text-white shadow-xs" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  All ({detailedSlots.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSlotFilter("AVAILABLE")}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
+                    slotFilter === "AVAILABLE" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  🟢 Free ({slots.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSlotFilter("BOOKED")}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all ${
+                    slotFilter === "BOOKED" ? "bg-rose-900/60 text-rose-200 shadow-xs" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  🔴 Booked ({detailedSlots.filter(s => !s.isAvailable).length})
+                </button>
+              </div>
+            </div>
+
             {slotsLoading ? (
               <div className="p-6 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
                 <RefreshCw className="h-4 w-4 animate-spin text-indigo-500" />
-                <span>Checking stylist schedules...</span>
+                <span>Checking live appointment calendar & stylist schedules...</span>
               </div>
-            ) : slots.length === 0 ? (
+            ) : detailedSlots.length === 0 ? (
               <p className="p-4 bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-500 rounded-xl font-medium">
                 No slots available on this date. Try another date or select a different stylist.
               </p>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {slots.map((slot) => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`py-2 px-3 rounded-xl border text-center text-[10px] font-bold font-mono transition-all ${
-                      selectedSlot === slot
-                        ? "bg-indigo-600 border-indigo-500 text-white shadow-md scale-[1.02]"
-                        : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-900/50 hover:text-slate-200"
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {detailedSlots
+                  .filter((item) => {
+                    if (slotFilter === "AVAILABLE") return item.isAvailable;
+                    if (slotFilter === "BOOKED") return !item.isAvailable;
+                    return true;
+                  })
+                  .map((item) => {
+                    const isSelected = selectedSlot === item.time;
+                    if (!item.isAvailable) {
+                      return (
+                        <div
+                          key={item.time}
+                          className="py-2.5 px-3 rounded-xl border border-slate-800/80 bg-slate-950/40 text-slate-600 text-center text-[10px] font-bold font-mono flex items-center justify-center gap-1.5 opacity-60 cursor-not-allowed select-none"
+                        >
+                          <Lock className="h-3 w-3 text-rose-500/70" />
+                          <span className="line-through">{item.time}</span>
+                          <span className="text-[8px] font-extrabold uppercase text-rose-400/80 bg-rose-950/60 border border-rose-900/40 px-1.5 py-0.5 rounded">
+                            Booked
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={item.time}
+                        type="button"
+                        onClick={() => setSelectedSlot(item.time)}
+                        className={`py-2.5 px-3 rounded-xl border text-center text-[10px] font-bold font-mono transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? "bg-indigo-600 border-indigo-500 text-white shadow-md scale-[1.02] ring-1 ring-indigo-400"
+                            : "bg-slate-950 border-emerald-900/40 text-emerald-300 hover:bg-emerald-950/40 hover:border-emerald-500"
+                        }`}
+                      >
+                        <span className={`h-2 w-2 rounded-full ${isSelected ? "bg-white" : "bg-emerald-400 animate-pulse"}`}></span>
+                        <span>{item.time}</span>
+                      </button>
+                    );
+                  })}
               </div>
             )}
           </div>
