@@ -360,7 +360,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     sock.ev.on('connection.update', async (update) => {
       this.logger.warn(`[${new Date().toISOString()}] [CONNECTION_UPDATE] [${sockId}] ${JSON.stringify(update)}`);
-      const { connection } = update;
+      const { connection, lastDisconnect } = update;
       if (connection === 'open') {
         const userJid = sock.user?.id.split(':')[0];
         const whatsappNumber = '+' + userJid;
@@ -377,6 +377,9 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
         managedSession.status = 'CONNECTED';
       } else if (connection === 'close') {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        const errorMessage = lastDisconnect?.error?.message;
+        this.logger.warn(`[${new Date().toISOString()}] [WS_CLOSED] [${sockId}] StatusCode: ${statusCode}, ErrorMessage: ${errorMessage}`);
         managedSession.status = 'DISCONNECTED';
       }
     });
