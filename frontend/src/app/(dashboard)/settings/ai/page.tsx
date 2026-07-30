@@ -155,12 +155,14 @@ export default function AISettingsPage() {
     }
   };
 
-  const loadQrCode = async () => {
+  const loadQrCode = async (isForce = false) => {
     setQrStatus('LOADING');
     setQrCode("");
     try {
-      const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const activeToken = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
+      const url = isForce ? `${apiUrl}/api/v1/webhooks/whatsapp/qr?force=true` : `${apiUrl}/api/v1/webhooks/whatsapp/qr`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${activeToken}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -172,7 +174,7 @@ export default function AISettingsPage() {
           setTimeout(async () => {
             try {
               const retryRes = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/qr`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${activeToken}` }
               });
               if (retryRes.ok) {
                 const retryData = await retryRes.json();
@@ -465,7 +467,7 @@ export default function AISettingsPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={loadQrCode}
+                      onClick={() => loadQrCode(true)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
                     >
                       <RefreshCw className="h-3 w-3 text-emerald-500" /> Regenerate QR Code
@@ -497,7 +499,7 @@ export default function AISettingsPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={loadQrCode}
+                    onClick={() => loadQrCode(false)}
                     className="inline-flex items-center justify-center gap-1.5 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-zinc-950 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 duration-200 border-0 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-zinc-950" />

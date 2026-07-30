@@ -229,21 +229,29 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
   }
 
   async initializeSession(salonId: string, forceFresh = false): Promise<void> {
+    const existing = this.sessions.get(salonId);
+
+    // If socket is already active and waiting for QR code from WhatsApp servers, do not destroy it!
+    if (existing && existing.status === 'QR' && !forceFresh) {
+      this.logger.log(`Session for salon ${salonId} is already active and awaiting WhatsApp QR response.`);
+      return;
+    }
+
+    if (existing) {
+      try {
+        existing.socket.logout();
+        existing.socket.end(undefined);
+      } catch (_) {}
+      this.sessions.delete(salonId);
+    }
+
     if (forceFresh) {
-      const existing = this.sessions.get(salonId);
-      if (existing) {
-        try {
-          existing.socket.logout();
-          existing.socket.end(undefined);
-        } catch (_) {}
-        this.sessions.delete(salonId);
-      }
       try {
         await this.prisma.whatsAppSession.deleteMany({
           where: { salonId },
         });
         this.logger.log(`Cleared stale WhatsApp credentials for salon ${salonId} to force fresh QR code generation.`);
-      } catch (err) {
+      } catch (err: any) {
         this.logger.error(`Error clearing old session keys for ${salonId}: ${err.message}`);
       }
     }
