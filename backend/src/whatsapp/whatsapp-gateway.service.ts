@@ -296,7 +296,16 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     const { state, saveCreds } = await this.usePrismaAuthState(salonId, true);
 
+    let version: [number, number, number] = [2, 3000, 1043857760];
+    try {
+      const latest = await fetchLatestBaileysVersion();
+      if (latest && latest.version) {
+        version = latest.version;
+      }
+    } catch (_) {}
+
     const sock = makeWASocket({
+      version,
       browser: Browsers.ubuntu('Chrome'),
       auth: state,
       printQRInTerminal: false,
@@ -315,7 +324,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     const noiseKey = toB64(state.creds.noiseKey?.public);
     const identityKey = toB64(state.creds.signedIdentityKey?.public);
     const advSecret = (state.creds as any).advSecretKey || (state.creds as any).advSecret || '';
-    const rawQrString = `${ref},${noiseKey},${identityKey},${advSecret}`;
+    const rawQrString = `https://wa.me/settings/linked_devices#2@${ref},${noiseKey},${identityKey},${advSecret}`;
 
     let instantQrDataUrl = '';
     try {
