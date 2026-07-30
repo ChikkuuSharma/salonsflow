@@ -469,11 +469,19 @@ export default function AISettingsPage() {
 
               {qrStatus === 'QR' && (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                  <div>
-                    <span className="text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase block mb-1">Scan QR Code to Link WhatsApp</span>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-200 leading-normal max-w-xs mx-auto font-sans">
-                      Open WhatsApp on your phone, go to <strong className="text-emerald-600 dark:text-emerald-400">Linked Devices &rarr; Link a Device</strong>, and scan the code below.
-                    </h4>
+                  <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 p-3.5 rounded-xl text-left max-w-sm mx-auto">
+                    <span className="text-[11px] font-bold tracking-wider text-amber-700 dark:text-amber-400 uppercase block mb-1">
+                      📱 Important: Scan inside WhatsApp App
+                    </span>
+                    <ol className="text-xs font-semibold text-amber-900 dark:text-amber-200 space-y-1 list-decimal list-inside">
+                      <li>Open <strong>WhatsApp</strong> on your mobile phone.</li>
+                      <li>Tap <strong>Menu (3 dots)</strong> or <strong>Settings</strong>.</li>
+                      <li>Select <strong>Linked Devices &rarr; Link a Device</strong>.</li>
+                      <li>Scan the QR code below using the in-app scanner.</li>
+                    </ol>
+                    <p className="text-[10px] text-amber-750 dark:text-amber-300 mt-1.5 font-bold italic">
+                      ⚠️ Do NOT scan with your regular Phone Camera app.
+                    </p>
                   </div>
                   {qrCode ? (
                     <div className="bg-white p-3 rounded-2xl shadow-md inline-block mx-auto border border-slate-200">
