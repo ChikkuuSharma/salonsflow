@@ -289,23 +289,14 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
       this.sessions.set(salonId, { socket: sock, status: 'QR' });
 
-      // Fallback timer (6 seconds) to guarantee instant HTTP response with QR payload
+      // Wait up to 18 seconds for authentic Baileys WhatsApp Web pairing payload (2@...)
       const timer = setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          const fallbackPayload = `salonflow-wa-pair:${salonId}:${Date.now()}`;
-          const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(fallbackPayload)}`;
-          
-          this.sessions.set(salonId, { socket: sock, qr: fallbackUrl, status: 'QR' });
-          this.prisma.whatsAppSession.upsert({
-            where: { salonId_key: { salonId, key: 'session_status_qr' } },
-            update: { value: fallbackUrl },
-            create: { salonId, key: 'session_status_qr', value: fallbackUrl },
-          }).catch(() => {});
-
-          resolve({ status: 'QR', qr: fallbackUrl });
+          this.logger.warn(`Baileys handshake pending for salon ${salonId}, returning status QR`);
+          resolve({ status: 'QR' });
         }
-      }, 6000);
+      }, 18000);
 
       sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
