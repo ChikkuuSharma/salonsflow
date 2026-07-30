@@ -29,6 +29,14 @@ export default function AISettingsPage() {
   const [pairingCodeLoading, setPairingCodeLoading] = useState(false);
   const [pairingCodeError, setPairingCodeError] = useState("");
   const [linkMode, setLinkMode] = useState<"QR" | "CODE">("QR");
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  const copyPairingCode = () => {
+    if (!pairingCode) return;
+    navigator.clipboard.writeText(pairingCode.replace(/-/g, ''));
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
 
   // Chat simulator state
   const [chatMessages, setChatMessages] = useState([
@@ -253,6 +261,7 @@ export default function AISettingsPage() {
     setPairingCodeLoading(true);
     setPairingCodeError("");
     setPairingCode("");
+    setLinkMode("CODE");
 
     try {
       const activeToken = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
@@ -267,6 +276,7 @@ export default function AISettingsPage() {
       const data = await res.json();
       if (res.ok && data.code) {
         setPairingCode(data.code);
+        setLinkMode("CODE");
         setQrStatus("QR");
       } else {
         setPairingCodeError(data.error || "Failed to generate pairing code.");
@@ -564,10 +574,17 @@ export default function AISettingsPage() {
                           <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block mb-1">
                             🔑 Your 8-Digit WhatsApp Pairing Code
                           </span>
-                          <div className="text-3xl font-mono font-black text-emerald-700 dark:text-emerald-300 tracking-widest my-2 bg-white dark:bg-zinc-900 py-3 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-sm">
-                            {pairingCode}
+                          <div className="text-3xl font-mono font-black text-emerald-700 dark:text-emerald-300 tracking-widest my-2 bg-white dark:bg-zinc-900 py-3 px-4 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-sm flex items-center justify-center gap-3">
+                            <span>{pairingCode}</span>
+                            <button
+                              type="button"
+                              onClick={copyPairingCode}
+                              className="text-xs font-sans font-bold px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg cursor-pointer transition-all active:scale-95 border-0"
+                            >
+                              {copiedCode ? "Copied! ✓" : "Copy"}
+                            </button>
                           </div>
-                          <ol className="text-xs font-semibold text-slate-700 dark:text-zinc-300 text-left space-y-1 list-decimal list-inside mt-3">
+                          <ol className="text-xs font-semibold text-slate-700 dark:text-zinc-300 text-left space-y-1.5 list-decimal list-inside mt-3">
                             <li>Open <strong>WhatsApp</strong> on your mobile phone.</li>
                             <li>Go to <strong>Linked Devices &rarr; Link a Device</strong>.</li>
                             <li>Tap <strong>"Link with phone number instead"</strong> at the bottom.</li>
