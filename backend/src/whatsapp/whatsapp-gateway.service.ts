@@ -312,34 +312,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       logger: pinoLogger as any,
     });
 
-    // Generate immediate 5ms protocol-compliant WhatsApp pairing QR payload
-    const toB64 = (val: any) =>
-      Buffer.isBuffer(val)
-        ? val.toString('base64')
-        : val?.data
-        ? Buffer.from(val.data).toString('base64')
-        : Buffer.from(val || []).toString('base64');
-
-    const ref = crypto.randomBytes(16).toString('base64');
-    const noiseKey = toB64(state.creds.noiseKey?.public);
-    const identityKey = toB64(state.creds.signedIdentityKey?.public);
-    const advSecret = (state.creds as any).advSecretKey || (state.creds as any).advSecret || '';
-    const rawQrString = `https://wa.me/settings/linked_devices#2@${ref},${noiseKey},${identityKey},${advSecret}`;
-
-    let instantQrDataUrl = '';
-    try {
-      const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
-      instantQrDataUrl = await toDataUrl(rawQrString, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
-    } catch (err: any) {
-      this.logger.error(`Error generating instant QR code data URL: ${err.message}`);
-    }
-
-    if (instantQrDataUrl) {
-      this.sessions.set(salonId, { socket: sock, qr: instantQrDataUrl, status: 'QR' });
-    } else {
-      this.sessions.set(salonId, { socket: sock, status: 'QR' });
-    }
-
+    this.sessions.set(salonId, { socket: sock, status: 'QR' });
     sock.ev.on('creds.update', saveCreds);
 
     const qrPromise = new Promise<string>((resolve) => {
@@ -348,15 +321,18 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       const timer = setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          this.logger.log(`Using instant QR fallback for salon ${salonId}`);
-          resolve(instantQrDataUrl);
+          this.logger.warn(`WhatsApp server QR timeout for salon ${salonId}`);
+          resolve('');
         }
-      }, 3500);
+      }, 10000);
 
       sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
-        if (qr) {
+        if (qr && !resolved) {
+          resolved = true;
+          clearTimeout(timer);
+
           let liveQrDataUrl = '';
           try {
             const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
@@ -372,13 +348,8 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
                 create: { salonId, key: 'session_status_qr', value: liveQrDataUrl },
               });
             } catch (_) {}
-
-            if (!resolved) {
-              resolved = true;
-              clearTimeout(timer);
-              resolve(liveQrDataUrl);
-            }
           }
+          resolve(liveQrDataUrl);
         }
 
         if (connection === 'open') {
