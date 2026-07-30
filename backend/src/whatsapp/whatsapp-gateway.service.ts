@@ -250,8 +250,8 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     const existing = this.sessions.get(salonId);
 
     // If socket is already active and waiting for QR code from WhatsApp servers, do not destroy it!
-    if (existing && existing.status === 'QR' && !forceFresh) {
-      this.logger.log(`Session for salon ${salonId} is already active and awaiting WhatsApp QR response.`);
+    if (existing && existing.status === 'QR' && existing.qr && !forceFresh) {
+      this.logger.log(`Session for salon ${salonId} is already active with QR code.`);
       return;
     }
 
@@ -263,16 +263,24 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       this.sessions.delete(salonId);
     }
 
-    if (forceFresh) {
-      try {
-        await this.prisma.whatsAppSession.deleteMany({
-          where: { salonId },
-        });
-        this.logger.log(`Cleared stale WhatsApp credentials for salon ${salonId} to force fresh QR code generation.`);
-      } catch (err: any) {
-        this.logger.error(`Error clearing old session keys for ${salonId}: ${err.message}`);
-      }
+    // Always wipe old stale credentials when starting a new QR pairing session
+    try {
+      await this.prisma.whatsAppSession.deleteMany({
+        where: { salonId },
+      });
+      this.logger.log(`Wiped old WhatsApp credentials from DB for salon ${salonId} to guarantee fresh QR generation.`);
+    } catch (err: any) {
+      this.logger.error(`Error clearing old session keys for ${salonId}: ${err.message}`);
     }
+
+    // Explicitly set session_status in DB to 'QR'
+    try {
+      await this.prisma.whatsAppSession.upsert({
+        where: { salonId_key: { salonId, key: 'session_status' } },
+        update: { value: 'QR' },
+        create: { salonId, key: 'session_status', value: 'QR' },
+      });
+    } catch (_) {}
 
     const { state, saveCreds } = await this.usePrismaAuthState(salonId);
 
