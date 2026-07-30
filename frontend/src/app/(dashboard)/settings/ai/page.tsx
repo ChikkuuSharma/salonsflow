@@ -17,6 +17,7 @@ export default function AISettingsPage() {
   const [openingTime, setOpeningTime] = useState("10:00");
   const [closingTime, setClosingTime] = useState("20:00");
   const [aiPrompt, setAiPrompt] = useState("");
+  const [salonId, setSalonId] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [qrCode, setQrCode] = useState("");
   const [qrStatus, setQrStatus] = useState<"QR" | "CONNECTED" | "DISCONNECTED" | "LOADING">("DISCONNECTED");
@@ -53,6 +54,7 @@ export default function AISettingsPage() {
         if (!res.ok) throw new Error("Failed to load salon configuration");
         const data = await res.json();
 
+        setSalonId(data.id || "");
         setName(data.name || "");
         setAddress(data.address || "");
         setHomeBookingFee(data.homeBookingFee ?? 0);
@@ -397,23 +399,23 @@ export default function AISettingsPage() {
                     Disconnect Channel
                   </button>
 
-                  {/* Test Walk-in QR Code helper */}
+                  {/* Walk-in Direct Online Booking QR Code helper */}
                   <div className="border-t border-slate-200 dark:border-zinc-800 pt-6 mt-4 text-center">
                     <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900/30 px-3 py-1 rounded-full">
-                      Test Walk-In QR
+                      Walk-In Direct Booking QR
                     </span>
                     <p className="text-slate-500 dark:text-zinc-400 text-[11px] font-semibold mt-3 max-w-[280px] mx-auto leading-relaxed">
-                      Scan this testing QR code to try your new live Walk-In Queue Booking flow:
+                      Scan this QR code with your phone camera to directly open your salon's web booking scheduler:
                     </p>
                     <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 inline-block my-4">
                       <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Join Queue")}`)}`} 
-                        alt="Test Walk-in QR" 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/book?salonId=${salonId || ""}` : "https://salonsflow.in/book")}`} 
+                        alt="Walk-in Direct Booking QR" 
                         className="w-36 h-36 object-contain"
                       />
                     </div>
                     <p className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold leading-normal max-w-xs mx-auto">
-                      Scan this with your phone camera, tap "Send" in WhatsApp to test the queue receptionist response.
+                      Direct booking link: <a href={typeof window !== "undefined" ? `${window.location.origin}/book?salonId=${salonId || ""}` : "#"} target="_blank" rel="noreferrer" className="text-emerald-600 underline">Open Booking Scheduler</a>
                     </p>
                   </div>
                 </div>

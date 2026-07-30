@@ -237,15 +237,16 @@ export default function ReviewsPage() {
     ? "" 
     : rawNumber.replace(/[^0-9]/g, "");
 
-  const waNumber = cleanNumber || "919999999999";
   const salonName = salonData?.name || "Our Salon";
-  const prefilledText = `Join Queue`;
-  const qrLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(prefilledText)}`;
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://salonsflow.in";
+  const targetSalonId = salonData?.id || "d5e27d13-135c-4068-9ced-8f0bfddc9f4d";
+  const qrLink = `${originUrl}/book?salonId=${targetSalonId}`;
   const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrLink)}`;
 
   const handlePrintQR = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
+    const salonName = salonData?.name || "Our Salon";
     printWindow.document.write(`
       <html>
         <head>
@@ -336,17 +337,17 @@ export default function ReviewsPage() {
           <div class="card">
             <div class="logo-placeholder">SalonsFlow</div>
             <h1>${salonName}</h1>
-            <div class="tagline">WhatsApp Walk-In Booking</div>
+            <div class="tagline">Direct Online Appointment Booking</div>
             <div class="instructions">
-              Skip the queue! Scan the QR code using your phone camera to register and book your walk-in service instantly via WhatsApp.
+              Skip the queue! Scan the QR code using your phone camera to view our live service menu and book your appointment instantly!
             </div>
             <div class="qr-container">
-              <img src="${qrImgUrl}" alt="WhatsApp QR Code" width="250" height="250" />
+              <img src="${qrImgUrl}" alt="Appointment Booking QR Code" width="250" height="250" />
             </div>
             <div class="step-container">
               <div class="step"><span class="step-num">1</span> Scan QR</div>
-              <div class="step"><span class="step-num">2</span> Chat & Book</div>
-              <div class="step"><span class="step-num">3</span> Get Served</div>
+              <div class="step"><span class="step-num">2</span> Pick Service</div>
+              <div class="step"><span class="step-num">3</span> Confirm Slot</div>
             </div>
             <div class="footer">
               Powered by SalonsFlow • Zero-Commission CRM

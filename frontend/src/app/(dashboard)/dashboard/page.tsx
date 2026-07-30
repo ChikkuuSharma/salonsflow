@@ -30,7 +30,11 @@ import {
   Clock,
   Megaphone,
   UserPlus,
-  BarChart2
+  BarChart2,
+  QrCode,
+  Copy,
+  ExternalLink,
+  Printer
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -52,6 +56,8 @@ interface ChatMessage {
 export default function DashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [salonInfo, setSalonInfo] = useState<any | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [metrics, setMetrics] = useState<any | null>(null);
   const [ucisMetrics, setUcisMetrics] = useState<any | null>(null);
   const [staffUtilization, setStaffUtilization] = useState<any[]>([]);
@@ -128,6 +134,7 @@ export default function DashboardPage() {
         });
         if (response.ok) {
           const salon = await response.json();
+          setSalonInfo(salon);
           if (!salon.isProfileComplete) {
             router.push("/onboarding");
           }
@@ -139,6 +146,150 @@ export default function DashboardPage() {
     checkProfile();
     loadData();
   }, [apiUrl, router]);
+
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://salonsflow.in";
+  const activeSalonId = salonInfo?.id || "d5e27d13-135c-4068-9ced-8f0bfddc9f4d";
+  const directBookingUrl = `${originUrl}/book?salonId=${activeSalonId}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(directBookingUrl)}`;
+
+  const handleCopyBookingLink = () => {
+    navigator.clipboard.writeText(directBookingUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 3000);
+  };
+
+  const handlePrintStandee = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const salonName = salonInfo?.name || "Our Salon";
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Walk-in Booking Standee</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+            body {
+              font-family: 'Outfit', sans-serif;
+              text-align: center;
+              padding: 40px;
+              color: #0f172a;
+              background-color: #ffffff;
+            }
+            .card {
+              border: 4px solid #059669;
+              border-radius: 32px;
+              padding: 50px 40px;
+              max-width: 500px;
+              margin: 0 auto;
+              box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            }
+            .logo-placeholder {
+              font-weight: 800;
+              font-size: 24px;
+              color: #059669;
+              margin-bottom: 24px;
+              letter-spacing: -0.5px;
+            }
+            h1 {
+              font-size: 32px;
+              font-weight: 800;
+              margin-bottom: 8px;
+              color: #1e293b;
+              letter-spacing: -0.5px;
+            }
+            .tagline {
+              font-size: 16px;
+              color: #059669;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 1.5px;
+              margin-bottom: 30px;
+            }
+            .qr-container {
+              margin: 24px 0;
+              display: inline-block;
+              border: 10px solid #ecfdf5;
+              border-radius: 24px;
+              padding: 20px;
+              background-color: #f8fafc;
+            }
+            .instructions {
+              font-size: 16px;
+              color: #475569;
+              line-height: 1.6;
+              margin-bottom: 24px;
+              font-weight: 500;
+            }
+            .url-display {
+              background: #f1f5f9;
+              padding: 10px 16px;
+              border-radius: 12px;
+              font-family: monospace;
+              font-size: 13px;
+              font-weight: bold;
+              color: #047857;
+              word-break: break-all;
+              margin-bottom: 24px;
+            }
+            .step-container {
+              display: flex;
+              justify-content: space-around;
+              margin-top: 30px;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 24px;
+            }
+            .step {
+              flex: 1;
+              font-size: 13px;
+              font-weight: 600;
+              color: #64748b;
+            }
+            .step-num {
+              display: block;
+              font-size: 20px;
+              font-weight: 800;
+              color: #059669;
+              margin-bottom: 4px;
+            }
+            .footer {
+              font-size: 12px;
+              color: #94a3b8;
+              margin-top: 40px;
+              font-weight: 600;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="logo-placeholder">SalonsFlow</div>
+            <h1>${salonName}</h1>
+            <div class="tagline">Direct Online Appointment Booking</div>
+            <div class="instructions">
+              Skip the queue! Scan the QR code using your phone camera to view our live service menu and book your appointment instantly!
+            </div>
+            <div class="qr-container">
+              <img src="${qrImageUrl}" alt="Appointment Booking QR Code" width="250" height="250" />
+            </div>
+            <div class="url-display">${directBookingUrl}</div>
+            <div class="step-container">
+              <div class="step"><span class="step-num">1</span> Scan QR</div>
+              <div class="step"><span class="step-num">2</span> Pick Service</div>
+              <div class="step"><span class="step-num">3</span> Confirm Slot</div>
+            </div>
+            <div class="footer">
+              Powered by SalonsFlow • Instant Walk-In Appointments
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+  };
 
   const handleSendChatMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,6 +418,66 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Salon-Specific Booking QR Standee & Direct Link Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-emerald-950 text-white rounded-3xl p-6 shadow-xl border border-emerald-800/40 relative overflow-hidden">
+        <div className="absolute top-0 right-0 h-64 w-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+          <div className="space-y-3 flex-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
+              <QrCode className="h-3.5 w-3.5" />
+              <span>Salon-Specific Live Booking QR Standee & Link</span>
+            </div>
+            <h3 className="text-xl md:text-2xl font-black tracking-tight text-white">
+              Direct Walk-In Online Booking Link
+            </h3>
+            <p className="text-xs text-slate-300 max-w-xl leading-relaxed font-medium">
+              Walk-in clients scan this QR code with their phone camera to open your salon's web booking scheduler directly! No WhatsApp redirect required.
+            </p>
+
+            {/* Direct URL Bar & Quick Actions */}
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <div className="bg-slate-950/80 border border-slate-700/80 rounded-2xl px-3.5 py-2 flex items-center gap-2 font-mono text-xs text-emerald-300 max-w-md w-full overflow-hidden">
+                <Globe className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                <span className="truncate flex-1">{directBookingUrl}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyBookingLink}
+                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copiedLink ? "Copied Link!" : "Copy Booking Link"}
+              </button>
+              <a
+                href={directBookingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border border-slate-700 active:scale-95 cursor-pointer"
+              >
+                <ExternalLink className="h-4 w-4" /> Open Web Scheduler
+              </a>
+            </div>
+          </div>
+
+          {/* QR Code & Print Button Box */}
+          <div className="bg-white p-4 rounded-2xl shadow-lg text-slate-900 flex flex-col items-center justify-center text-center space-y-2 flex-shrink-0">
+            <img 
+              src={qrImageUrl} 
+              alt="Direct Booking QR Code" 
+              className="w-32 h-32 object-contain rounded-xl border border-slate-100" 
+            />
+            <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">Scan with Phone Camera</span>
+            <button
+              type="button"
+              onClick={handlePrintStandee}
+              className="w-full flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer mt-1"
+            >
+              <Printer className="h-3.5 w-3.5" /> Print Standee Poster
+            </button>
           </div>
         </div>
       </div>
