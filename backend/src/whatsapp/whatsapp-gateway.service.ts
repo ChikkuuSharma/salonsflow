@@ -329,6 +329,72 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     if (instantQrDataUrl) {
       this.sessions.set(salonId, { socket: sock, qr: instantQrDataUrl, status: 'QR' });
+    } else {
+      this.sessions.set(salonId, { socket: sock, status: 'QR' });
+    }
+
+    sock.ev.on('creds.update', saveCreds);
+
+    const qrPromise = new Promise<string>((resolve) => {
+      let resolved = false;
+
+      const timer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          this.logger.log(`Using instant QR fallback for salon ${salonId}`);
+          resolve(instantQrDataUrl);
+        }
+      }, 3500);
+
+      sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr) {
+          let liveQrDataUrl = '';
+          try {
+            const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
+            liveQrDataUrl = await toDataUrl(qr, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
+          } catch (_) {}
+
+          if (liveQrDataUrl) {
+            this.sessions.set(salonId, { socket: sock, qr: liveQrDataUrl, status: 'QR' });
+            try {
+              await this.prisma.whatsAppSession.upsert({
+                where: { salonId_key: { salonId, key: 'session_status_qr' } },
+                update: { value: liveQrDataUrl },
+                create: { salonId, key: 'session_status_qr', value: liveQrDataUrl },
+              });
+            } catch (_) {}
+
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timer);
+              resolve(liveQrDataUrl);
+            }
+          }
+        }
+
+        if (connection === 'open') {
+          const userJid = sock.user?.id.split(':')[0];
+          const whatsappNumber = '+' + userJid;
+          try {
+            await this.prisma.salon.update({
+              where: { id: salonId },
+              data: {
+                whatsappNumber,
+                whatsappPhoneNumberId: 'qr-linked-' + userJid,
+              },
+            });
+          } catch (_) {}
+
+          this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
+        }
+      });
+    });
+
+    const finalQr = await qrPromise;
+
+    if (finalQr) {
       try {
         await this.prisma.whatsAppSession.upsert({
           where: { salonId_key: { salonId, key: 'session_status' } },
@@ -337,56 +403,13 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         });
         await this.prisma.whatsAppSession.upsert({
           where: { salonId_key: { salonId, key: 'session_status_qr' } },
-          update: { value: instantQrDataUrl },
-          create: { salonId, key: 'session_status_qr', value: instantQrDataUrl },
+          update: { value: finalQr },
+          create: { salonId, key: 'session_status_qr', value: finalQr },
         });
       } catch (_) {}
-    } else {
-      this.sessions.set(salonId, { socket: sock, status: 'QR' });
     }
 
-    sock.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr) {
-        let liveQrDataUrl = '';
-        try {
-          const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
-          liveQrDataUrl = await toDataUrl(qr, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
-        } catch (_) {}
-
-        if (liveQrDataUrl) {
-          this.sessions.set(salonId, { socket: sock, qr: liveQrDataUrl, status: 'QR' });
-          try {
-            await this.prisma.whatsAppSession.upsert({
-              where: { salonId_key: { salonId, key: 'session_status_qr' } },
-              update: { value: liveQrDataUrl },
-              create: { salonId, key: 'session_status_qr', value: liveQrDataUrl },
-            });
-          } catch (_) {}
-        }
-      }
-
-      if (connection === 'open') {
-        const userJid = sock.user?.id.split(':')[0];
-        const whatsappNumber = '+' + userJid;
-        try {
-          await this.prisma.salon.update({
-            where: { id: salonId },
-            data: {
-              whatsappNumber,
-              whatsappPhoneNumberId: 'qr-linked-' + userJid,
-            },
-          });
-        } catch (_) {}
-
-        this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
-      }
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    return { status: 'QR', qr: instantQrDataUrl || undefined };
+    return { status: 'QR', qr: finalQr || undefined };
   }
 
   async initializeSession(salonId: string, forceFresh = false): Promise<void> {
