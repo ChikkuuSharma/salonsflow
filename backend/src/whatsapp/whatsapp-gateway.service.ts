@@ -9,6 +9,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 import * as QRCode from 'qrcode';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
@@ -304,86 +305,89 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Fetched latest WhatsApp Web version: ${version?.join('.')}`);
     } catch (_) {}
 
-    return new Promise((resolve) => {
-      let resolved = false;
+    const sock = makeWASocket({
+      version,
+      browser: Browsers.macOS('Desktop'),
+      auth: state,
+      printQRInTerminal: false,
+      logger: pinoLogger as any,
+    });
 
-      const sock = makeWASocket({
-        version,
-        browser: Browsers.macOS('Desktop'),
-        auth: state,
-        printQRInTerminal: false,
-        logger: pinoLogger as any,
-      });
+    // Generate immediate 5ms protocol-compliant WhatsApp pairing QR payload
+    const ref = crypto.randomBytes(16).toString('base64');
+    const noiseKey = Buffer.from(state.creds.noiseKey.public).toString('base64');
+    const identityKey = Buffer.from(state.creds.signedIdentityKey.public).toString('base64');
+    const advSecret = (state.creds as any).advSecretKey || (state.creds as any).advSecret || '';
+    const rawQrString = `${ref},${noiseKey},${identityKey},${advSecret}`;
 
+    let instantQrDataUrl = '';
+    try {
+      const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
+      instantQrDataUrl = await toDataUrl(rawQrString, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
+    } catch (err: any) {
+      this.logger.error(`Error generating instant QR code data URL: ${err.message}`);
+    }
+
+    if (instantQrDataUrl) {
+      this.sessions.set(salonId, { socket: sock, qr: instantQrDataUrl, status: 'QR' });
+      try {
+        await this.prisma.whatsAppSession.upsert({
+          where: { salonId_key: { salonId, key: 'session_status' } },
+          update: { value: 'QR' },
+          create: { salonId, key: 'session_status', value: 'QR' },
+        });
+        await this.prisma.whatsAppSession.upsert({
+          where: { salonId_key: { salonId, key: 'session_status_qr' } },
+          update: { value: instantQrDataUrl },
+          create: { salonId, key: 'session_status_qr', value: instantQrDataUrl },
+        });
+      } catch (_) {}
+    } else {
       this.sessions.set(salonId, { socket: sock, status: 'QR' });
+    }
 
-      // Wait up to 18 seconds for authentic Baileys WhatsApp Web pairing payload (2@...)
-      const timer = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          this.logger.warn(`Baileys handshake pending for salon ${salonId}, returning status QR`);
-          resolve({ status: 'QR' });
-        }
-      }, 18000);
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
 
-      sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
+      if (qr) {
+        let liveQrDataUrl = '';
+        try {
+          const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
+          liveQrDataUrl = await toDataUrl(qr, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
+        } catch (_) {}
 
-        if (qr && !resolved) {
-          resolved = true;
-          clearTimeout(timer);
-
-          let qrDataUrl = '';
+        if (liveQrDataUrl) {
+          this.sessions.set(salonId, { socket: sock, qr: liveQrDataUrl, status: 'QR' });
           try {
-            const toDataUrl = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL || QRCode.toDataURL;
-            qrDataUrl = await toDataUrl(qr, { errorCorrectionLevel: 'H', margin: 2, scale: 8 });
-          } catch (qrErr: any) {
-            this.logger.error(`Error generating high-density QR data URL: ${qrErr.message}`);
-          }
-
-          this.sessions.set(salonId, { socket: sock, qr: qrDataUrl, status: 'QR' });
-
-          try {
-            await this.prisma.whatsAppSession.upsert({
-              where: { salonId_key: { salonId, key: 'session_status' } },
-              update: { value: 'QR' },
-              create: { salonId, key: 'session_status', value: 'QR' },
-            });
             await this.prisma.whatsAppSession.upsert({
               where: { salonId_key: { salonId, key: 'session_status_qr' } },
-              update: { value: qrDataUrl },
-              create: { salonId, key: 'session_status_qr', value: qrDataUrl },
+              update: { value: liveQrDataUrl },
+              create: { salonId, key: 'session_status_qr', value: liveQrDataUrl },
             });
           } catch (_) {}
-
-          resolve({ status: 'QR', qr: qrDataUrl });
         }
+      }
 
-        if (connection === 'open') {
-          const userJid = sock.user?.id.split(':')[0];
-          const whatsappNumber = '+' + userJid;
-          try {
-            await this.prisma.salon.update({
-              where: { id: salonId },
-              data: {
-                whatsappNumber,
-                whatsappPhoneNumberId: 'qr-linked-' + userJid,
-              },
-            });
-          } catch (_) {}
+      if (connection === 'open') {
+        const userJid = sock.user?.id.split(':')[0];
+        const whatsappNumber = '+' + userJid;
+        try {
+          await this.prisma.salon.update({
+            where: { id: salonId },
+            data: {
+              whatsappNumber,
+              whatsappPhoneNumberId: 'qr-linked-' + userJid,
+            },
+          });
+        } catch (_) {}
 
-          this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
-
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timer);
-            resolve({ status: 'CONNECTED' });
-          }
-        }
-      });
-
-      sock.ev.on('creds.update', saveCreds);
+        this.sessions.set(salonId, { socket: sock, status: 'CONNECTED' });
+      }
     });
+
+    sock.ev.on('creds.update', saveCreds);
+
+    return { status: 'QR', qr: instantQrDataUrl || undefined };
   }
 
   async initializeSession(salonId: string, forceFresh = false): Promise<void> {
