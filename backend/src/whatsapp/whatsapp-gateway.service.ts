@@ -302,12 +302,16 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         this.logger.warn(`[${new Date().toISOString()}] [STATE_MACHINE_PROTECT] Forbidding auto-teardown of protected session [${existing.id}] in state ${existing.status}`);
       } else {
         try {
-          this.logger.warn(`[${new Date().toISOString()}] [SOCKET_END_CALL] [${existing.id}] Terminating socket during generatePairingCode (status: ${existing.status}, isForce: ${isForce})`);
+          const stackTrace = new Error().stack;
+          this.logger.warn(`[${new Date().toISOString()}] [SOCKET_TERMINATION_EVENT] [OLD_SOCKET: ${existing.id}] [STATE: ${existing.status}] [REASON: generatePairingCode replacing socket] StackTrace:\n${stackTrace}`);
           if (existing.status === 'CONNECTED') {
+            this.logger.warn(`[${new Date().toISOString()}] [LOGOUT_CALL] [${existing.id}] Calling socket.logout()`);
             await existing.socket.logout().catch(() => {});
           }
+          this.logger.warn(`[${new Date().toISOString()}] [SOCKET_END_CALL] [${existing.id}] Calling socket.end(undefined)`);
           existing.socket.end(undefined);
         } catch (_) {}
+        this.logger.warn(`[${new Date().toISOString()}] [SESSION_DELETE] [${existing.id}] Calling sessions.delete(${salonId})`);
         this.sessions.delete(salonId);
       }
     }
