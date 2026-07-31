@@ -263,7 +263,36 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         },
       },
       saveCreds: async () => {
-        const valueStr = JSON.stringify(creds, BufferJSON.replacer);
+        const preSerializedStr = JSON.stringify(creds, BufferJSON.replacer);
+        const parsedBackCreds = JSON.parse(preSerializedStr, BufferJSON.reviver);
+        
+        const sha256 = (obj: any) => crypto.createHash('sha256').update(Buffer.from(JSON.stringify(obj || {}))).digest('hex');
+        
+        const beforeHashes = {
+          registrationId: creds.registrationId,
+          noisePubKey: sha256(creds.noiseKey?.public),
+          noisePrivKey: sha256(creds.noiseKey?.private),
+          signedIdentityPubKey: sha256(creds.signedIdentityKey?.public),
+          signedIdentityPrivKey: sha256(creds.signedIdentityKey?.private),
+          pairingEphemeralPubKey: sha256(creds.pairingEphemeralKeyPair?.public),
+          pairingEphemeralPrivKey: sha256(creds.pairingEphemeralKeyPair?.private),
+        };
+
+        const afterHashes = {
+          registrationId: parsedBackCreds.registrationId,
+          noisePubKey: sha256(parsedBackCreds.noiseKey?.public),
+          noisePrivKey: sha256(parsedBackCreds.noiseKey?.private),
+          signedIdentityPubKey: sha256(parsedBackCreds.signedIdentityKey?.public),
+          signedIdentityPrivKey: sha256(parsedBackCreds.signedIdentityKey?.private),
+          pairingEphemeralPubKey: sha256(parsedBackCreds.pairingEphemeralKeyPair?.public),
+          pairingEphemeralPrivKey: sha256(parsedBackCreds.pairingEphemeralKeyPair?.private),
+        };
+
+        const isExactMatch = JSON.stringify(beforeHashes) === JSON.stringify(afterHashes);
+        this.logger.warn(`[${new Date().toISOString()}] [CREDS_SERIALIZATION_AUDIT] [${salonId}] ExactByteMatch: ${isExactMatch}`);
+        this.logger.warn(`[${new Date().toISOString()}] [CREDS_BEFORE] ${JSON.stringify(beforeHashes)}`);
+        this.logger.warn(`[${new Date().toISOString()}] [CREDS_AFTER] ${JSON.stringify(afterHashes)}`);
+
         await this.prisma.whatsAppSession.upsert({
           where: {
             salonId_key: {
@@ -271,11 +300,11 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
               key: 'creds',
             },
           },
-          update: { value: valueStr },
+          update: { value: preSerializedStr },
           create: {
             salonId,
             key: 'creds',
-            value: valueStr,
+            value: preSerializedStr,
           },
         });
       },
