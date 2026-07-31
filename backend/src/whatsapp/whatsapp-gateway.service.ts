@@ -358,34 +358,10 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('connection.update', async (update) => {
-      this.logger.warn(`[${new Date().toISOString()}] [CONNECTION_UPDATE] [${sockId}] ${JSON.stringify(update)}`);
-      const { connection, lastDisconnect } = update;
-      if (connection === 'open') {
-        const userJid = sock.user?.id.split(':')[0];
-        const whatsappNumber = '+' + userJid;
-        this.logger.warn(`[${new Date().toISOString()}] [STATE_TRANSITION] [${sockId}] Transitioning to CONNECTED for ${whatsappNumber}`);
-        try {
-          await this.prisma.salon.update({
-            where: { id: salonId },
-            data: {
-              whatsappNumber,
-              whatsappPhoneNumberId: 'qr-linked-' + userJid,
-            },
-          });
-        } catch (_) {}
-
-        managedSession.status = 'CONNECTED';
-      } else if (connection === 'close') {
-        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-        const errorMessage = lastDisconnect?.error?.message;
-        this.logger.warn(`[${new Date().toISOString()}] [WS_CLOSED] [${sockId}] StatusCode: ${statusCode}, ErrorMessage: ${errorMessage}`);
-        managedSession.status = 'DISCONNECTED';
-      }
-    });
-
     return new Promise((resolve) => {
       let isResolved = false;
+      let pairingRequested = false;
+
       const timeout = setTimeout(() => {
         if (!isResolved) {
           isResolved = true;
@@ -395,7 +371,11 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       }, 12000);
 
       sock.ev.on('connection.update', async (update) => {
-        if (update.qr && !isResolved) {
+        this.logger.warn(`[${new Date().toISOString()}] [CONNECTION_UPDATE] [${sockId}] ${JSON.stringify(update)}`);
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr && !pairingRequested && !isResolved) {
+          pairingRequested = true;
           try {
             this.logger.warn(`[${new Date().toISOString()}] [PAIRING_REQUEST_START] [${sockId}] Calling sock.requestPairingCode(${cleanPhone})`);
             const rawCode = await sock.requestPairingCode(cleanPhone);
@@ -415,6 +395,28 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
               resolve({ error: err.message || 'Failed to request pairing code from WhatsApp server.' });
             }
           }
+        }
+
+        if (connection === 'open') {
+          const userJid = sock.user?.id.split(':')[0];
+          const whatsappNumber = '+' + userJid;
+          this.logger.warn(`[${new Date().toISOString()}] [STATE_TRANSITION] [${sockId}] Transitioning to CONNECTED for ${whatsappNumber}`);
+          try {
+            await this.prisma.salon.update({
+              where: { id: salonId },
+              data: {
+                whatsappNumber,
+                whatsappPhoneNumberId: 'qr-linked-' + userJid,
+              },
+            });
+          } catch (_) {}
+
+          managedSession.status = 'CONNECTED';
+        } else if (connection === 'close') {
+          const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+          const errorMessage = lastDisconnect?.error?.message;
+          this.logger.warn(`[${new Date().toISOString()}] [WS_CLOSED] [${sockId}] StatusCode: ${statusCode}, ErrorMessage: ${errorMessage}`);
+          managedSession.status = 'DISCONNECTED';
         }
       });
     });
