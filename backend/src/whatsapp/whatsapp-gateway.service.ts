@@ -34,6 +34,8 @@ export interface ManagedSession {
   pairingPhone?: string;
   createdAt: number;
   pairingExpiresAt?: number;
+  lastConnectionUpdate?: any;
+  lastDisconnect?: any;
 }
 
 const pinoLogger = pino({ level: 'silent' });
@@ -371,24 +373,30 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       }, 12000);
 
       sock.ev.on('connection.update', async (update) => {
+        managedSession.lastConnectionUpdate = update;
         this.logger.warn(`[${new Date().toISOString()}] [CONNECTION_UPDATE] [${sockId}] ${JSON.stringify(update)}`);
         const { connection, lastDisconnect, qr } = update;
+
+        if (qr) {
+          this.logger.warn(`[${new Date().toISOString()}] [QR_GENERATED] [${sockId}] Raw QR payload received from WhatsApp WS`);
+        }
 
         if (qr && !pairingRequested && !isResolved) {
           pairingRequested = true;
           try {
-            this.logger.warn(`[${new Date().toISOString()}] [PAIRING_REQUEST_START] [${sockId}] Calling sock.requestPairingCode(${cleanPhone})`);
+            this.logger.warn(`[${new Date().toISOString()}] [REQUEST_PAIRING_CODE_START] [${sockId}] Calling sock.requestPairingCode(${cleanPhone})`);
             const rawCode = await sock.requestPairingCode(cleanPhone);
             const formattedCode = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
-            this.logger.warn(`[${new Date().toISOString()}] [PAIRING_REQUEST_SUCCESS] [${sockId}] Code generated: ${formattedCode}`);
+            this.logger.warn(`[${new Date().toISOString()}] [REQUEST_PAIRING_CODE_SUCCESS] [${sockId}] Code generated: ${formattedCode}`);
             managedSession.status = 'PAIRING_PENDING';
             managedSession.pairingCode = formattedCode;
             managedSession.pairingExpiresAt = Date.now() + this.pairingTimeoutMs;
             isResolved = true;
             clearTimeout(timeout);
+            this.logger.warn(`[${new Date().toISOString()}] [PAIRING_CODE_RETURNED] [${sockId}] Returning code ${formattedCode} to HTTP response`);
             resolve({ code: formattedCode });
           } catch (err: any) {
-            this.logger.error(`[${new Date().toISOString()}] [PAIRING_REQUEST_ERROR] [${sockId}] Error: ${err.message}`);
+            this.logger.error(`[${new Date().toISOString()}] [REQUEST_PAIRING_CODE_ERROR] [${sockId}] Error: ${err.message}`);
             if (!isResolved) {
               isResolved = true;
               clearTimeout(timeout);
@@ -400,7 +408,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         if (connection === 'open') {
           const userJid = sock.user?.id.split(':')[0];
           const whatsappNumber = '+' + userJid;
-          this.logger.warn(`[${new Date().toISOString()}] [STATE_TRANSITION] [${sockId}] Transitioning to CONNECTED for ${whatsappNumber}`);
+          this.logger.warn(`[${new Date().toISOString()}] [STATE_TRANSITION] [${sockId}] Handshake complete -> Transitioning to CONNECTED for ${whatsappNumber}`);
           try {
             await this.prisma.salon.update({
               where: { id: salonId },
@@ -413,13 +421,39 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
           managedSession.status = 'CONNECTED';
         } else if (connection === 'close') {
+          managedSession.lastDisconnect = lastDisconnect;
           const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
           const errorMessage = lastDisconnect?.error?.message;
-          this.logger.warn(`[${new Date().toISOString()}] [WS_CLOSED] [${sockId}] StatusCode: ${statusCode}, ErrorMessage: ${errorMessage}`);
+          this.logger.warn(`[${new Date().toISOString()}] [LAST_DISCONNECT] [${sockId}] StatusCode: ${statusCode}, ErrorMessage: ${errorMessage}`);
+          this.logger.warn(`[${new Date().toISOString()}] [STATE_TRANSITION] [${sockId}] Socket closed -> Transitioning to DISCONNECTED`);
           managedSession.status = 'DISCONNECTED';
         }
       });
     });
+  }
+
+  async getDebugInfo(salonId: string) {
+    const session = this.sessions.get(salonId);
+    const dbStatus = await this.prisma.whatsAppSession.findUnique({
+      where: { salonId_key: { salonId, key: 'session_status' } },
+    }).catch(() => null);
+
+    return {
+      timestamp: new Date().toISOString(),
+      salonId,
+      socketId: session?.id || null,
+      lifecycleState: session?.status || 'DISCONNECTED',
+      connectionState: session?.status === 'CONNECTED' ? 'open' : (session ? 'connecting' : 'close'),
+      pairingPending: session?.status === 'PAIRING_PENDING',
+      pairingPhone: session?.pairingPhone || null,
+      pairingCode: session?.pairingCode || null,
+      pairingExpiration: session?.pairingExpiresAt ? new Date(session.pairingExpiresAt).toISOString() : null,
+      authenticated: session?.status === 'CONNECTED',
+      dbSessionStatus: dbStatus?.value || null,
+      lastConnectionUpdate: session?.lastConnectionUpdate || null,
+      lastDisconnect: session?.lastDisconnect || null,
+      socketAlive: !!(session && session.socket && !(session.socket as any).ws?.closed),
+    };
   }
 
   async generateQrCodeSynchronously(salonId: string, isForce = false): Promise<{ status: 'QR' | 'CONNECTED' | 'DISCONNECTED'; qr?: string }> {

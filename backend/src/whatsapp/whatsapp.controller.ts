@@ -159,6 +159,12 @@ export class WhatsappController {
     return this.gatewayService.getSessionStatus(salonId);
   }
 
+  @Get('debug')
+  @UseGuards(ClerkAuthGuard)
+  async getDebug(@SalonId() salonId: string) {
+    return this.gatewayService.getDebugInfo(salonId);
+  }
+
   @Get('qr')
   @UseGuards(ClerkAuthGuard)
   async getQr(@SalonId() salonId: string) {
