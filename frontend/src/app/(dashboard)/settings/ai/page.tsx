@@ -31,6 +31,21 @@ export default function AISettingsPage() {
   const [linkMode, setLinkMode] = useState<"QR" | "CODE">("QR");
   const [copiedCode, setCopiedCode] = useState(false);
 
+  const instanceIdRef = React.useRef('inst_' + Math.random().toString(36).substring(2, 7));
+  const renderCountRef = React.useRef(0);
+  renderCountRef.current += 1;
+
+  if (typeof window !== "undefined") {
+    console.log(`[${new Date().toISOString()}] [RENDER #${renderCountRef.current}] [${instanceIdRef.current}] linkMode: ${linkMode}, pairingCode: ${pairingCode || 'EMPTY'}, qrStatus: ${qrStatus}, loading: ${loading}, salonId: ${salonId || 'EMPTY'}`);
+  }
+
+  useEffect(() => {
+    console.log(`[${new Date().toISOString()}] [COMPONENT_MOUNT] [${instanceIdRef.current}] Mounted AISettingsPage`);
+    return () => {
+      console.log(`[${new Date().toISOString()}] [COMPONENT_UNMOUNT] [${instanceIdRef.current}] Unmounted AISettingsPage`);
+    };
+  }, []);
+
   const copyPairingCode = () => {
     if (!pairingCode) return;
     navigator.clipboard.writeText(pairingCode.replace(/-/g, ''));
@@ -258,13 +273,16 @@ export default function AISettingsPage() {
   const handleRequestPairingCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pairingPhone) return;
+    console.log(`[${new Date().toISOString()}] [CLICK_GET_CODE] [${instanceIdRef.current}] Phone: ${pairingPhone}`);
     setPairingCodeLoading(true);
     setPairingCodeError("");
     setPairingCode("");
+    console.log(`[${new Date().toISOString()}] [SET_LINK_MODE] [${instanceIdRef.current}] Transitioning linkMode to CODE`);
     setLinkMode("CODE");
 
     try {
       const activeToken = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
+      console.log(`[${new Date().toISOString()}] [HTTP_DISPATCH] [${instanceIdRef.current}] Dispatching POST ${apiUrl}/api/v1/webhooks/whatsapp/pairing-code`);
       const res = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/pairing-code`, {
         method: "POST",
         headers: {
@@ -274,7 +292,9 @@ export default function AISettingsPage() {
         body: JSON.stringify({ phoneNumber: pairingPhone }),
       });
       const data = await res.json();
+      console.log(`[${new Date().toISOString()}] [HTTP_RESPONSE] [${instanceIdRef.current}] Status: ${res.status}, Data: ${JSON.stringify(data)}`);
       if (res.ok && data.code) {
+        console.log(`[${new Date().toISOString()}] [SET_PAIRING_CODE] [${instanceIdRef.current}] Setting pairing code state: ${data.code}`);
         setPairingCode(data.code);
         setLinkMode("CODE");
 
@@ -292,6 +312,7 @@ export default function AISettingsPage() {
             if (statusRes.ok) {
               const statusData = await statusRes.json();
               if (statusData.status === 'CONNECTED') {
+                console.log(`[${new Date().toISOString()}] [CONNECTED_DETECTED] [${instanceIdRef.current}] Setting status CONNECTED`);
                 setQrStatus('CONNECTED');
                 clearInterval(codePoll);
                 const confRes = await fetch(`${apiUrl}/api/v1/salons/me`, {
@@ -306,9 +327,11 @@ export default function AISettingsPage() {
           } catch (_) {}
         }, 2000);
       } else {
+        console.error(`[${new Date().toISOString()}] [HTTP_ERROR] [${instanceIdRef.current}] Error: ${data.error}`);
         setPairingCodeError(data.error || "Failed to generate pairing code.");
       }
     } catch (err: any) {
+      console.error(`[${new Date().toISOString()}] [FETCH_EXCEPTION] [${instanceIdRef.current}] Exception: ${err.message}`);
       setPairingCodeError(err.message || "Failed to connect to backend server.");
     } finally {
       setPairingCodeLoading(false);
