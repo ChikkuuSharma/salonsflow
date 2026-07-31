@@ -339,6 +339,22 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       }
     } catch (_) {}
 
+    const customTraceLogger = pino({
+      level: 'trace',
+    }, pino.destination({
+      write: (msg: string) => {
+        try {
+          const parsed = JSON.parse(msg);
+          const time = new Date().toISOString();
+          if (parsed.msg || parsed.node || parsed.stanza || parsed.iq || parsed.tag || parsed.recv || parsed.send || parsed.level >= 10) {
+            this.logger.warn(`[${time}] [PROTOCOL_TRACE] ${JSON.stringify(parsed)}`);
+          }
+        } catch (_) {
+          this.logger.warn(`[${new Date().toISOString()}] [RAW_TRACE] ${msg.trim()}`);
+        }
+      }
+    }));
+
     const sock = makeWASocket({
       version,
       browser: Browsers.ubuntu('Chrome'),
@@ -346,7 +362,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       markOnlineOnConnect: false,
       auth: state,
       printQRInTerminal: false,
-      logger: pinoLogger as any,
+      logger: customTraceLogger as any,
     });
 
     const sockId = 'sock_single_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
