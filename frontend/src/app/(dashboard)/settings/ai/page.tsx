@@ -277,7 +277,34 @@ export default function AISettingsPage() {
       if (res.ok && data.code) {
         setPairingCode(data.code);
         setLinkMode("CODE");
-        setQrStatus("QR");
+
+        // Start lightweight status-only polling loop to detect phone handshake completion
+        const startTime = Date.now();
+        const codePoll = setInterval(async () => {
+          if (Date.now() - startTime > 180000) {
+            clearInterval(codePoll);
+            return;
+          }
+          try {
+            const statusRes = await fetch(`${apiUrl}/api/v1/webhooks/whatsapp/status`, {
+              headers: { Authorization: `Bearer ${activeToken}` }
+            });
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              if (statusData.status === 'CONNECTED') {
+                setQrStatus('CONNECTED');
+                clearInterval(codePoll);
+                const confRes = await fetch(`${apiUrl}/api/v1/salons/me`, {
+                  headers: { Authorization: `Bearer ${activeToken}` }
+                });
+                if (confRes.ok) {
+                  const confData = await confRes.json();
+                  setWhatsappNumber(confData.whatsappNumber || "");
+                }
+              }
+            }
+          } catch (_) {}
+        }, 2000);
       } else {
         setPairingCodeError(data.error || "Failed to generate pairing code.");
       }
@@ -294,16 +321,16 @@ export default function AISettingsPage() {
 
   useEffect(() => {
     let interval: any;
-    if (qrStatus === 'QR' || qrStatus === 'LOADING') {
-      // Poll faster (every 1 second) while waiting for QR scan or generation
+    // ONLY poll QR status when user is explicitly in QR mode
+    if (linkMode === "QR" && (qrStatus === 'QR' || qrStatus === 'LOADING')) {
       interval = setInterval(() => {
         checkQrStatus();
-      }, 1000);
+      }, 2000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [qrStatus, qrCode]);
+  }, [qrStatus, qrCode, linkMode]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
