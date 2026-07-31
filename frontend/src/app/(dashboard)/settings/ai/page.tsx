@@ -270,8 +270,8 @@ export default function AISettingsPage() {
     }
   };
 
-  const handleRequestPairingCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRequestPairingCode = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (!pairingPhone) return;
     console.log(`[${new Date().toISOString()}] [CLICK_GET_CODE] [${instanceIdRef.current}] Phone: ${pairingPhone}`);
     setPairingCodeLoading(true);
@@ -593,7 +593,7 @@ export default function AISettingsPage() {
 
                   {linkMode === "CODE" && (
                     <div className="space-y-3 animate-in fade-in duration-200">
-                      <form onSubmit={handleRequestPairingCode} className="p-4 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-sm mx-auto space-y-3 text-left">
+                      <div className="p-4 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl max-w-sm mx-auto space-y-3 text-left">
                         <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300 block">
                           Enter Phone Number with Country Code:
                         </label>
@@ -602,12 +602,19 @@ export default function AISettingsPage() {
                             type="tel"
                             value={pairingPhone}
                             onChange={(e) => setPairingPhone(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleRequestPairingCode(e);
+                              }
+                            }}
                             placeholder="e.g. 919876543210"
                             className="flex-1 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                             required
                           />
                           <button
-                            type="submit"
+                            type="button"
+                            onClick={(e) => handleRequestPairingCode(e)}
                             disabled={pairingCodeLoading}
                             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
                           >
@@ -617,7 +624,7 @@ export default function AISettingsPage() {
                         {pairingCodeError && (
                           <p className="text-[11px] font-bold text-rose-500">{pairingCodeError}</p>
                         )}
-                      </form>
+                      </div>
 
                       {pairingCode && (
                         <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 p-4 rounded-2xl max-w-sm mx-auto text-center animate-in fade-in zoom-in-95 duration-200">
