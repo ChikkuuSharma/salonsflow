@@ -56,6 +56,10 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
         clientId: salonId,
         dataPath: path.join(process.cwd(), 'whatsapp_sessions'),
       }),
+      webVersionCache: {
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version-history/main/html/2.3000.1018904586-alpha.html',
+      },
       puppeteer: {
         headless: true,
         args: [
@@ -66,6 +70,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
           '--no-first-run',
           '--no-zygote',
           '--disable-gpu',
+          '--disable-web-security',
         ],
       },
     });
