@@ -20,3 +20,6 @@ Thumbs.db
 .vercel
 .env*
 backend/sessions/
+backend/whatsapp_sessions/
+backend/minimal_auth_reproduction_dir/
+backend/standalone_auth_session/

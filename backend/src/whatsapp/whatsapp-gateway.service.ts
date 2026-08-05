@@ -6,6 +6,7 @@ import makeWASocket, {
   BufferJSON,
   fetchLatestBaileysVersion,
   Browsers,
+  useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -169,157 +170,34 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     return { success: true };
   }
 
-  async usePrismaAuthState(salonId: string, forceFresh = false) {
-    let creds = initAuthCreds();
-
-    if (!forceFresh) {
-      const dbCreds = await this.prisma.whatsAppSession.findUnique({
-        where: {
-          salonId_key: {
-            salonId,
-            key: 'creds',
-          },
-        },
-      });
-
-      if (dbCreds) {
-        try {
-          creds = JSON.parse(dbCreds.value, BufferJSON.reviver);
-        } catch (err) {
-          this.logger.error(`Failed to parse credentials from DB for salon ${salonId}: ${err.message}`);
-        }
-      }
+  async useSessionAuthState(salonId: string, forceFresh = false) {
+    const sessionDir = path.join(process.cwd(), 'whatsapp_sessions', salonId);
+    if (forceFresh && fs.existsSync(sessionDir)) {
+      this.logger.warn(`[${new Date().toISOString()}] [SESSION_WIPE] Wiping auth directory for salonId [${salonId}]`);
+      fs.rmSync(sessionDir, { recursive: true, force: true });
+      await this.prisma.whatsAppSession.deleteMany({ where: { salonId } }).catch(() => {});
     }
 
-    const keys: { [key: string]: any } = {};
+    if (!fs.existsSync(sessionDir)) {
+      fs.mkdirSync(sessionDir, { recursive: true });
+    }
 
-    return {
-      state: {
-        creds,
-        keys: {
-          get: async (type: string, ids: string[]) => {
-            const data: { [id: string]: any } = {};
-            await Promise.all(
-              ids.map(async (id) => {
-                const key = `${type}-${id}`;
-                let value = keys[key];
-                if (!value) {
-                  const dbKey = await this.prisma.whatsAppSession.findUnique({
-                    where: {
-                      salonId_key: {
-                        salonId,
-                        key,
-                      },
-                    },
-                  });
-                  if (dbKey) {
-                    try {
-                      value = JSON.parse(dbKey.value, BufferJSON.reviver);
-                      keys[key] = value;
-                    } catch (err) {
-                      this.logger.error(`Failed to parse key ${key} from DB: ${err.message}`);
-                    }
-                  }
-                }
-                data[id] = value;
-              }),
-            );
-            return data;
-          },
-          set: async (data: any) => {
-            for (const type in data) {
-              for (const id in data[type]) {
-                const value = data[type][id];
-                const key = `${type}-${id}`;
-                if (value) {
-                  keys[key] = value;
-                  const valueStr = JSON.stringify(value, BufferJSON.replacer);
-                  await this.prisma.whatsAppSession.upsert({
-                    where: {
-                      salonId_key: {
-                        salonId,
-                        key,
-                      },
-                    },
-                    update: { value: valueStr },
-                    create: {
-                      salonId,
-                      key,
-                      value: valueStr,
-                    },
-                  });
-                } else {
-                  delete keys[key];
-                  await this.prisma.whatsAppSession.deleteMany({
-                    where: {
-                      salonId,
-                      key,
-                    },
-                  });
-                }
-              }
-            }
-          },
-        },
-      },
-      saveCreds: async () => {
-        const preSerializedStr = JSON.stringify(creds, BufferJSON.replacer);
-        const parsedBackCreds = JSON.parse(preSerializedStr, BufferJSON.reviver);
-        
-        const sha256 = (obj: any) => crypto.createHash('sha256').update(Buffer.from(JSON.stringify(obj || {}))).digest('hex');
-        
-        const beforeHashes = {
-          registrationId: creds.registrationId,
-          noisePubKey: sha256(creds.noiseKey?.public),
-          noisePrivKey: sha256(creds.noiseKey?.private),
-          signedIdentityPubKey: sha256(creds.signedIdentityKey?.public),
-          signedIdentityPrivKey: sha256(creds.signedIdentityKey?.private),
-          pairingEphemeralPubKey: sha256(creds.pairingEphemeralKeyPair?.public),
-          pairingEphemeralPrivKey: sha256(creds.pairingEphemeralKeyPair?.private),
-        };
-
-        const afterHashes = {
-          registrationId: parsedBackCreds.registrationId,
-          noisePubKey: sha256(parsedBackCreds.noiseKey?.public),
-          noisePrivKey: sha256(parsedBackCreds.noiseKey?.private),
-          signedIdentityPubKey: sha256(parsedBackCreds.signedIdentityKey?.public),
-          signedIdentityPrivKey: sha256(parsedBackCreds.signedIdentityKey?.private),
-          pairingEphemeralPubKey: sha256(parsedBackCreds.pairingEphemeralKeyPair?.public),
-          pairingEphemeralPrivKey: sha256(parsedBackCreds.pairingEphemeralKeyPair?.private),
-        };
-
-        const isExactMatch = JSON.stringify(beforeHashes) === JSON.stringify(afterHashes);
-        this.logger.warn(`[${new Date().toISOString()}] [CREDS_SERIALIZATION_AUDIT] [${salonId}] ExactByteMatch: ${isExactMatch}`);
-        this.logger.warn(`[${new Date().toISOString()}] [CREDS_BEFORE] ${JSON.stringify(beforeHashes)}`);
-        this.logger.warn(`[${new Date().toISOString()}] [CREDS_AFTER] ${JSON.stringify(afterHashes)}`);
-
-        await this.prisma.whatsAppSession.upsert({
-          where: {
-            salonId_key: {
-              salonId,
-              key: 'creds',
-            },
-          },
-          update: { value: preSerializedStr },
-          create: {
-            salonId,
-            key: 'creds',
-            value: preSerializedStr,
-          },
-        });
-      },
-    };
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+    return { state, saveCreds };
   }
 
   private async getOrCreateSingleSocket(salonId: string, isForce = false): Promise<ManagedSession> {
     const existing = this.sessions.get(salonId);
-    if (existing && !isForce) {
+    const isSocketClosed = existing?.status === 'DISCONNECTED' || (existing?.socket as any)?.ws?.readyState === 3;
+
+    if (existing && !isForce && !isSocketClosed) {
       this.logger.warn(`[${new Date().toISOString()}] [SINGLE_SESSION_REUSE] [${existing.id}] Reusing active single socket for salonId [${salonId}] (state: ${existing.status})`);
       return existing;
     }
 
-    if (existing && isForce) {
-      this.logger.warn(`[${new Date().toISOString()}] [SINGLE_SESSION_TEARDOWN] [${existing.id}] Explicit force teardown requested for salonId [${salonId}]`);
+    const shouldForceTeardown = isForce || isSocketClosed;
+    if (existing && shouldForceTeardown) {
+      this.logger.warn(`[${new Date().toISOString()}] [SINGLE_SESSION_TEARDOWN] [${existing.id}] Teardown closed/stale socket for salonId [${salonId}]`);
       try {
         if (existing.status === 'CONNECTED') {
           await existing.socket.logout().catch(() => {});
@@ -329,7 +207,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       this.sessions.delete(salonId);
     }
 
-    const { state, saveCreds } = await this.usePrismaAuthState(salonId, isForce);
+    const { state, saveCreds } = await this.useSessionAuthState(salonId, shouldForceTeardown);
 
     let version: [number, number, number] = [2, 3000, 1043857760];
     try {
@@ -357,7 +235,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
 
     const sock = makeWASocket({
       version,
-      browser: Browsers.ubuntu('Chrome'),
+      browser: Browsers.macOS('Desktop'),
       syncFullHistory: false,
       markOnlineOnConnect: false,
       auth: state,
@@ -434,6 +312,21 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       return { code: session.pairingCode };
     }
 
+    // Ensure socket is ready (wait for QR / connected state if currently connecting)
+    if (session.status === 'CONNECTING' && !session.qr) {
+      this.logger.warn(`[${new Date().toISOString()}] [WAIT_FOR_SOCKET_READY] [${session.id}] Waiting for WebSocket connection handshake to complete...`);
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 8000);
+        const checkInterval = setInterval(() => {
+          if (session.qr || session.status === 'QR_READY' || session.status === 'CONNECTED') {
+            clearInterval(checkInterval);
+            clearTimeout(timeout);
+            resolve();
+          }
+        }, 100);
+      });
+    }
+
     try {
       this.logger.warn(`[${new Date().toISOString()}] [REQUEST_PAIRING_CODE_START] [${session.id}] Calling sock.requestPairingCode(${cleanPhone}) on SINGLE active socket`);
       const rawCode = await session.socket.requestPairingCode(cleanPhone);
@@ -483,6 +376,8 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     }
 
     const session = await this.getOrCreateSingleSocket(salonId, isForce);
+    
+    // If QR is already available, convert to base64 data URL and return immediately
     if (session.qr) {
       try {
         const qrDataUrl = session.qr.startsWith('data:image/') ? session.qr : await QRCode.toDataURL(session.qr);
@@ -493,37 +388,28 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    return new Promise((resolve) => {
-      let isResolved = false;
-      const timeout = setTimeout(() => {
-        if (!isResolved) {
-          isResolved = true;
-          resolve({ status: session.status === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED' });
+    // Wait up to 10 seconds for initial QR event to populate on session object
+    const start = Date.now();
+    while (Date.now() - start < 10000) {
+      if (session.status === 'CONNECTED') {
+        return { status: 'CONNECTED' };
+      }
+      if (session.qr) {
+        try {
+          const qrDataUrl = session.qr.startsWith('data:image/') ? session.qr : await QRCode.toDataURL(session.qr);
+          session.qr = qrDataUrl;
+          return { status: 'QR', qr: qrDataUrl };
+        } catch (_) {
+          return { status: 'QR', qr: session.qr };
         }
-      }, 12000);
+      }
+      if (session.status === 'DISCONNECTED') {
+        return { status: 'DISCONNECTED' };
+      }
+      await new Promise((r) => setTimeout(r, 150));
+    }
 
-      session.socket.ev.on('connection.update', async (update) => {
-        const { qr, connection } = update;
-        if (connection === 'open' && !isResolved) {
-          isResolved = true;
-          clearTimeout(timeout);
-          resolve({ status: 'CONNECTED' });
-        }
-        if (qr && !isResolved) {
-          isResolved = true;
-          clearTimeout(timeout);
-          try {
-            const qrDataUrl = await QRCode.toDataURL(qr);
-            session.qr = qrDataUrl;
-            session.status = 'QR_READY';
-            session.pairingExpiresAt = Date.now() + this.pairingTimeoutMs;
-            resolve({ status: 'QR', qr: qrDataUrl });
-          } catch (_) {
-            resolve({ status: 'QR', qr });
-          }
-        }
-      });
-    });
+    return { status: session.status === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED' };
   }
 
   async initializeSession(salonId: string, forceFresh = false): Promise<void> {
@@ -564,7 +450,7 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
       });
     } catch (_) {}
 
-    const { state, saveCreds } = await this.usePrismaAuthState(salonId);
+    const { state, saveCreds } = await this.useSessionAuthState(salonId);
 
     const sock = makeWASocket({
       browser: Browsers.macOS('Desktop'),
