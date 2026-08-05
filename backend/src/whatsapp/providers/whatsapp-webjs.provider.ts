@@ -138,7 +138,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
     }
 
     const start = Date.now();
-    while (Date.now() - start < 10000) {
+    while (Date.now() - start < 30000) {
       const status = this.statuses.get(salonId);
       if (status?.status === 'CONNECTED') {
         return { status: 'CONNECTED' };
@@ -149,12 +149,12 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
       if (status?.status === 'DISCONNECTED') {
         return { status: 'DISCONNECTED' };
       }
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 250));
     }
 
     const finalStatus = this.statuses.get(salonId);
     return {
-      status: finalStatus?.status || 'DISCONNECTED',
+      status: finalStatus?.status || 'CONNECTING',
       qr: finalStatus?.qr,
     };
   }

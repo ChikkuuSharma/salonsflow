@@ -167,8 +167,10 @@ export class WhatsappController {
 
   @Get('qr')
   @UseGuards(ClerkAuthGuard)
-  async getQr(@SalonId() salonId: string) {
-    return this.gatewayService.generateQrCodeSynchronously(salonId);
+  async getQr(@SalonId() salonId: string, @Query('force') force?: string) {
+    const isForce = force === 'true';
+    const result = await this.gatewayService.generateQrCodeSynchronously(salonId, isForce);
+    return result || { status: 'CONNECTING' };
   }
 
   @Post('pairing-code')
