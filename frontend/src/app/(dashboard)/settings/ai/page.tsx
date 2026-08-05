@@ -188,7 +188,11 @@ export default function AISettingsPage() {
           setQrStatus('QR');
           if (data.qr) {
             setQrCode(data.qr);
+          } else {
+            loadQrCode(false);
           }
+        } else if (data.status === 'DISCONNECTED') {
+          setQrStatus('DISCONNECTED');
         }
       }
     } catch (err) {
@@ -340,6 +344,7 @@ export default function AISettingsPage() {
 
   useEffect(() => {
     checkQrStatus();
+    loadQrCode(false);
   }, []);
 
   useEffect(() => {
