@@ -135,11 +135,13 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
     }
 
     if (forceFresh || !this.clients.has(salonId)) {
-      await this.initializeSession(salonId, forceFresh);
+      this.initializeSession(salonId, forceFresh).catch((err) => {
+        this.logger.error(`Error initializing session for ${salonId}: ${err.message}`);
+      });
     }
 
     const start = Date.now();
-    while (Date.now() - start < 30000) {
+    while (Date.now() - start < 3000) {
       const status = this.statuses.get(salonId);
       if (status?.status === 'CONNECTED') {
         return { status: 'CONNECTED' };
@@ -150,7 +152,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
       if (status?.status === 'DISCONNECTED') {
         return { status: 'DISCONNECTED' };
       }
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 200));
     }
 
     const finalStatus = this.statuses.get(salonId);
