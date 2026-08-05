@@ -6,11 +6,18 @@ import { WhatsappGatewayService } from './whatsapp-gateway.service';
 import { AiModule } from '../ai/ai.module';
 import { AppointmentsModule } from '../appointments/appointments.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { WhatsappWebJsProvider } from './providers/whatsapp-webjs.provider';
+import { WhatsappProviderFactory } from './providers/provider.factory';
 
 @Module({
   imports: [AiModule, AppointmentsModule, PrismaModule],
-  providers: [WhatsappService, WhatsappGatewayService],
+  providers: [
+    WhatsappService,
+    WhatsappGatewayService,
+    WhatsappWebJsProvider,
+    WhatsappProviderFactory,
+  ],
   controllers: [WhatsappController, VoiceNotesController],
-  exports: [WhatsappService, WhatsappGatewayService],
+  exports: [WhatsappService, WhatsappGatewayService, WhatsappWebJsProvider],
 })
 export class WhatsappModule {}
