@@ -184,7 +184,7 @@ export default function AISettingsPage() {
             const confData = await confRes.json();
             setWhatsappNumber(confData.whatsappNumber || "");
           }
-        } else if (data.status === 'QR') {
+        } else if (data.status === 'QR' || data.status === 'QR_READY') {
           setQrStatus('QR');
           if (data.qr) {
             setQrCode(data.qr);

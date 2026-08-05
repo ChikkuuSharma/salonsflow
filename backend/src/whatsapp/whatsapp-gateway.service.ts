@@ -90,10 +90,11 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Destroying WhatsApp Gateway Service...');
   }
 
-  async getSessionStatus(salonId: string): Promise<{ status: SocketLifecycleState; qr?: string }> {
+  async getSessionStatus(salonId: string): Promise<{ status: SocketLifecycleState | 'QR'; qr?: string }> {
     const providerStatus = await this.whatsappProvider.getSessionStatus(salonId);
+    const normalizedStatus = providerStatus.status === 'QR_READY' ? 'QR' : providerStatus.status;
     return {
-      status: providerStatus.status,
+      status: normalizedStatus,
       qr: providerStatus.qr,
     };
   }
@@ -110,8 +111,13 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  async generateQrCodeSynchronously(salonId: string, isForce = false): Promise<{ status: SocketLifecycleState; qr?: string }> {
-    return this.whatsappProvider.getQrCode(salonId, isForce);
+  async generateQrCodeSynchronously(salonId: string, isForce = false): Promise<{ status: SocketLifecycleState | 'QR'; qr?: string }> {
+    const res = await this.whatsappProvider.getQrCode(salonId, isForce);
+    const normalizedStatus = res.status === 'QR_READY' ? 'QR' : res.status;
+    return {
+      status: normalizedStatus,
+      qr: res.qr,
+    };
   }
 
   async generatePairingCode(salonId: string, rawPhoneNumber: string, isForce = false): Promise<{ code?: string; error?: string }> {
