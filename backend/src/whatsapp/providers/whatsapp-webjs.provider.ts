@@ -28,7 +28,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
   }
 
   async initializeSession(salonId: string, forceFresh = false): Promise<void> {
-    const sessionDir = path.join(process.cwd(), 'whatsapp_sessions', `wwebjs_${salonId}`);
+    const sessionDir = path.join(process.cwd(), 'whatsapp_sessions', `session-${salonId}`);
 
     if (forceFresh) {
       this.logger.warn(`[${new Date().toISOString()}] [WWEBJS_WIPE] Wiping session directory for salonId [${salonId}]`);
@@ -38,6 +38,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
         } catch (_) {}
         this.clients.delete(salonId);
       }
+      this.statuses.delete(salonId);
       if (fs.existsSync(sessionDir)) {
         fs.rmSync(sessionDir, { recursive: true, force: true });
       }
