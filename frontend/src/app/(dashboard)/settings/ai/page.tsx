@@ -193,6 +193,7 @@ export default function AISettingsPage() {
           }
         } else if (data.status === 'CONNECTING') {
           setQrStatus('LOADING');
+          loadQrCode(false);
         } else if (data.status === 'DISCONNECTED') {
           setQrStatus('DISCONNECTED');
         }
