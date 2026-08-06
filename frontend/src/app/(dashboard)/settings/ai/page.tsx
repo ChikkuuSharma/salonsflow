@@ -191,6 +191,8 @@ export default function AISettingsPage() {
           } else {
             loadQrCode(false);
           }
+        } else if (data.status === 'CONNECTING') {
+          setQrStatus('LOADING');
         } else if (data.status === 'DISCONNECTED') {
           setQrStatus('DISCONNECTED');
         }
@@ -245,6 +247,9 @@ export default function AISettingsPage() {
                   const confData = await confRes.json();
                   setWhatsappNumber(confData.whatsappNumber || "");
                 }
+              } else if ((pollData.status === 'QR' || pollData.status === 'QR_READY') && pollData.qr) {
+                setQrStatus('QR');
+                setQrCode(pollData.qr);
               }
             }
           } catch (_) {}

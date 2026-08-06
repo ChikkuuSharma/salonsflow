@@ -16,6 +16,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
   private readonly logger = new Logger(WhatsappWebJsProvider.name);
   private readonly clients = new Map<string, Client>();
   private readonly statuses = new Map<string, ProviderSessionStatus>();
+  private readonly initializingPromises = new Map<string, Promise<void>>();
   private messageHandler?: (salonId: string, message: NormalizedMessage) => Promise<void>;
   private statusHandler?: (salonId: string, status: SocketLifecycleState, metadata?: any) => void;
 
@@ -40,7 +41,11 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
       }
       this.statuses.delete(salonId);
       if (fs.existsSync(sessionDir)) {
-        fs.rmSync(sessionDir, { recursive: true, force: true });
+        try {
+          fs.rmSync(sessionDir, { recursive: true, force: true });
+        } catch (err: any) {
+          this.logger.warn(`Could not remove session directory: ${err.message}`);
+        }
       }
     }
 
@@ -56,12 +61,9 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
         clientId: salonId,
         dataPath: path.join(process.cwd(), 'whatsapp_sessions'),
       }),
-      webVersionCache: {
-        type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version-history/main/html/2.3000.1018904586-alpha.html',
-      },
       puppeteer: {
         headless: true,
+        bypassCSP: true,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -74,6 +76,8 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
         ],
       },
     });
+
+    this.clients.set(salonId, client);
 
     client.on('qr', async (qrRaw) => {
       this.logger.warn(`[${new Date().toISOString()}] [WWEBJS_QR] QR code generated for salonId [${salonId}]`);
@@ -104,6 +108,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
       this.logger.error(`[${new Date().toISOString()}] [WWEBJS_AUTH_FAIL] Auth failure for salonId [${salonId}]: ${msg}`);
       currentStatus.status = 'DISCONNECTED';
       currentStatus.lastDisconnectReason = msg;
+      this.clients.delete(salonId);
       this.statusHandler?.(salonId, 'DISCONNECTED', { reason: msg });
     });
 
@@ -127,9 +132,15 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
       }
     });
 
-    this.clients.set(salonId, client);
-    client.initialize().catch((err) => {
+    client.initialize().catch((err: any) => {
       this.logger.error(`[${new Date().toISOString()}] [WWEBJS_INIT_ERROR] Error initializing client for salonId [${salonId}]: ${err.message}`);
+      currentStatus.status = 'DISCONNECTED';
+      currentStatus.lastDisconnectReason = err.message;
+      try {
+        client.destroy().catch(() => {});
+      } catch (_) {}
+      this.clients.delete(salonId);
+      this.statusHandler?.(salonId, 'DISCONNECTED', { reason: err.message });
     });
   }
 
@@ -146,7 +157,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
     }
 
     const start = Date.now();
-    while (Date.now() - start < 3000) {
+    while (Date.now() - start < 15000) {
       const status = this.statuses.get(salonId);
       if (status?.status === 'CONNECTED') {
         return { status: 'CONNECTED' };
@@ -157,7 +168,7 @@ export class WhatsappWebJsProvider implements IWhatsappProvider {
       if (status?.status === 'DISCONNECTED') {
         return { status: 'DISCONNECTED' };
       }
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 300));
     }
 
     const finalStatus = this.statuses.get(salonId);
