@@ -327,7 +327,15 @@ export class BaileysProvider implements IWhatsappProvider {
   }
 
   async getSessionStatus(salonId: string): Promise<ProviderSessionStatus> {
-    const status = this.statuses.get(salonId);
+    const sessionDir = path.join(process.cwd(), 'whatsapp_sessions', `baileys-session-${salonId}`);
+    const credsFile = path.join(sessionDir, 'creds.json');
+
+    let status = this.statuses.get(salonId);
+    if (!status && fs.existsSync(credsFile)) {
+      this.initializeSession(salonId, false).catch(() => {});
+      status = { status: 'CONNECTING' };
+    }
+
     return status || { status: 'DISCONNECTED' };
   }
 }
