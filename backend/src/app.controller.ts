@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, BadRequestException, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, BadRequestException, Param, Query, NotFoundException } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma/prisma.service';
 import { SubscriptionPlan, LeadStatus } from '@prisma/client';
@@ -61,16 +61,28 @@ export class AppController {
   }
 
   @Get('api/v1/public/salons')
-  async getPublicSalons() {
+  async getPublicSalons(
+    @Query('q') q?: string,
+    @Query('city') city?: string,
+    @Query('category') category?: string,
+  ) {
     let salons = await this.prisma.salon.findMany({
-      select: {
-        id: true,
-        name: true,
-        whatsappNumber: true,
-        address: true,
-        ownerCity: true,
-        businessCategory: true,
-        homeBookingFee: true,
+      include: {
+        services: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            durationMins: true,
+            gender: true,
+          },
+          orderBy: { price: 'asc' },
+        },
+        staff: {
+          where: { isAvailable: true },
+          select: { id: true, name: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -92,6 +104,9 @@ export class AppController {
             businessCategory: 'UNISEX_SALON',
             homeBookingFee: 150.00,
             isProfileComplete: true,
+            openingTime: '09:00',
+            closingTime: '21:00',
+            aiPrompt: 'Welcome to Demo Styling Studio!',
           },
         });
 
@@ -110,15 +125,68 @@ export class AppController {
           ],
         });
 
+        await this.prisma.service.createMany({
+          data: [
+            {
+              salonId: created.id,
+              name: 'Classic Haircut & Styling',
+              price: 450,
+              durationMins: 45,
+              gender: 'UNISEX',
+              isActive: true,
+            },
+            {
+              salonId: created.id,
+              name: 'Royal Hair Spa & Deep Conditioning',
+              price: 1200,
+              durationMins: 60,
+              gender: 'UNISEX',
+              isActive: true,
+            },
+            {
+              salonId: created.id,
+              name: 'Beard Trimming & Styling',
+              price: 250,
+              durationMins: 30,
+              gender: 'MEN',
+              isActive: true,
+            },
+            {
+              salonId: created.id,
+              name: 'Gel Polish & Nail Art',
+              price: 799,
+              durationMins: 45,
+              gender: 'WOMEN',
+              isActive: true,
+            },
+            {
+              salonId: created.id,
+              name: 'Glitz Facial & Skin Glow',
+              price: 1800,
+              durationMins: 75,
+              gender: 'UNISEX',
+              isActive: true,
+            },
+          ],
+        });
+
         salons = await this.prisma.salon.findMany({
-          select: {
-            id: true,
-            name: true,
-            whatsappNumber: true,
-            address: true,
-            ownerCity: true,
-            businessCategory: true,
-            homeBookingFee: true,
+          include: {
+            services: {
+              where: { isActive: true },
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                durationMins: true,
+                gender: true,
+              },
+              orderBy: { price: 'asc' },
+            },
+            staff: {
+              where: { isAvailable: true },
+              select: { id: true, name: true },
+            },
           },
           orderBy: { createdAt: 'desc' },
         });
@@ -127,7 +195,92 @@ export class AppController {
       }
     }
 
-    return salons;
+    // Format & calculate min price and counts
+    let result = salons.map((s) => {
+      const prices = s.services.map((srv) => Number(srv.price));
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 299;
+      return {
+        id: s.id,
+        name: s.name,
+        whatsappNumber: s.whatsappNumber,
+        address: s.address || 'Address not specified',
+        ownerCity: s.ownerCity || 'Mumbai',
+        businessCategory: s.businessCategory || 'UNISEX_SALON',
+        homeBookingFee: Number(s.homeBookingFee || 0),
+        openingTime: s.openingTime || '10:00',
+        closingTime: s.closingTime || '20:00',
+        services: s.services,
+        serviceCount: s.services.length,
+        staffCount: s.staff.length,
+        minPrice,
+        rating: 4.8,
+        reviewCount: 42,
+      };
+    });
+
+    // Apply Filters
+    if (city && city.trim() !== '' && city !== 'ALL') {
+      const targetCity = city.toLowerCase().trim();
+      result = result.filter(
+        (s) =>
+          s.ownerCity.toLowerCase().includes(targetCity) ||
+          s.address.toLowerCase().includes(targetCity),
+      );
+    }
+
+    if (category && category.trim() !== '' && category !== 'ALL') {
+      result = result.filter(
+        (s) => s.businessCategory.toUpperCase() === category.toUpperCase(),
+      );
+    }
+
+    if (q && q.trim() !== '') {
+      const queryStr = q.toLowerCase().trim();
+      result = result.filter(
+        (s) =>
+          s.name.toLowerCase().includes(queryStr) ||
+          s.address.toLowerCase().includes(queryStr) ||
+          s.ownerCity.toLowerCase().includes(queryStr) ||
+          s.services.some((srv) => srv.name.toLowerCase().includes(queryStr)),
+      );
+    }
+
+    return result;
+  }
+
+  @Get('api/v1/public/salons/:salonId/catalog')
+  async getPublicSalonCatalog(@Param('salonId') salonId: string) {
+    const salon = await this.prisma.salon.findUnique({
+      where: { id: salonId },
+      include: {
+        services: {
+          where: { isActive: true },
+          orderBy: { price: 'asc' },
+        },
+        staff: {
+          where: { isAvailable: true },
+        },
+      },
+    });
+
+    if (!salon) {
+      throw new NotFoundException('Salon not found');
+    }
+
+    return {
+      id: salon.id,
+      name: salon.name,
+      address: salon.address,
+      ownerCity: salon.ownerCity,
+      whatsappNumber: salon.whatsappNumber,
+      businessCategory: salon.businessCategory,
+      homeBookingFee: Number(salon.homeBookingFee || 0),
+      openingTime: salon.openingTime || '10:00',
+      closingTime: salon.closingTime || '20:00',
+      googleReviewLink: salon.googleReviewLink,
+      services: salon.services,
+      staff: salon.staff,
+    };
   }
 
   @Get('api/v1/public/salons/:salonId/staff')

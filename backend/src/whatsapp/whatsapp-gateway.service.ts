@@ -56,12 +56,23 @@ export class WhatsappGatewayService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
+      const pushName = (message.raw as any)?.pushName || (message.raw as any)?.notifyName || message.from;
+      const isAudio = message.hasMedia && message.media?.mimetype?.startsWith('audio');
+
       // Convert NormalizedMessage to internal format for WhatsappService
       const parsed = {
+        fromPhone: message.from,
         from: message.from,
+        customerName: pushName,
         text: message.body,
+        messageId: message.id,
         mediaUrl: message.media ? `data:${message.media.mimetype};base64,${message.media.data}` : undefined,
-        mediaType: message.hasMedia ? 'image' : undefined,
+        mediaType: message.hasMedia ? (isAudio ? 'audio' : 'image') : undefined,
+        audio: isAudio && message.media ? {
+          id: message.id,
+          mimeType: message.media.mimetype,
+          data: message.media.data,
+        } : null,
         rawMessage: message.raw,
       };
 

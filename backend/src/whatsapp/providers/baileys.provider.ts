@@ -5,6 +5,7 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   Browsers,
   WASocket,
+  downloadMediaMessage,
 } from '@whiskeysockets/baileys';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -33,6 +34,80 @@ export class BaileysProvider implements IWhatsappProvider {
 
   onStatusChanged(handler: (salonId: string, status: SocketLifecycleState, metadata?: any) => void): void {
     this.statusHandler = handler;
+  }
+
+  private registerMessageListener(sock: WASocket, salonId: string) {
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+      if (type !== 'notify') return;
+      for (const msg of messages) {
+        if (msg.key.fromMe || !msg.message) continue;
+        try {
+          const jid = msg.key.remoteJid || '';
+          if (jid.endsWith('@g.us')) continue; // Skip group messages
+
+          const fromClean = jid.split('@')[0].split(':')[0].replace(/\D/g, '');
+          if (!fromClean) continue;
+
+          const text = this.extractMessageText(msg.message);
+
+          let hasMedia = false;
+          let mediaPayload: any = undefined;
+
+          // Extract voice note / audio if available
+          const audioMsg = msg.message.audioMessage || msg.message.ephemeralMessage?.message?.audioMessage;
+          if (audioMsg) {
+            hasMedia = true;
+            try {
+              const buffer = await downloadMediaMessage(msg, 'buffer', {});
+              mediaPayload = {
+                data: buffer.toString('base64'),
+                mimetype: audioMsg.mimetype || 'audio/ogg',
+              };
+            } catch (mediaErr: any) {
+              this.logger.warn(`Could not download voice note media for salon ${salonId}: ${mediaErr.message}`);
+            }
+          }
+
+          if (this.messageHandler) {
+            await this.messageHandler(salonId, {
+              id: msg.key.id || '',
+              from: fromClean,
+              to: sock.user?.id ? sock.user.id.split(':')[0].replace(/\D/g, '') : '',
+              body: text,
+              hasMedia,
+              media: mediaPayload,
+              timestamp: msg.messageTimestamp ? Number(msg.messageTimestamp) * 1000 : Date.now(),
+              isGroupMsg: false,
+              raw: msg,
+            });
+          }
+        } catch (err: any) {
+          this.logger.error(`Error processing message for salon ${salonId}: ${err.message}`);
+        }
+      }
+    });
+  }
+
+  private extractMessageText(message: any): string {
+    if (!message) return '';
+    let m = message;
+    if (m.ephemeralMessage?.message) m = m.ephemeralMessage.message;
+    if (m.viewOnceMessage?.message) m = m.viewOnceMessage.message;
+    if (m.viewOnceMessageV2?.message) m = m.viewOnceMessageV2.message;
+    if (m.documentWithCaptionMessage?.message) m = m.documentWithCaptionMessage.message;
+
+    return (
+      m.conversation ||
+      m.extendedTextMessage?.text ||
+      m.imageMessage?.caption ||
+      m.videoMessage?.caption ||
+      m.documentMessage?.caption ||
+      m.buttonsResponseMessage?.selectedButtonId ||
+      m.buttonsResponseMessage?.selectedDisplayText ||
+      m.listResponseMessage?.singleSelectReply?.selectedRowId ||
+      m.templateButtonReplyMessage?.selectedId ||
+      ''
+    );
   }
 
   async initializeSession(salonId: string, forceFresh = false): Promise<void> {
@@ -128,31 +203,7 @@ export class BaileysProvider implements IWhatsappProvider {
           }
         });
 
-        sock.ev.on('messages.upsert', async ({ messages, type }) => {
-          if (type !== 'notify') return;
-          for (const msg of messages) {
-            if (msg.key.fromMe || !msg.message) continue;
-            try {
-              const fromClean = msg.key.remoteJid ? msg.key.remoteJid.replace('@s.whatsapp.net', '').replace('@g.us', '') : '';
-              const text = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
-
-              if (this.messageHandler) {
-                await this.messageHandler(salonId, {
-                  id: msg.key.id || '',
-                  from: fromClean,
-                  to: sock.user?.id ? sock.user.id.split(':')[0] : '',
-                  body: text,
-                  hasMedia: false,
-                  timestamp: msg.messageTimestamp ? Number(msg.messageTimestamp) : Date.now(),
-                  isGroupMsg: msg.key.remoteJid?.endsWith('@g.us') || false,
-                  raw: msg,
-                });
-              }
-            } catch (err: any) {
-              this.logger.error(`Error processing message: ${err.message}`);
-            }
-          }
-        });
+        this.registerMessageListener(sock, salonId);
 
         this.sockets.set(salonId, sock);
       } catch (err: any) {
@@ -268,6 +319,9 @@ export class BaileysProvider implements IWhatsappProvider {
         }
       });
 
+      // Register inbound message listener on pairing code socket
+      this.registerMessageListener(sock, salonId);
+
       this.sockets.set(salonId, sock);
 
       await new Promise((r) => setTimeout(r, 800));
@@ -288,7 +342,10 @@ export class BaileysProvider implements IWhatsappProvider {
       return { success: false, error: 'WhatsApp socket is not connected.' };
     }
 
-    const cleanTo = to.replace(/\D/g, '');
+    const cleanTo = to.split('@')[0].split(':')[0].replace(/\D/g, '');
+    if (!cleanTo) {
+      return { success: false, error: 'Invalid destination phone number.' };
+    }
     const jid = `${cleanTo}@s.whatsapp.net`;
 
     try {
@@ -309,7 +366,7 @@ export class BaileysProvider implements IWhatsappProvider {
         messageId: sentMsg?.key?.id || undefined,
       };
     } catch (err: any) {
-      this.logger.error(`Error sending Baileys message: ${err.message}`);
+      this.logger.error(`Error sending Baileys message to ${jid}: ${err.message}`);
       return { success: false, error: err.message };
     }
   }

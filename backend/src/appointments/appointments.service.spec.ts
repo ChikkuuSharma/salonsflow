@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppointmentsService } from './appointments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { WaitingListService } from './waiting-list.service';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('AppointmentsService', () => {
@@ -10,6 +11,10 @@ describe('AppointmentsService', () => {
 
   const mockWaitingListService = {
     checkAndNotifyWaitlistCandidates: jest.fn().mockResolvedValue(true),
+  };
+
+  const mockWhatsappService = {
+    sendAppointmentConfirmation: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockPrismaService = {
@@ -60,6 +65,10 @@ describe('AppointmentsService', () => {
         {
           provide: WaitingListService,
           useValue: mockWaitingListService,
+        },
+        {
+          provide: WhatsappService,
+          useValue: mockWhatsappService,
         },
       ],
     }).compile();

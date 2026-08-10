@@ -29,7 +29,8 @@ import {
   ChevronDown,
   Menu,
   Check,
-  Award
+  Award,
+  MapPin
 } from "lucide-react";
 
 // Types for Chat Simulator
@@ -441,7 +442,10 @@ export default function Home() {
           </div>
           
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <Link href="/salons" className="text-purple-700 font-extrabold transition-colors flex items-center gap-1 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs">
+              <MapPin className="w-3.5 h-3.5 text-purple-600" /> Salons & Prices
+            </Link>
             <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
             <Link href="/pricing" className="hover:text-slate-900 transition-colors">Pricing</Link>
             <Link href="/haircut-advisor" className="hover:text-purple-600 text-purple-600 transition-colors flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" /> AI Style Lab</Link>
@@ -493,6 +497,9 @@ export default function Home() {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-200 p-6 flex flex-col gap-4 text-sm font-bold text-slate-600 animate-in slide-in-from-top-4 duration-200 shadow-lg">
+            <Link href="/salons" onClick={() => setMobileMenuOpen(false)} className="text-purple-700 bg-purple-50 p-2.5 rounded-xl border border-purple-200 font-extrabold flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-purple-600" /> 📍 Explore Salons & Prices
+            </Link>
             <a href="#features" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Features</a>
             <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="hover:text-slate-900 transition-colors py-1">Pricing</Link>
             <Link href="/haircut-advisor" onClick={() => setMobileMenuOpen(false)} className="hover:text-purple-700 text-purple-600 transition-colors py-1 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-purple-650 animate-pulse" /> AI Style Lab</Link>
@@ -557,7 +564,7 @@ export default function Home() {
             </p>
             
             {/* Hero CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md pt-4">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 w-full max-w-xl pt-4">
               <Link
                 href="/sign-up"
                 className="group flex items-center justify-center gap-2 h-13 px-8 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-550 hover:to-pink-400 text-white font-bold tracking-wide transition-all shadow-md active:scale-95 duration-200 hover:-translate-y-0.5 text-xs uppercase rounded-xl border-0"
@@ -566,8 +573,15 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
+                href="/salons"
+                className="flex items-center justify-center gap-2 h-13 px-6 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-purple-500/40 active:bg-slate-950 rounded-xl font-bold tracking-wide transition-all duration-200 active:scale-95 hover:-translate-y-0.5 text-xs uppercase shadow-md cursor-pointer"
+              >
+                <span className="text-sm">📍</span>
+                Find Nearest Salons & Prices
+              </Link>
+              <Link
                 href="/demo"
-                className="flex items-center justify-center gap-2.5 h-13 px-8 bg-white hover:bg-slate-50 border border-slate-200 active:bg-slate-100 rounded-xl text-slate-700 hover:text-slate-900 font-bold tracking-wide transition-all duration-200 active:scale-95 hover:-translate-y-0.5 text-xs uppercase shadow-xs cursor-pointer"
+                className="flex items-center justify-center gap-2.5 h-13 px-6 bg-white hover:bg-slate-50 border border-slate-200 active:bg-slate-100 rounded-xl text-slate-700 hover:text-slate-900 font-bold tracking-wide transition-all duration-200 active:scale-95 hover:-translate-y-0.5 text-xs uppercase shadow-xs cursor-pointer"
               >
                 <Sparkles className="h-3.5 w-3.5 text-purple-600 animate-pulse" />
                 Explore Demo Mode

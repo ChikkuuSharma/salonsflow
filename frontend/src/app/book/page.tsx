@@ -46,11 +46,16 @@ function BookingContent() {
       try {
         setLoading(true);
         const res = await fetch(`${apiUrl}/api/v1/public/appointments/salon/${salonId}`);
-        if (!res.ok) throw new Error("Failed to load salon details.");
         const data = await res.json();
+        const serviceIdParam = searchParams.get("serviceId");
         setSalonInfo(data);
         if (data.services?.length > 0) {
-          setSelectedServices([data.services[0]]);
+          const matched = data.services.find((s: any) => s.id === serviceIdParam);
+          if (matched) {
+            setSelectedServices([matched]);
+          } else {
+            setSelectedServices([data.services[0]]);
+          }
         }
       } catch (err: any) {
         console.error(err);

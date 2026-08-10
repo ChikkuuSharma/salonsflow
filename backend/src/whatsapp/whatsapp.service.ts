@@ -369,8 +369,17 @@ export class WhatsappService {
   }
 
 
-async processParsedMessage(parsed: any, salon: any): Promise<void> {
-    if (!parsed || !parsed.fromPhone) return;
+  async processParsedMessage(parsed: any, salon: any): Promise<void> {
+    const fromPhone = parsed?.fromPhone || parsed?.from;
+    if (!parsed || !fromPhone) return;
+    parsed.fromPhone = fromPhone;
+
+    if (!this.processedMessageIds) {
+      this.processedMessageIds = new Set<string>();
+    }
+    if (!this.recentTextCache) {
+      this.recentTextCache = new Map<string, number>();
+    }
 
     // 1. Deduplicate by unique messageId
     if (parsed.messageId) {

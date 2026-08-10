@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Bell, AlertTriangle, Menu, ChevronDown, LogOut, Crown, RotateCcw, Settings, Users, UserCheck } from "lucide-react";
+import { Search, Bell, AlertTriangle, Menu, ChevronDown, LogOut, Crown, RotateCcw, Settings, Users, UserCheck, MapPin } from "lucide-react";
 
 export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isSuspended, setIsSuspended] = useState(false);
@@ -219,6 +219,15 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
         </div>
         
         <div className="flex-1 max-w-sm flex items-center gap-3 ml-auto">
+          <Link
+            href="/salons"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition-all shrink-0"
+            title="Explore nearby listed partner salons & prices"
+          >
+            <span className="text-sm">📍</span>
+            Explore Salons
+          </Link>
+
           <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-zinc-500" />
             <input 

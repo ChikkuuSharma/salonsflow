@@ -74,6 +74,7 @@ describe('ServicesService', () => {
           name: 'Manicure',
           price: 600,
           durationMins: 30,
+          gender: 'UNISEX',
           isActive: true,
         },
       });
