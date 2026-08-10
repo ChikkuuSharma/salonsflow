@@ -245,6 +245,23 @@ export class AppController {
       );
     }
 
+    // Ensure only ONE primary demo salon account is listed, removing any duplicate demo accounts
+    let demoCount = 0;
+    result = result.filter((s) => {
+      const isDemo =
+        s.name.toLowerCase().includes('demo styling studio') ||
+        s.name.toLowerCase().includes('elegance salon') ||
+        s.name.toLowerCase().includes('elegance barber') ||
+        s.whatsappNumber === '+91 99999 88888' ||
+        s.whatsappNumber === '+919876543210';
+
+      if (isDemo) {
+        demoCount++;
+        return demoCount === 1; // Retain ONLY the first demo salon, filter out any extra duplicate demo salons
+      }
+      return true; // Keep all real client salons intact
+    });
+
     return result;
   }
 
