@@ -502,16 +502,34 @@ function BookingContent() {
 
             {/* Stylist Select */}
             <div className="space-y-3 col-span-1 md:col-span-2">
-              <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">4. Preferred Stylist</h3>
-              <select
-                value={selectedStaff?.id || ""}
-                onChange={(e) => {
-                  const staff = salonInfo.staff.find((s: any) => s.id === e.target.value);
-                  setSelectedStaff(staff || null);
-                }}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500/50 font-semibold"
-              >
-                <option value="">Any Available Qualified Stylist</option>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase text-indigo-400 tracking-widest font-mono">4. Preferred Stylist</h3>
+                <span className="text-[10px] text-slate-400 font-medium">Select a master stylist or auto-assign</span>
+              </div>
+
+              {/* Stylist Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {/* Any Available Option */}
+                <div
+                  onClick={() => setSelectedStaff(null)}
+                  className={`p-3.5 rounded-2xl border text-left cursor-pointer transition-all hover:scale-[1.01] flex items-center gap-3 ${
+                    selectedStaff === null
+                      ? "bg-indigo-950/70 border-indigo-500 text-indigo-200 ring-1 ring-indigo-500/50 shadow-md"
+                      : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700"
+                  }`}
+                >
+                  <div className={`h-9 w-9 rounded-xl border flex items-center justify-center flex-shrink-0 ${
+                    selectedStaff === null ? "bg-indigo-600 border-indigo-400 text-white" : "bg-slate-900 border-slate-700 text-slate-400"
+                  }`}>
+                    <Sparkles className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-xs text-slate-100">Any Available Stylist</p>
+                    <p className="text-[10px] text-slate-400 font-mono">Fastest Available Slot</p>
+                  </div>
+                </div>
+
+                {/* Specific Staff Cards */}
                 {salonInfo?.staff
                   ?.filter((st: any) => {
                     if (genderPreference === "MALE") {
@@ -522,12 +540,39 @@ function BookingContent() {
                     }
                     return true;
                   })
-                  .map((st: any) => (
-                    <option key={st.id} value={st.id}>
-                      {st.name} {st.genderSpecialization === "MALE_ONLY" ? "(Men's Specialist)" : st.genderSpecialization === "FEMALE_ONLY" ? "(Ladies Specialist)" : "(Unisex)"}
-                    </option>
-                  ))}
-              </select>
+                  .map((st: any) => {
+                    const isSelected = selectedStaff?.id === st.id;
+                    return (
+                      <div
+                        key={st.id}
+                        onClick={() => setSelectedStaff(st)}
+                        className={`p-3.5 rounded-2xl border text-left cursor-pointer transition-all hover:scale-[1.01] flex items-center gap-3 ${
+                          isSelected
+                            ? "bg-indigo-950/70 border-indigo-500 text-indigo-200 ring-1 ring-indigo-500/50 shadow-md"
+                            : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700"
+                        }`}
+                      >
+                        <div className={`h-9 w-9 rounded-xl border flex items-center justify-center flex-shrink-0 ${
+                          isSelected ? "bg-indigo-600 border-indigo-400 text-white" : "bg-slate-900 border-slate-700 text-indigo-400"
+                        }`}>
+                          <User className="h-4.5 w-4.5" />
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="font-extrabold text-xs text-slate-100 truncate">{st.name}</p>
+                          <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded border uppercase inline-block mt-0.5 ${
+                            st.genderSpecialization === "MALE_ONLY"
+                              ? "bg-blue-950 text-blue-300 border-blue-800"
+                              : st.genderSpecialization === "FEMALE_ONLY"
+                              ? "bg-pink-950 text-pink-300 border-pink-800"
+                              : "bg-purple-950 text-purple-300 border-purple-800"
+                          }`}>
+                            {st.genderSpecialization === "MALE_ONLY" ? "Men's Spec" : st.genderSpecialization === "FEMALE_ONLY" ? "Ladies Spec" : "Unisex"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           </div>
 

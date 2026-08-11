@@ -89,6 +89,13 @@ export default function BookingsPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
 
+  const staffColCount = Math.max(1, staffList.length);
+  const staffGridStyle = {
+    display: "grid",
+    gridTemplateColumns: `100px repeat(${staffColCount}, minmax(180px, 1fr))`
+  };
+  const minStaffContainerWidth = `${100 + staffColCount * 180}px`;
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -338,9 +345,9 @@ export default function BookingsPage() {
               {/* STAFF DAY VIEW */}
               {view === "staff" && (
                 <div className="overflow-x-auto custom-scrollbar">
-                  <div className="min-w-[800px]">
+                  <div style={{ minWidth: minStaffContainerWidth }}>
                     {/* Header Columns */}
-                    <div className="grid grid-cols-[100px_repeat(auto-fit,minmax(150px,1fr))] border-b border-slate-200 bg-slate-50/50">
+                    <div style={staffGridStyle} className="border-b border-slate-200 bg-slate-50/50">
                       <div className="p-4 text-center font-bold text-xs text-slate-500 uppercase tracking-wider border-r border-slate-200 flex items-center justify-center font-mono">Time</div>
                       {staffList.map((staff) => (
                         <div key={staff.id} className="p-4 text-center border-r border-slate-200">
@@ -362,105 +369,105 @@ export default function BookingsPage() {
                     <div className="divide-y divide-slate-100 bg-white">
                       {hours.map((hour) => {
                         return (
-                          <div key={hour} className="grid grid-cols-[100px_repeat(auto-fit,minmax(150px,1fr))] h-[120px]">
+                          <div key={hour} style={staffGridStyle} className="h-[120px]">
                             {/* Time block */}
                             <div className="text-center text-[10px] font-bold text-slate-500 border-r border-slate-200 flex items-center justify-center bg-slate-50/30 font-mono uppercase h-[120px]">
                               {hour > 12 ? `${hour - 12} PM` : hour === 12 ? "12 PM" : `${hour} AM`}
                             </div>
-                            
-                            {/* Stylist Columns */}
-                            {staffList.map((staff) => {
-                              // Find appointments for this hour/staff
-                              const appts = appointments.filter((appt) => {
-                                if (appt.staffId !== staff.id) return false;
-                                const startTime = new Date(appt.startTime);
-                                return startTime.getHours() === hour;
-                              });
+                          
+                          {/* Stylist Columns */}
+                          {staffList.map((staff) => {
+                            // Find appointments for this hour/staff
+                            const appts = appointments.filter((appt) => {
+                              if (appt.staffId !== staff.id) return false;
+                              const startTime = new Date(appt.startTime);
+                              return startTime.getHours() === hour;
+                            });
 
-                              return (
-                                <div 
-                                  key={staff.id} 
-                                  className="border-r border-slate-100 relative group h-[120px]"
-                                >
-                                  {/* Underlying 15-minute hover slots (z-0) */}
-                                  {staff.isAvailable && (
-                                    <div className="absolute inset-0 flex flex-col z-0">
-                                      {[0, 15, 30, 45].map((mins) => {
-                                        const slotTimeStr = `${hour.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-                                        return (
-                                          <button
-                                            key={mins}
-                                            type="button"
-                                            onClick={() => handleOpenAddModal(staff.id, slotTimeStr)}
-                                            className="flex-1 w-full relative border-b border-dashed border-slate-100/30 hover:bg-purple-500/[0.04] transition-all group/slot flex items-center justify-center cursor-pointer border-0 bg-transparent"
-                                            title={`Book at ${slotTimeStr}`}
-                                          >
-                                            <span className="opacity-0 group-hover/slot:opacity-100 text-[9px] text-purple-600 font-bold transition-opacity">
-                                              + {hour > 12 ? hour - 12 : hour}:{mins.toString().padStart(2, "0")} {hour >= 12 ? "PM" : "AM"}
-                                            </span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
+                            return (
+                              <div 
+                                key={staff.id} 
+                                className="border-r border-slate-100 relative group h-[120px]"
+                              >
+                                {/* Underlying 15-minute hover slots (z-0) */}
+                                {staff.isAvailable && (
+                                  <div className="absolute inset-0 flex flex-col z-0">
+                                    {[0, 15, 30, 45].map((mins) => {
+                                      const slotTimeStr = `${hour.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+                                      return (
+                                        <button
+                                          key={mins}
+                                          type="button"
+                                          onClick={() => handleOpenAddModal(staff.id, slotTimeStr)}
+                                          className="flex-1 w-full relative border-b border-dashed border-slate-100/30 hover:bg-purple-500/[0.04] transition-all group/slot flex items-center justify-center cursor-pointer border-0 bg-transparent"
+                                          title={`Book at ${slotTimeStr}`}
+                                        >
+                                          <span className="opacity-0 group-hover/slot:opacity-100 text-[9px] text-purple-600 font-bold transition-opacity">
+                                            + {hour > 12 ? hour - 12 : hour}:{mins.toString().padStart(2, "0")} {hour >= 12 ? "PM" : "AM"}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
 
-                                  {/* Actual Appointments (z-10) */}
-                                  {appts.map((appt) => {
-                                    const startTime = new Date(appt.startTime);
-                                    const startMin = startTime.getMinutes();
-                                    const duration = appt.service?.durationMins || 30;
-                                    
-                                    // Position relative to the 120px hourly height (2px per minute)
-                                    const topPx = startMin * 2;
-                                    const heightPx = Math.max(26, duration * 2);
-                                    
-                                    return (
-                                      <div
-                                        key={appt.id}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedAppt(appt);
-                                        }}
-                                        style={{
-                                          top: `${topPx}px`,
-                                          height: `${heightPx}px`
-                                        }}
-                                        className={`px-2 py-1 rounded-xl border text-left cursor-pointer transition-all hover:scale-[1.01] shadow-xs select-none absolute inset-x-1.5 z-10 flex flex-col justify-between overflow-hidden ${
-                                          appt.status === "COMPLETED" 
-                                            ? "bg-indigo-50 border-indigo-100 text-indigo-650 font-semibold" 
-                                            : appt.status === "CANCELLED" 
-                                              ? "bg-rose-50 border-rose-100 text-rose-600 line-through font-semibold" 
-                                              : appt.status === "PENDING"
-                                                ? "bg-amber-50 border-amber-100 text-amber-600 font-bold animate-pulse"
-                                                : "bg-purple-50 border border-purple-100 text-purple-650 font-semibold"
-                                        }`}
-                                        title={`${appt.customer.name} - ${appt.service?.name} (${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`}
-                                      >
-                                        <div>
-                                          <p className="font-extrabold text-[10px] leading-tight truncate text-slate-800">{appt.customer.name}</p>
-                                          {heightPx > 42 && appt.service && (
-                                            <p className="text-[8px] font-semibold opacity-90 leading-tight truncate mt-0.5 text-slate-500">{appt.service.name}</p>
-                                          )}
-                                        </div>
-                                        {heightPx > 58 && (
-                                          <div className="flex items-center gap-1 text-[8px] opacity-75 font-mono leading-none">
-                                            <Clock className="h-2 w-2" />
-                                            <span>{startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({duration}m)</span>
-                                          </div>
+                                {/* Actual Appointments (z-10) */}
+                                {appts.map((appt) => {
+                                  const startTime = new Date(appt.startTime);
+                                  const startMin = startTime.getMinutes();
+                                  const duration = appt.service?.durationMins || 30;
+                                  
+                                  // Position relative to the 120px hourly height (2px per minute)
+                                  const topPx = startMin * 2;
+                                  const heightPx = Math.max(26, duration * 2);
+                                  
+                                  return (
+                                    <div
+                                      key={appt.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedAppt(appt);
+                                      }}
+                                      style={{
+                                        top: `${topPx}px`,
+                                        height: `${heightPx}px`
+                                      }}
+                                      className={`px-2 py-1 rounded-xl border text-left cursor-pointer transition-all hover:scale-[1.01] shadow-xs select-none absolute inset-x-1.5 z-10 flex flex-col justify-between overflow-hidden ${
+                                        appt.status === "COMPLETED" 
+                                          ? "bg-indigo-50 border-indigo-100 text-indigo-650 font-semibold" 
+                                          : appt.status === "CANCELLED" 
+                                            ? "bg-rose-50 border-rose-100 text-rose-600 line-through font-semibold" 
+                                            : appt.status === "PENDING"
+                                              ? "bg-amber-50 border-amber-100 text-amber-600 font-bold animate-pulse"
+                                              : "bg-purple-50 border border-purple-100 text-purple-650 font-semibold"
+                                      }`}
+                                      title={`${appt.customer.name} - ${appt.service?.name} (${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`}
+                                    >
+                                      <div>
+                                        <p className="font-extrabold text-[10px] leading-tight truncate text-slate-800">{appt.customer.name}</p>
+                                        {heightPx > 42 && appt.service && (
+                                          <p className="text-[8px] font-semibold opacity-90 leading-tight truncate mt-0.5 text-slate-500">{appt.service.name}</p>
                                         )}
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
+                                      {heightPx > 58 && (
+                                        <div className="flex items-center gap-1 text-[8px] opacity-75 font-mono leading-none">
+                                          <Clock className="h-2 w-2" />
+                                          <span>{startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({duration}m)</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
               {/* DAY VIEW (TIMELINE) */}
               {view === "day" && (
