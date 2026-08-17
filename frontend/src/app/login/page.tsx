@@ -17,7 +17,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<"admin" | "owner" | "demo">("demo");
+  const [selectedRole, setSelectedRole] = useState<"admin" | "owner" | "demo">("owner");
   const [formMode, setFormMode] = useState<"login" | "register" | "change-password">("login");
 
   useEffect(() => {

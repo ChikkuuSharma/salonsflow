@@ -16,18 +16,21 @@ export class AuthController {
       throw new UnauthorizedException('Admin ID and Password are required.');
     }
 
-    const cred = await this.prisma.adminCredential.findUnique({
+    let cred = await this.prisma.adminCredential.findUnique({
       where: { adminId },
     });
+
+    // Bootstrap default admin in database on first run if missing
+    if (!cred && adminId === 'admin') {
+      cred = await this.prisma.adminCredential.create({
+        data: { adminId: 'admin', password: 'admin123' },
+      });
+    }
 
     if (cred && cred.password === password) {
       return { token: `dev-bypass-token-superadmin-${adminId}` };
     }
 
-    // Fallback to default credentials if not matched in the DB
-    if (adminId === 'admin' && password === 'admin123') {
-      return { token: 'dev-bypass-token-superadmin-admin' };
-    }
     throw new UnauthorizedException('Invalid admin credentials.');
   }
 
@@ -58,27 +61,26 @@ export class AuthController {
       throw new UnauthorizedException('Admin ID, Old Password, and New Password are required.');
     }
 
-    const cred = await this.prisma.adminCredential.findUnique({
+    let cred = await this.prisma.adminCredential.findUnique({
       where: { adminId },
     });
 
-    if (cred) {
-      if (cred.password === oldPassword) {
-        await this.prisma.adminCredential.update({
-          where: { adminId },
-          data: { password: newPassword },
-        });
-        return { success: true };
-      }
-    } else {
-      if (adminId === 'admin' && oldPassword === 'admin123') {
-        await this.prisma.adminCredential.create({
-          data: { adminId, password: newPassword },
-        });
-        return { success: true };
-      }
+    // Bootstrap default admin in database on first run if missing
+    if (!cred && adminId === 'admin') {
+      cred = await this.prisma.adminCredential.create({
+        data: { adminId: 'admin', password: 'admin123' },
+      });
     }
-    throw new UnauthorizedException('Invalid old admin credentials.');
+
+    if (!cred || cred.password !== oldPassword) {
+      throw new UnauthorizedException('Invalid old admin credentials.');
+    }
+
+    await this.prisma.adminCredential.update({
+      where: { adminId },
+      data: { password: newPassword },
+    });
+    return { success: true };
   }
 
   @Post('owner/login')
