@@ -57,6 +57,7 @@ export default function Home() {
 
   // Active feature tab state
   const [activeTab, setActiveTab] = useState<"receptionist" | "multilingual" | "rebooking">("receptionist");
+  const [heroPreviewTab, setHeroPreviewTab] = useState<"whatsapp" | "crm" | "salon">("whatsapp");
   
   // Billing cycle state for homepage pricing block
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
@@ -643,24 +644,67 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Column (Hero Illustration Image & Floating Widgets) */}
-          <div className="lg:col-span-5 relative flex justify-center w-full">
+          {/* Right Column (Hero Interactive Tabbed Image & Floating Widgets) */}
+          <div className="lg:col-span-5 relative flex flex-col items-center justify-center w-full">
             {/* Ambient backdrop glow */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-transparent blur-3xl rounded-3xl pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 via-pink-500/10 to-transparent blur-3xl rounded-3xl pointer-events-none"></div>
             
+            {/* Interactive Tab Switcher */}
+            <div className="flex bg-white/90 border border-purple-100 backdrop-blur-md p-1 rounded-2xl mb-4 z-20 gap-1 shadow-md">
+              <button
+                type="button"
+                onClick={() => setHeroPreviewTab("whatsapp")}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer border-0 ${
+                  heroPreviewTab === "whatsapp"
+                    ? "bg-purple-600 text-white shadow-md"
+                    : "bg-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                💬 WhatsApp AI
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeroPreviewTab("crm")}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer border-0 ${
+                  heroPreviewTab === "crm"
+                    ? "bg-purple-600 text-white shadow-md"
+                    : "bg-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                📊 Operations CRM
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeroPreviewTab("salon")}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer border-0 ${
+                  heroPreviewTab === "salon"
+                    ? "bg-purple-600 text-white shadow-md"
+                    : "bg-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                ✨ Luxury Salon
+              </button>
+            </div>
+
             {/* Styled Frame for Illustration */}
-            <div className="relative border border-slate-200 bg-white p-3 rounded-3xl shadow-2xl max-w-md w-full z-10 transition-transform duration-500 hover:scale-[1.02]">
+            <div className="relative border border-purple-100 bg-white p-2.5 rounded-3xl shadow-2xl max-w-md w-full z-10 transition-all duration-300 hover:scale-[1.02] hover:shadow-purple-500/10">
               <img 
-                src="/hero-illustration.png" 
-                alt="SalonsFlow Platform Operations" 
-                className="w-full rounded-2xl object-cover shadow-sm aspect-square bg-slate-50"
+                src={
+                  heroPreviewTab === "whatsapp"
+                    ? "/whatsapp-ai-receptionist-phone.png"
+                    : heroPreviewTab === "crm"
+                    ? "/ai-dashboard-analytics.png"
+                    : "/salon-interior-showcase.png"
+                } 
+                alt="SalonsFlow Visual Showcase" 
+                className="w-full rounded-2xl object-cover shadow-sm aspect-[4/3] bg-slate-900 transition-all duration-300"
               />
             </div>
 
             {/* Floating 3D widgets positioned relative to the image on desktop */}
-            <div className="hidden lg:block absolute -left-12 top-8 bg-white border border-slate-200/80 backdrop-blur-md rounded-2xl p-4 text-left shadow-lg max-w-[180px] z-20 animate-float">
+            <div className="hidden lg:block absolute -left-10 top-16 bg-white/95 border border-slate-200/80 backdrop-blur-md rounded-2xl p-4 text-left shadow-lg max-w-[180px] z-20 animate-float">
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-ping"></span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Hinglish Agent NLP</span>
               </div>
               <p className="text-[9px] text-slate-700 font-semibold leading-relaxed">
@@ -668,10 +712,10 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="hidden lg:block absolute -right-12 bottom-12 bg-white border border-slate-200/80 backdrop-blur-md rounded-2xl p-4 text-left shadow-lg max-w-[170px] z-20 animate-float-delay-1">
+            <div className="hidden lg:block absolute -right-10 bottom-10 bg-white/95 border border-slate-200/80 backdrop-blur-md rounded-2xl p-4 text-left shadow-lg max-w-[170px] z-20 animate-float-delay-1">
               <div className="flex items-center gap-2 mb-1">
                 <Bot className="h-3.5 w-3.5 text-purple-650 animate-pulse" />
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Revenue Saved</span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Revenue Recovered</span>
               </div>
               <span className="text-lg font-black text-slate-800 font-display block">₹42,800</span>
               <span className="text-[8px] text-purple-600 font-bold uppercase tracking-wider">autonomously saved</span>
@@ -794,6 +838,276 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Brand Partner Ticker Banner */}
+      <section className="py-6 border-y border-slate-200 bg-slate-950 text-white overflow-hidden relative z-10">
+        <div className="max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-between gap-6 text-xs">
+          <div className="flex items-center gap-2 text-purple-400 font-bold uppercase tracking-widest text-[10px] font-mono">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+            TRUSTED BY 100+ PREMIER SALONS & SPAS IN INDIA
+          </div>
+          <div className="flex items-center gap-8 text-slate-350 text-xs font-bold font-display uppercase tracking-wider overflow-x-auto scrollbar-none py-1">
+            <span className="flex items-center gap-2 text-white shrink-0"><span className="text-purple-400">✨</span> SV Glam Up Salon</span>
+            <span className="flex items-center gap-2 text-white shrink-0"><span className="text-pink-400">✂️</span> Royal Barber Lounge</span>
+            <span className="flex items-center gap-2 text-white shrink-0"><span className="text-indigo-400">💅</span> Velvet Touch Nail Spa</span>
+            <span className="flex items-center gap-2 text-white shrink-0"><span className="text-emerald-400">💆</span> Zen Wellness Studio</span>
+            <span className="flex items-center gap-2 text-white shrink-0"><span className="text-amber-400">💄</span> Aura Beauty Clinic</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Showcase 1: AI Haircut & Style Advisor Lab */}
+      <section className="py-24 border-b border-slate-200 bg-gradient-to-b from-purple-50/60 via-white to-white relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-12 gap-12 items-center">
+            {/* Image Preview */}
+            <div className="lg:col-span-6 relative flex justify-center">
+              <div className="absolute inset-0 bg-purple-500/10 blur-3xl rounded-3xl pointer-events-none"></div>
+              <div className="relative border border-purple-200 bg-white p-3 rounded-3xl shadow-2xl overflow-hidden hover:scale-[1.01] transition-all duration-300">
+                <img 
+                  src="/haircut-ai-advisor-demo.png" 
+                  alt="AI Haircut & Style Analysis Interface" 
+                  className="w-full h-[380px] rounded-2xl object-cover shadow-sm bg-slate-900"
+                />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="lg:col-span-6 text-left space-y-6">
+              <span className="text-[10px] font-extrabold text-purple-700 uppercase tracking-widest bg-purple-100/80 border border-purple-200 px-3.5 py-1.5 rounded-full inline-block font-mono">
+                🔥 AI Haircut & Style Advisor
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-800 tracking-tight font-display leading-tight">
+                AI Face Shape Analysis & Custom Lookbook Recommendations
+              </h2>
+              <p className="text-slate-600 text-xs sm:text-sm font-medium leading-relaxed">
+                SalonsFlow uses face shape detection algorithms (Oval, Round, Square, Heart) to match clients with trending hairstyles and treatment recommendations before their appointment.
+              </p>
+
+              {/* Lookbook avatars preview */}
+              <div className="grid grid-cols-4 gap-3 pt-2">
+                {[
+                  { shape: "Oval", img: "/looks/oval.png" },
+                  { shape: "Square", img: "/looks/square.png" },
+                  { shape: "Round", img: "/looks/round.png" },
+                  { shape: "Heart", img: "/looks/heart.png" }
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-white border border-purple-100 p-2 rounded-2xl text-center shadow-sm hover:border-purple-300 transition-all">
+                    <img src={item.img} alt={item.shape} className="h-14 w-full object-cover rounded-xl mb-1 bg-purple-50" />
+                    <span className="text-[9px] font-black text-slate-700 uppercase block tracking-wider">{item.shape}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href="/haircut-advisor"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all hover:-translate-y-0.5 active:scale-95"
+                >
+                  <span>Launch AI Style Scanner</span>
+                  <ArrowRight className="w-4 h-4 text-white" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Showcase 2: Full Operations & POS Register (Dark Glassmorphic Section) */}
+      <section className="py-24 bg-slate-950 text-white border-b border-slate-850 relative z-10 overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-2xl mx-auto text-center space-y-3 mb-16">
+            <span className="text-[10px] font-extrabold text-pink-400 uppercase tracking-widest bg-pink-950/60 border border-pink-850 px-3.5 py-1.5 rounded-full inline-block font-mono">
+              ⚡ Unified Salon CRM & Register
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight font-display">
+              Control Appointments, Cash Drawers & Commissions in Real-Time
+            </h2>
+            <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed">
+              Eliminate paper registers. Monitor appointment queues, split cash/card invoices, and generate automated stylist payroll ledgers seamlessly.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-12 gap-8 items-center">
+            {/* Dashboard Mockup Image */}
+            <div className="lg:col-span-7 relative">
+              <div className="border border-purple-500/30 bg-slate-900/90 p-3 rounded-3xl shadow-2xl overflow-hidden backdrop-blur-md">
+                <img 
+                  src="/ai-dashboard-analytics.png" 
+                  alt="SalonsFlow POS and Analytics Dashboard" 
+                  className="w-full h-[400px] rounded-2xl object-cover bg-slate-950"
+                />
+              </div>
+            </div>
+
+            {/* Feature Callouts */}
+            <div className="lg:col-span-5 space-y-4 text-left">
+              {[
+                { title: "Stylist Commission Slabs", desc: "Set custom slab ratios (e.g. 20% on haircuts, 35% on facials) with automatic monthly payroll statements.", icon: "💰" },
+                { title: "Offline POS Digital Billing", desc: "Accept UPI, cash, card, and WhatsApp pay. Print GST receipts or send digital invoices.", icon: "🧾" },
+                { title: "Missed Call Intercept Engine", desc: "Never lose a caller. Dispatches instant WhatsApp booking menus to missed callers automatically.", icon: "📞" },
+                { title: "Google Review Booster", desc: "Triggers review request cards 60 mins post-service to boost your salon Google Maps ranking.", icon: "⭐" }
+              ].map((item, idx) => (
+                <div key={idx} className="bg-slate-900/70 border border-slate-800/80 p-4.5 rounded-2xl hover:border-purple-500/50 hover:bg-slate-900 transition-all">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">{item.icon}</span>
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-xs uppercase tracking-wider text-purple-300 font-display">{item.title}</h4>
+                      <p className="text-[11px] text-slate-400 leading-relaxed font-semibold">{item.desc}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Showcase 3: Before vs After SalonsFlow Transformation Matrix */}
+      <section className="py-24 bg-slate-50/70 border-b border-slate-200 relative z-10">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center space-y-3 mb-16">
+            <span className="text-[10px] font-bold text-purple-700 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3.5 py-1.5 rounded-full inline-block">
+              VS TRADITIONAL SOFTWARE
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800 font-display tracking-tight">The SalonsFlow Transformation</h2>
+            <p className="text-slate-500 text-xs font-semibold leading-relaxed max-w-lg mx-auto">
+              Compare how traditional manual registers stack up against 100% automated AI operations.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
+            {/* Traditional Card */}
+            <div className="bg-white border border-rose-200/80 rounded-3xl p-8 text-left space-y-6 shadow-sm">
+              <div className="flex items-center justify-between border-b border-rose-100 pb-4">
+                <span className="text-xs font-extrabold text-rose-600 uppercase tracking-wider">❌ Traditional Manual Salon</span>
+                <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2.5 py-1 rounded-full">High Leakage</span>
+              </div>
+              <ul className="space-y-4 text-xs text-slate-600 font-semibold">
+                <li className="flex items-start gap-2.5">
+                  <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                  <span>Missed client calls during rush hours lead to lost appointments.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                  <span>Stylists argue over manual commission entries and split calculations.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                  <span>Receptionists struggle to type responses in Hindi/Hinglish.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="text-rose-500 font-bold mt-0.5">✕</span>
+                  <span>Zero automated follow-ups or Google review requests.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* SalonsFlow Card */}
+            <div className="bg-white border-2 border-purple-500 rounded-3xl p-8 text-left space-y-6 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-bl-full pointer-events-none"></div>
+              <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+                <span className="text-xs font-extrabold text-purple-700 uppercase tracking-wider">✅ SalonsFlow AI Salon</span>
+                <span className="text-[10px] font-extrabold text-white bg-purple-600 px-3 py-1 rounded-full shadow-sm">0% Missed Calls</span>
+              </div>
+              <ul className="space-y-4 text-xs text-slate-700 font-semibold">
+                <li className="flex items-start gap-2.5">
+                  <Check className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+                  <span>24/7 AI Receptionist books slots on WhatsApp in Hinglish instantly.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+                  <span>Automated POS drawer logs and transparent stylist commission ledgers.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+                  <span>AI Haircut & Style Advisor engages clients with personalized lookbooks.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+                  <span>Automated post-checkout Google review collection boosts local SEO.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Showcase 4: Verified Salon Partner Testimonials */}
+      <section className="py-24 bg-white border-b border-slate-200 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-2xl mx-auto text-center space-y-3 mb-16">
+            <span className="text-[10px] font-bold text-purple-700 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3.5 py-1.5 rounded-full inline-block">
+              CLIENT SUCCESS STORIES
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800 font-display tracking-tight">Loved by Salon Owners Across India</h2>
+            <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+              Read how partner salons scale revenues and automate receptionist desk operations.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                salon: "SV Glam Up Salon",
+                city: "Delhi NCR",
+                owner: "Sunita Verma",
+                metric: "+42% Monthly Revenue",
+                quote: "Before SalonsFlow, we were losing 5 to 10 clients daily because my phone was busy while I was giving facials. Now the AI handles all WhatsApp bookings automatically!",
+                img: "/salon-interior-showcase.png"
+              },
+              {
+                salon: "Royal Barber Lounge",
+                city: "Mumbai",
+                owner: "Vikram Malhotra",
+                metric: "0 Missed Calls",
+                quote: "The Hinglish voice note booking is magic! My male clients just send a voice message saying 'bhaiya kal 6 baje Rahul ko rkna', and SalonsFlow locks the slot.",
+                img: "/ai-dashboard-analytics.png"
+              },
+              {
+                salon: "Velvet Touch Spa",
+                city: "Bengaluru",
+                owner: "Priya Nair",
+                metric: "+68 Google Reviews",
+                quote: "The commission ledger and Google Review booster saved us hours of accounting every month. Our Google rating jumped from 4.1 to 4.9 stars in 30 days!",
+                img: "/haircut-ai-advisor-demo.png"
+              }
+            ].map((story, idx) => (
+              <div key={idx} className="bg-slate-50/60 border border-slate-200/80 rounded-3xl p-6 text-left hover:border-purple-300 hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4">
+                <div className="space-y-4">
+                  <div className="relative h-40 rounded-2xl overflow-hidden border border-slate-200">
+                    <img src={story.img} alt={story.salon} className="w-full h-full object-cover" />
+                    <div className="absolute top-3 left-3 bg-purple-600 text-white font-extrabold text-[9px] uppercase px-2.5 py-1 rounded-full shadow-sm">
+                      {story.metric}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {[...Array(5)].map((_, i) => (
+                      <span key={i} className="text-sm">★</span>
+                    ))}
+                  </div>
+
+                  <p className="text-slate-600 text-xs italic font-medium leading-relaxed">
+                    "{story.quote}"
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-200/60 pt-4 flex items-center justify-between">
+                  <div>
+                    <h5 className="font-bold text-xs text-slate-800 font-display">{story.owner}</h5>
+                    <span className="text-[10px] text-slate-400 font-semibold">{story.salon} • {story.city}</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">Verified</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
