@@ -121,23 +121,8 @@ export class AppointmentsService {
         const staff = await this.prisma.staff.findFirst({
           where: { id: staffId, salonId },
         });
-        if (!staff || staff.isAvailable === false) {
+        if (!staff) {
           return false;
-        }
-
-        const qualCount = typeof this.prisma.staffService?.count === 'function'
-          ? await this.prisma.staffService.count({ where: { staffId } })
-          : 0;
-
-        if (qualCount > 0) {
-          const qualification = await this.prisma.staffService.findUnique({
-            where: {
-              staffId_serviceId: { staffId, serviceId },
-            },
-          });
-          if (!qualification) {
-            return false;
-          }
         }
 
         const overlappingAppointments = await this.prisma.appointment.findMany({
@@ -258,22 +243,6 @@ export class AppointmentsService {
       });
       if (!staff) {
         throw new NotFoundException('Staff member not found at this salon');
-      }
-      if (staff.isAvailable === false) {
-        throw new BadRequestException('Requested stylist is currently not available');
-      }
-
-      const qualCount = typeof tx.staffService?.count === 'function'
-        ? await tx.staffService.count({ where: { staffId: requestedStaffId } })
-        : 0;
-
-      if (qualCount > 0) {
-        const qual = await tx.staffService.findUnique({
-          where: { staffId_serviceId: { staffId: requestedStaffId, serviceId } },
-        });
-        if (!qual) {
-          throw new BadRequestException('Requested stylist is not qualified to perform this service');
-        }
       }
 
       const overlappingAppointments = await tx.appointment.findMany({
