@@ -82,13 +82,27 @@ function BookingContent() {
   const totalDuration = selectedServices.reduce((sum, s) => sum + (s.durationMins || 30), 0);
   const primaryService = selectedServices[0] || null;
 
+  const slotsCacheRef = React.useRef<Map<string, any>>(new Map());
+
   // Fetch available slots when service, date, or staff changes
   useEffect(() => {
     if (!primaryService || !selectedDate) return;
 
+    const cacheKey = `${salonId}_${primaryService.id}_${selectedDate}_${selectedStaff?.id || 'any'}`;
+
+    // Instant load from cache if available
+    if (slotsCacheRef.current.has(cacheKey)) {
+      const cached = slotsCacheRef.current.get(cacheKey);
+      setSlots(cached.availableSlots || []);
+      setDetailedSlots(cached.detailedSlots || []);
+      setQueueInfo(cached.queueInfo || null);
+      setSlotsLoading(false);
+    } else {
+      setSlotsLoading(true);
+    }
+
     const fetchAvailableSlots = async () => {
       try {
-        setSlotsLoading(true);
         setSelectedSlot(null);
         let url = `${apiUrl}/api/v1/public/appointments/slots?salonId=${salonId}&serviceId=${primaryService.id}&date=${selectedDate}&detailed=true`;
         if (selectedStaff) {
@@ -99,12 +113,15 @@ function BookingContent() {
         const data = await res.json();
         
         if (data.detailedSlots) {
+          slotsCacheRef.current.set(cacheKey, data);
           setSlots(data.availableSlots || []);
           setDetailedSlots(data.detailedSlots || []);
           setQueueInfo(data.queueInfo || null);
         } else if (Array.isArray(data)) {
+          const formatted = { availableSlots: data, detailedSlots: data.map((s: string) => ({ time: s, isAvailable: true })), queueInfo: null };
+          slotsCacheRef.current.set(cacheKey, formatted);
           setSlots(data);
-          setDetailedSlots(data.map((s: string) => ({ time: s, isAvailable: true })));
+          setDetailedSlots(formatted.detailedSlots);
         }
       } catch (err: any) {
         console.error(err);

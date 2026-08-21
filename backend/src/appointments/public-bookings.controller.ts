@@ -61,14 +61,26 @@ export class PublicBookingsController {
     @Query('staffId') staffId?: string,
     @Query('detailed') detailed?: string,
   ) {
-    const salon = await this.prisma.salon.findUnique({
-      where: { id: salonId },
-    });
-    if (!salon) throw new NotFoundException('Salon not found');
+    const [yr, mo, dy] = dateStr.split('-').map(Number);
+    const dayStartUtc = new Date(Date.UTC(yr, mo - 1, dy, 0, 0, 0) - 5.5 * 60 * 60 * 1000);
+    const dayEndUtc = new Date(Date.UTC(yr, mo - 1, dy, 23, 59, 59) - 5.5 * 60 * 60 * 1000);
 
-    const service = await this.prisma.service.findUnique({
-      where: { id: serviceId },
-    });
+    // Execute salon lookup, service lookup, and day appointments in a SINGLE parallel Promise.all query
+    const [salon, service, dayAppointments] = await Promise.all([
+      this.prisma.salon.findUnique({ where: { id: salonId } }),
+      this.prisma.service.findUnique({ where: { id: serviceId } }),
+      this.prisma.appointment.findMany({
+        where: {
+          salonId,
+          ...(staffId ? { staffId } : {}),
+          status: { in: ['CONFIRMED', 'PENDING'] },
+          startTime: { lt: dayEndUtc },
+          endTime: { gt: dayStartUtc },
+        },
+      }),
+    ]);
+
+    if (!salon) throw new NotFoundException('Salon not found');
     if (!service) throw new NotFoundException('Service not found');
 
     const openTimeStr = salon.openingTime || '10:00';
@@ -76,7 +88,6 @@ export class PublicBookingsController {
 
     const [openH, openM] = openTimeStr.split(':').map(Number);
     const [closeH, closeM] = closeTimeStr.split(':').map(Number);
-    const [yr, mo, dy] = dateStr.split('-').map(Number);
 
     // Calculate current IST time (UTC +5:30)
     const nowUtc = new Date();
@@ -96,16 +107,8 @@ export class PublicBookingsController {
       return `${displayHour}:${displayMin} ${ampm}`;
     };
 
-    const parseTime12Hour = (timeStr: string) => {
-      const [time, ampm] = timeStr.split(' ');
-      let [h, m] = time.split(':').map(Number);
-      if (ampm === 'PM' && h < 12) h += 12;
-      if (ampm === 'AM' && h === 12) h = 0;
-      return { hour: h, minute: m };
-    };
-
     const slots: string[] = [];
-    const intervalMinutes = 15; // 15-minute interval slots
+    const intervalMinutes = 15;
 
     let currentHour = openH;
     let currentMinute = openM;
@@ -125,39 +128,34 @@ export class PublicBookingsController {
       }
     }
 
-    // Filter slots by checking database availability
     const availableSlots: string[] = [];
     const detailedSlots: Array<{ time: string; isAvailable: boolean }> = [];
+    const serviceDurationMs = (service.durationMins || 30) * 60000;
 
+    // Evaluate all 40+ slots IN-MEMORY with 0ms latency
     for (const slotStr of slots) {
-      const slotTime = parseTime12Hour(slotStr);
-      const slotDate = new Date(Date.UTC(yr, mo - 1, dy, slotTime.hour, slotTime.minute) - 5.5 * 60 * 60 * 1000);
-      
-      const isFree = await this.appointmentsService.checkAvailability(
-        salonId,
-        serviceId,
-        slotDate,
-        staffId || undefined,
-      );
+      const [tStr, ampm] = slotStr.split(' ');
+      let [h, m] = tStr.split(':').map(Number);
+      if (ampm === 'PM' && h < 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
 
+      const slotStartTime = new Date(Date.UTC(yr, mo - 1, dy, h, m) - 5.5 * 60 * 60 * 1000);
+      const slotEndTime = new Date(slotStartTime.getTime() + serviceDurationMs);
+
+      const hasOverlap = dayAppointments.some((appt) => {
+        const apptStart = new Date(appt.startTime);
+        const apptEnd = new Date(appt.endTime);
+        return apptStart < slotEndTime && apptEnd > slotStartTime;
+      });
+
+      const isFree = !hasOverlap;
       detailedSlots.push({ time: slotStr, isAvailable: isFree });
       if (isFree) {
         availableSlots.push(slotStr);
       }
     }
 
-    // Calculate queue waiting metrics for today
-    const activeTodayCount = await this.prisma.appointment.count({
-      where: {
-        salonId,
-        status: { in: ['CONFIRMED', 'PENDING'] },
-        startTime: {
-          gte: new Date(Date.UTC(yr, mo - 1, dy, 0, 0, 0) - 5.5 * 60 * 60 * 1000),
-          lte: new Date(Date.UTC(yr, mo - 1, dy, 23, 59, 59) - 5.5 * 60 * 60 * 1000),
-        },
-      },
-    });
-
+    const activeTodayCount = dayAppointments.length;
     const estimatedWaitMins = activeTodayCount * 15;
 
     if (detailed === 'true') {
