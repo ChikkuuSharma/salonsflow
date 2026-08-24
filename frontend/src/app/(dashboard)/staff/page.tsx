@@ -659,31 +659,62 @@ export default function StaffPage() {
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => setQualifiedServiceIds(serviceList.map(s => s.id))}
-                        className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg transition-all shadow-2xs"
+                        onClick={() => {
+                          if (qualifiedServiceIds.length === serviceList.length) {
+                            setQualifiedServiceIds([]);
+                          } else {
+                            setQualifiedServiceIds(serviceList.map(s => s.id));
+                          }
+                        }}
+                        className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1 rounded-lg transition-all shadow-2xs cursor-pointer"
                       >
-                        Select All ✨
+                        {qualifiedServiceIds.length === serviceList.length ? "Deselect All" : "Select All Services ✨"}
                       </button>
-                      {qualifiedServiceIds.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setQualifiedServiceIds([])}
-                          className="text-[11px] font-bold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded-lg transition-all"
-                        >
-                          Clear
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
-                <div className="max-h-[250px] overflow-y-auto border border-gray-100 rounded-xl divide-y divide-gray-50 p-2">
+
+                <div className="max-h-[260px] overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100 p-1.5 bg-gray-50/50">
+                  {/* Master Select All Row */}
+                  {serviceList.length > 0 && (
+                    <div
+                      onClick={() => {
+                        if (qualifiedServiceIds.length === serviceList.length) {
+                          setQualifiedServiceIds([]);
+                        } else {
+                          setQualifiedServiceIds(serviceList.map(s => s.id));
+                        }
+                      }}
+                      className="flex items-center justify-between py-2.5 px-3 mb-1 bg-purple-50/80 hover:bg-purple-100/80 border border-purple-200/80 rounded-lg cursor-pointer transition-all"
+                    >
+                      <span className="text-xs font-black text-purple-900 flex items-center gap-1.5">
+                        <Check className="h-4 w-4 text-purple-600 stroke-[3]" />
+                        Select All Services ({serviceList.length})
+                      </span>
+                      <div className={`h-5 w-5 rounded-md border flex items-center justify-center transition-all ${
+                        qualifiedServiceIds.length === serviceList.length && serviceList.length > 0
+                          ? "bg-purple-600 border-purple-600 text-white"
+                          : qualifiedServiceIds.length > 0
+                          ? "bg-purple-200 border-purple-400 text-purple-800"
+                          : "border-purple-300 bg-white"
+                      }`}>
+                        {qualifiedServiceIds.length === serviceList.length && serviceList.length > 0 && (
+                          <Check className="h-3.5 w-3.5 stroke-[3]" />
+                        )}
+                        {qualifiedServiceIds.length > 0 && qualifiedServiceIds.length < serviceList.length && (
+                          <span className="h-2 w-2 bg-purple-700 rounded-xs"></span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {serviceList.map((service) => {
                     const isChecked = qualifiedServiceIds.includes(service.id);
                     return (
                       <div 
                         key={service.id} 
                         onClick={() => handleToggleQualificationCheckbox(service.id)}
-                        className="flex items-center justify-between py-2.5 px-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                        className="flex items-center justify-between py-2.5 px-3 hover:bg-white bg-white/60 rounded-lg cursor-pointer transition-colors"
                       >
                         <span className="text-sm font-semibold text-gray-700">{service.name}</span>
                         <div className={`h-5 w-5 rounded-md border flex items-center justify-center transition-all ${
