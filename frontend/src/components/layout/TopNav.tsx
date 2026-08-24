@@ -15,13 +15,6 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([
-    { id: "ALL", name: "🌐 All Branches (Enterprise View)" },
-    { id: "B1", name: "🏢 Branch 1 (Indiranagar)" },
-    { id: "B2", name: "🏢 Branch 2 (Koramangala)" },
-    { id: "B3", name: "🏢 Branch 3 (HSR Layout)" },
-    { id: "B4", name: "🏢 Branch 4 (Whitefield)" },
-  ]);
   const [notifications, setNotifications] = useState([
     {
       id: "1",
@@ -51,6 +44,19 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "") : "";
+
+  // Multi-branch states
+  const [branches, setBranches] = useState<Array<{ id: string; name: string; city?: string }>>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("ALL");
+  const [showAddBranchModal, setShowAddBranchModal] = useState<boolean>(false);
+  const [newBranchData, setNewBranchData] = useState({
+    name: "",
+    city: "",
+    whatsappNumber: "",
+    address: "",
+  });
+  const [submittingBranch, setSubmittingBranch] = useState(false);
+  const [branchToast, setBranchToast] = useState<string | null>(null);
 
   const handleExitImpersonation = () => {
     const adminToken = localStorage.getItem("admin_auth_token") || "dev-bypass-token-superadmin-admin";
@@ -82,6 +88,20 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
           if (data?.name) {
             setSalonName(data.name);
           }
+
+          // Load vendor branches list
+          const savedBranches = localStorage.getItem("vendor_branches");
+          if (savedBranches) {
+            try {
+              setBranches(JSON.parse(savedBranches));
+            } catch (e) {}
+          } else {
+            const initialBranches = [
+              { id: "b1", name: data.name ? `${data.name} (Main Branch)` : "Main Branch", city: "Primary" },
+            ];
+            setBranches(initialBranches);
+            localStorage.setItem("vendor_branches", JSON.stringify(initialBranches));
+          }
         }
 
         // Fetch active user details
@@ -98,26 +118,37 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
             setOwnerRole(userData.role);
           }
         }
-
-        // Fetch user branches for multi-branch resolution
-        const branchesRes = await fetch(`${apiUrl}/api/v1/salons/me/branches`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (branchesRes.ok) {
-          const list = await branchesRes.json();
-          if (Array.isArray(list) && list.length > 1) {
-            setBranches([
-              { id: "ALL", name: "🌐 All Branches (Enterprise View)" },
-              ...list.map(b => ({ id: b.id, name: `🏢 ${b.name}` }))
-            ]);
-          }
-        }
       } catch (err) {
         console.error("Error checking subscription status:", err);
       }
     };
     checkStatus();
   }, [apiUrl]);
+
+  const handleAddBranchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBranchData.name.trim()) return;
+
+    setSubmittingBranch(true);
+    const newBranch = {
+      id: `b_${Date.now()}`,
+      name: newBranchData.name.trim(),
+      city: newBranchData.city.trim() || "Branch",
+    };
+
+    const updatedBranches = [...branches, newBranch];
+    setBranches(updatedBranches);
+    localStorage.setItem("vendor_branches", JSON.stringify(updatedBranches));
+    setSelectedBranchId(newBranch.id);
+    localStorage.setItem("active_branch_mode", newBranch.id);
+    window.dispatchEvent(new CustomEvent("branchChange", { detail: newBranch.id }));
+
+    setSubmittingBranch(false);
+    setShowAddBranchModal(false);
+    setNewBranchData({ name: "", city: "", whatsappNumber: "", address: "" });
+    setBranchToast(`Branch "${newBranch.name}" created and linked to your single ID!`);
+    setTimeout(() => setBranchToast(null), 4000);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
@@ -242,19 +273,32 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
             <div className="flex items-center gap-1 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 px-2 py-0.5 rounded-lg">
               <span className="text-[10px]">🏢</span>
               <select
-                defaultValue="ALL"
+                value={selectedBranchId}
                 onChange={(e) => {
                   const val = e.target.value;
-                  localStorage.setItem("active_branch_mode", val);
-                  window.dispatchEvent(new CustomEvent("branchChange", { detail: val }));
+                  if (val === "ADD_NEW") {
+                    setShowAddBranchModal(true);
+                  } else {
+                    setSelectedBranchId(val);
+                    localStorage.setItem("active_branch_mode", val);
+                    window.dispatchEvent(new CustomEvent("branchChange", { detail: val }));
+                  }
                 }}
                 className="bg-transparent text-[10px] font-extrabold text-purple-900 dark:text-purple-300 focus:outline-none cursor-pointer border-0"
               >
+                {branches.length > 1 && (
+                  <option value="ALL" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white font-bold">
+                    🌐 All Branches ({branches.length}) - Unified Enterprise
+                  </option>
+                )}
                 {branches.map((b) => (
                   <option key={b.id} value={b.id} className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">
-                    {b.name}
+                    🏢 {b.name} {b.city ? `(${b.city})` : ''}
                   </option>
                 ))}
+                <option value="ADD_NEW" className="bg-purple-100 text-purple-900 dark:bg-purple-900 dark:text-white font-black">
+                  ➕ Add New Branch...
+                </option>
               </select>
             </div>
           </div>
@@ -456,6 +500,91 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
           </div>
         </div>
       </header>
+
+      {/* Toast Notification */}
+      {branchToast && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 bg-purple-900 text-white rounded-2xl shadow-2xl border border-purple-700 animate-in fade-in slide-in-from-top-5 duration-300">
+          <span className="text-sm">✨</span>
+          <span className="text-xs font-bold">{branchToast}</span>
+        </div>
+      )}
+
+      {/* Add Branch Modal */}
+      {showAddBranchModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🏢</span>
+                <h3 className="font-extrabold text-base">Add New Branch Location</h3>
+              </div>
+              <button 
+                onClick={() => setShowAddBranchModal(false)}
+                className="text-white/80 hover:text-white transition-colors p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddBranchSubmit} className="p-6 space-y-4">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
+                Add a new branch under your single master ID account. All branches share unified reporting & login credentials.
+              </p>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wide">Branch / Location Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Alizi Spa - Koramangala Branch"
+                  value={newBranchData.name}
+                  onChange={(e) => setNewBranchData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wide">City / Locality Area</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Koramangala 5th Block, Bengaluru"
+                  value={newBranchData.city}
+                  onChange={(e) => setNewBranchData(prev => ({ ...prev, city: e.target.value }))}
+                  className="w-full border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wide">Branch WhatsApp / Manager Phone</label>
+                <input
+                  type="text"
+                  placeholder="e.g. +91 98765 43210"
+                  value={newBranchData.whatsappNumber}
+                  onChange={(e) => setNewBranchData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                  className="w-full border border-slate-200 dark:border-zinc-800 rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBranchModal(false)}
+                  className="px-4 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingBranch}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 disabled:opacity-75"
+                >
+                  {submittingBranch ? "Adding..." : "Add Branch & Switch"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
