@@ -185,6 +185,57 @@ export default function CustomersPage() {
     }
   };
 
+  // Filter panel states
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [genderFilter, setGenderFilter] = useState<string>("ALL");
+  const [sourceFilter, setSourceFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<string>("LAST_VISIT_DESC");
+
+  const filteredCustomers = customers
+    .filter((c) => {
+      if (genderFilter !== "ALL" && (c.gender || "UNSPECIFIED").toUpperCase() !== genderFilter) return false;
+      if (sourceFilter !== "ALL" && (c.source || "WHATSAPP") !== sourceFilter) return false;
+      if (statusFilter !== "ALL") {
+        const isVIP = c.totalVisits >= 5;
+        const isActive = c.totalVisits >= 2 && c.totalVisits < 5;
+        const isNew = c.totalVisits === 1;
+        const isLead = c.totalVisits === 0;
+        if (statusFilter === "VIP" && !isVIP) return false;
+        if (statusFilter === "ACTIVE" && !isActive) return false;
+        if (statusFilter === "NEW" && !isNew) return false;
+        if (statusFilter === "LEAD" && !isLead) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "LAST_VISIT_DESC") {
+        const dA = a.lastVisit ? new Date(a.lastVisit).getTime() : 0;
+        const dB = b.lastVisit ? new Date(b.lastVisit).getTime() : 0;
+        return dB - dA;
+      }
+      if (sortBy === "VISITS_DESC") {
+        return b.totalVisits - a.totalVisits;
+      }
+      if (sortBy === "NAME_ASC") {
+        return a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
+
+  const activeFilterCount = [
+    genderFilter !== "ALL",
+    sourceFilter !== "ALL",
+    statusFilter !== "ALL",
+  ].filter(Boolean).length;
+
+  const resetFilters = () => {
+    setGenderFilter("ALL");
+    setSourceFilter("ALL");
+    setStatusFilter("ALL");
+    setSortBy("LAST_VISIT_DESC");
+  };
+
   return (
     <div className="space-y-6 text-slate-800">
       {/* Toast Alert */}
@@ -211,7 +262,7 @@ export default function CustomersPage() {
       </div>
 
       <Card className="bg-white border-slate-200 shadow-sm overflow-hidden rounded-3xl">
-        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-55/40 bg-slate-50">
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50 relative">
           <div className="relative flex-1 w-full sm:max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input 
@@ -222,10 +273,171 @@ export default function CustomersPage() {
               className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/25 transition-all duration-200 font-semibold"
             />
           </div>
-          <button className="w-full sm:w-auto flex items-center justify-center gap-2 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-all bg-white font-semibold cursor-pointer">
-            <Filter className="h-4 w-4 text-slate-400" /> Filter
-          </button>
+          
+          <div className="relative w-full sm:w-auto">
+            <button 
+              onClick={() => setShowFilterPanel(!showFilterPanel)}
+              className={`w-full sm:w-auto flex items-center justify-center gap-2 border rounded-xl px-4 py-2 text-sm font-semibold transition-all cursor-pointer ${
+                activeFilterCount > 0
+                  ? "border-purple-500 bg-purple-50 text-purple-700 ring-2 ring-purple-500/20"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <Filter className={`h-4 w-4 ${activeFilterCount > 0 ? "text-purple-600" : "text-slate-400"}`} /> 
+              <span>Filter</span>
+              {activeFilterCount > 0 && (
+                <span className="bg-purple-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+
+            {/* Filter Popover Panel */}
+            {showFilterPanel && (
+              <div className="absolute right-0 top-12 z-50 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 space-y-4 text-left animate-in fade-in duration-200">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <Filter className="h-3.5 w-3.5 text-purple-600" /> Filter Database
+                  </h4>
+                  <button 
+                    onClick={() => setShowFilterPanel(false)}
+                    className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Filter Group: Gender */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Gender</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {["ALL", "MALE", "FEMALE"].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setGenderFilter(g)}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                          genderFilter === g
+                            ? "bg-purple-600 text-white shadow-xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {g === "ALL" ? "All" : g === "MALE" ? "Male" : "Female"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filter Group: Source */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Channel Source</label>
+                  <select
+                    value={sourceFilter}
+                    onChange={(e) => setSourceFilter(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="ALL">All Channels</option>
+                    <option value="WHATSAPP">WhatsApp AI</option>
+                    <option value="WALK_IN">Walk-In Customer</option>
+                    <option value="PHONE">Phone Booking</option>
+                    <option value="REFERRAL">Friend Referral</option>
+                    <option value="INSTAGRAM">Instagram / Social</option>
+                    <option value="GOOGLE">Google Maps / Review</option>
+                  </select>
+                </div>
+
+                {/* Filter Group: Loyalty Status */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Loyalty Tier</label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { id: "ALL", label: "All Tiers" },
+                      { id: "VIP", label: "⭐ VIP (5+ Visits)" },
+                      { id: "ACTIVE", label: "🟢 Active (2-4)" },
+                      { id: "NEW", label: "🔹 New (1 Visit)" },
+                    ].map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setStatusFilter(st.id)}
+                        className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-left truncate ${
+                          statusFilter === st.id
+                            ? "bg-purple-600 text-white shadow-xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filter Group: Sort By */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Sort By</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="LAST_VISIT_DESC">Recent Visit (Newest First)</option>
+                    <option value="VISITS_DESC">Total Visits (Highest First)</option>
+                    <option value="NAME_ASC">Client Name (A - Z)</option>
+                  </select>
+                </div>
+
+                {/* Filter Footer */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="text-xs text-slate-500 hover:text-slate-800 font-semibold underline"
+                  >
+                    Reset All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowFilterPanel(false)}
+                    className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Active Filter Pills Bar */}
+        {activeFilterCount > 0 && (
+          <div className="px-4 py-2.5 bg-purple-50/60 border-b border-purple-100 flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-bold uppercase text-purple-700 tracking-wider">Active Filters:</span>
+            {genderFilter !== "ALL" && (
+              <span className="inline-flex items-center gap-1 bg-white border border-purple-200 text-purple-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs">
+                Gender: {genderFilter}
+                <button onClick={() => setGenderFilter("ALL")} className="hover:text-purple-900 ml-0.5"><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            {sourceFilter !== "ALL" && (
+              <span className="inline-flex items-center gap-1 bg-white border border-purple-200 text-purple-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs">
+                Source: {sourceFilter.replace('_', ' ')}
+                <button onClick={() => setSourceFilter("ALL")} className="hover:text-purple-900 ml-0.5"><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            {statusFilter !== "ALL" && (
+              <span className="inline-flex items-center gap-1 bg-white border border-purple-200 text-purple-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-xs">
+                Status: {statusFilter}
+                <button onClick={() => setStatusFilter("ALL")} className="hover:text-purple-900 ml-0.5"><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            <button
+              onClick={resetFilters}
+              className="text-[10px] font-extrabold uppercase text-purple-600 hover:text-purple-800 underline ml-auto"
+            >
+              Clear All
+            </button>
+          </div>
+        )}
         
         <CardContent className="p-0 overflow-x-auto">
           {error && (
@@ -253,7 +465,7 @@ export default function CustomersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
-                {customers.map((customer) => {
+                {filteredCustomers.map((customer) => {
                   const isVIP = customer.totalVisits >= 5;
                   const status = isVIP ? 'VIP' : 'Active';
                   return (

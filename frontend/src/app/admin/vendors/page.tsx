@@ -261,13 +261,24 @@ export default function AdminVendorsPage() {
     window.location.href = "/dashboard";
   };
 
+  const [filterPlan, setFilterPlan] = useState<string>("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [showVendorFilter, setShowVendorFilter] = useState<boolean>(false);
+
   // Filter list
-  const filteredSalons = salons.filter(
-    (salon) =>
+  const filteredSalons = salons.filter((salon) => {
+    const matchesSearch =
       salon.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       salon.whatsappNumber.includes(searchQuery) ||
-      (salon.ownerName && salon.ownerName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+      (salon.ownerName && salon.ownerName.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesPlan = filterPlan === "ALL" || salon.subscription.plan === filterPlan;
+    const matchesStatus = filterStatus === "ALL" || salon.subscription.status === filterStatus;
+
+    return matchesSearch && matchesPlan && matchesStatus;
+  });
+
+  const activeVendorFilterCount = (filterPlan !== "ALL" ? 1 : 0) + (filterStatus !== "ALL" ? 1 : 0);
 
   // Total aggregator counters
   const totalSalons = salons.length;
@@ -369,15 +380,109 @@ export default function AdminVendorsPage() {
       <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
         <CardHeader className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50">
           <CardTitle className="text-sm font-bold text-slate-800">Registered Salon Entities</CardTitle>
-          <div className="relative max-w-sm w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search name, whatsapp, owner..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-10 pr-4 text-xs font-medium placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-colors text-slate-800"
-            />
+          <div className="flex flex-col sm:flex-row items-center gap-3 max-w-md w-full relative">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search name, whatsapp, owner..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-10 pr-4 text-xs font-medium placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-colors text-slate-800"
+              />
+            </div>
+            
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowVendorFilter(!showVendorFilter)}
+                className={`flex items-center justify-center gap-2 border rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                  activeVendorFilterCount > 0
+                    ? "border-purple-500 bg-purple-50 text-purple-700 ring-2 ring-purple-500/20"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <Sliders className={`h-3.5 w-3.5 ${activeVendorFilterCount > 0 ? "text-purple-600" : "text-slate-400"}`} />
+                <span>Filter</span>
+                {activeVendorFilterCount > 0 && (
+                  <span className="bg-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                    {activeVendorFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Vendor Filter Dropdown Popover */}
+              {showVendorFilter && (
+                <div className="absolute right-0 top-11 z-50 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 space-y-4 text-left animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                      <Sliders className="h-3.5 w-3.5 text-purple-600" /> Filter Partners
+                    </h4>
+                    <button 
+                      onClick={() => setShowVendorFilter(false)}
+                      className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Plan Filter */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subscription Plan</label>
+                    <div className="grid grid-cols-4 gap-1">
+                      {["ALL", "FREE", "BASIC", "PRO"].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setFilterPlan(p)}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                            filterPlan === p
+                              ? "bg-purple-600 text-white shadow-xs"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Status Filter */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Partition Status</label>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="ACTIVE">ACTIVE (Subscribed)</option>
+                      <option value="TRIAL">TRIAL (Free Period)</option>
+                      <option value="GRACE_PERIOD">GRACE_PERIOD (Renewal Due)</option>
+                      <option value="SUSPENDED">SUSPENDED (Disabled)</option>
+                    </select>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => { setFilterPlan("ALL"); setFilterStatus("ALL"); }}
+                      className="text-xs text-slate-500 hover:text-slate-800 font-semibold underline"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowVendorFilter(false)}
+                      className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all shadow-sm"
+                    >
+                      Apply Filters
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
         
