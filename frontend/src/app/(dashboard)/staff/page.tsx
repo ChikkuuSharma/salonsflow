@@ -651,7 +651,31 @@ export default function StaffPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Select Qualified Services</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Select Qualified Services ({qualifiedServiceIds.length}/{serviceList.length})
+                  </p>
+                  {serviceList.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setQualifiedServiceIds(serviceList.map(s => s.id))}
+                        className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg transition-all shadow-2xs"
+                      >
+                        Select All ✨
+                      </button>
+                      {qualifiedServiceIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setQualifiedServiceIds([])}
+                          className="text-[11px] font-bold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded-lg transition-all"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="max-h-[250px] overflow-y-auto border border-gray-100 rounded-xl divide-y divide-gray-50 p-2">
                   {serviceList.map((service) => {
                     const isChecked = qualifiedServiceIds.includes(service.id);
