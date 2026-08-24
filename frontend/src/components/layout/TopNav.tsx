@@ -15,6 +15,13 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([
+    { id: "ALL", name: "🌐 All Branches (Enterprise View)" },
+    { id: "B1", name: "🏢 Branch 1 (Indiranagar)" },
+    { id: "B2", name: "🏢 Branch 2 (Koramangala)" },
+    { id: "B3", name: "🏢 Branch 3 (HSR Layout)" },
+    { id: "B4", name: "🏢 Branch 4 (Whitefield)" },
+  ]);
   const [notifications, setNotifications] = useState([
     {
       id: "1",
@@ -89,6 +96,20 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
           }
           if (userData?.role) {
             setOwnerRole(userData.role);
+          }
+        }
+
+        // Fetch user branches for multi-branch resolution
+        const branchesRes = await fetch(`${apiUrl}/api/v1/salons/me/branches`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (branchesRes.ok) {
+          const list = await branchesRes.json();
+          if (Array.isArray(list) && list.length > 1) {
+            setBranches([
+              { id: "ALL", name: "🌐 All Branches (Enterprise View)" },
+              ...list.map(b => ({ id: b.id, name: `🏢 ${b.name}` }))
+            ]);
           }
         }
       } catch (err) {
@@ -229,11 +250,11 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
                 }}
                 className="bg-transparent text-[10px] font-extrabold text-purple-900 dark:text-purple-300 focus:outline-none cursor-pointer border-0"
               >
-                <option value="ALL" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🌐 All Branches (Enterprise View)</option>
-                <option value="B1" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 1 (Indiranagar)</option>
-                <option value="B2" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 2 (Koramangala)</option>
-                <option value="B3" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 3 (HSR Layout)</option>
-                <option value="B4" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 4 (Whitefield)</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id} className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">
+                    {b.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

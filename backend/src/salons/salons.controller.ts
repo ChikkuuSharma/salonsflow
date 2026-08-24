@@ -41,6 +41,38 @@ export class SalonsController {
     return dbUser;
   }
 
+  @Get('me/branches')
+  async getMeBranches(@UserId() userId: string, @SalonId() currentSalonId: string) {
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!dbUser) {
+      const currentSalon = await this.prisma.salon.findUnique({ where: { id: currentSalonId } });
+      return [{ id: currentSalonId, name: currentSalon?.name || 'Main Branch', isCurrent: true }];
+    }
+
+    const matchingUsers = await this.prisma.user.findMany({
+      where: { email: dbUser.email },
+      include: { salon: true },
+    });
+
+    if (matchingUsers.length === 0) {
+      const currentSalon = await this.prisma.salon.findUnique({ where: { id: currentSalonId } });
+      return [{ id: currentSalonId, name: currentSalon?.name || 'Main Branch', isCurrent: true }];
+    }
+
+    const branches = matchingUsers.map(u => ({
+      id: u.salon.id,
+      name: u.salon.name,
+      address: u.salon.address || '',
+      role: u.role,
+      isCurrent: u.salon.id === currentSalonId,
+    }));
+
+    return branches;
+  }
+
   @Put('me')
   async updateMe(
     @SalonId() salonId: string,
