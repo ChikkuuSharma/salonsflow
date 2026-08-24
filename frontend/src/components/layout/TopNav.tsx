@@ -210,12 +210,33 @@ export function TopNav({ onMenuClick }: { onMenuClick?: () => void }) {
           </button>
         )}
         <div className="hidden md:flex flex-col">
-          <h1 className="text-sm lg:text-base font-bold text-slate-900 dark:text-zinc-100 tracking-tight leading-tight">
-            Welcome back, <span className="text-purple-600 dark:text-purple-400 font-extrabold">{ownerName}</span>!
+          <h1 className="text-sm lg:text-base font-bold text-slate-900 dark:text-zinc-100 tracking-tight leading-tight flex items-center gap-2">
+            <span>Welcome back, <span className="text-purple-600 dark:text-purple-400 font-extrabold">{ownerName}</span>!</span>
           </h1>
-          <p className="text-[10px] lg:text-xs text-slate-500 dark:text-zinc-400 font-semibold mt-0.5">
-            Here's what's happening at <span className="text-purple-600 dark:text-purple-400 font-bold">{salonName}</span> today.
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-[10px] lg:text-xs text-slate-500 dark:text-zinc-400 font-semibold">
+              <span className="text-purple-600 dark:text-purple-400 font-bold">{salonName}</span>
+            </p>
+            {/* Multi-Branch Selector */}
+            <div className="flex items-center gap-1 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 px-2 py-0.5 rounded-lg">
+              <span className="text-[10px]">🏢</span>
+              <select
+                defaultValue="ALL"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  localStorage.setItem("active_branch_mode", val);
+                  window.dispatchEvent(new CustomEvent("branchChange", { detail: val }));
+                }}
+                className="bg-transparent text-[10px] font-extrabold text-purple-900 dark:text-purple-300 focus:outline-none cursor-pointer border-0"
+              >
+                <option value="ALL" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🌐 All Branches (Enterprise View)</option>
+                <option value="B1" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 1 (Indiranagar)</option>
+                <option value="B2" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 2 (Koramangala)</option>
+                <option value="B3" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 3 (HSR Layout)</option>
+                <option value="B4" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-white">🏢 Branch 4 (Whitefield)</option>
+              </select>
+            </div>
+          </div>
         </div>
         
         <div className="flex-1 max-w-sm flex items-center gap-3 ml-auto">
