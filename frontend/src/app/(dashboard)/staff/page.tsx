@@ -351,16 +351,47 @@ export default function StaffPage() {
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Qualified Services</p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Qualified Skills</p>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        {staff.staffServices?.length || 0} mapped
+                      </span>
+                    </div>
+
+                    <div className="pt-1">
                       {staff.staffServices && staff.staffServices.length > 0 ? (
-                        staff.staffServices.map((ss) => (
-                          <span key={ss.serviceId} className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg text-[10px] font-bold">
-                            {ss.service.name}
-                          </span>
-                        ))
+                        serviceList.length > 0 && staff.staffServices.length >= serviceList.length ? (
+                          <div className="flex items-center gap-2 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200/80 px-3 py-2 rounded-xl shadow-2xs">
+                            <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse"></span>
+                            <span className="text-xs font-bold text-purple-900">✨ All Catalog Services ({staff.staffServices.length})</span>
+                          </div>
+                        ) : staff.staffServices.length > 3 ? (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {staff.staffServices.slice(0, 3).map((ss) => (
+                              <span key={ss.serviceId} className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200/60">
+                                {ss.service.name}
+                              </span>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenQualifications(staff)}
+                              className="bg-purple-50 text-purple-700 border border-purple-200/80 px-2 py-0.5 rounded-lg text-[10px] font-extrabold hover:bg-purple-100 transition-all cursor-pointer"
+                              title="Click to view all mapped services"
+                            >
+                              +{staff.staffServices.length - 3} more
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {staff.staffServices.map((ss) => (
+                              <span key={ss.serviceId} className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200/60">
+                                {ss.service.name}
+                              </span>
+                            ))}
+                          </div>
+                        )
                       ) : (
-                        <span className="text-gray-400 text-xs font-medium italic">No qualified services mapped.</span>
+                        <span className="text-gray-400 text-xs font-medium italic block py-1">No qualified skills mapped.</span>
                       )}
                     </div>
                   </div>
