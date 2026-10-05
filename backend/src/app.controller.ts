@@ -60,14 +60,71 @@ export class AppController {
     });
   }
 
+  private publicSalonsCache: { data: any[]; expiresAt: number } | null = null;
+
   @Get('api/v1/public/salons')
   async getPublicSalons(
     @Query('q') q?: string,
     @Query('city') city?: string,
     @Query('category') category?: string,
   ) {
+    const isDefaultQuery =
+      (!q || !q.trim()) &&
+      (!city || city === 'ALL' || !city.trim()) &&
+      (!category || category === 'ALL' || !category.trim());
+
+    const now = Date.now();
+    if (isDefaultQuery && this.publicSalonsCache && this.publicSalonsCache.expiresAt > now) {
+      return this.publicSalonsCache.data;
+    }
+
+    const whereClause: any = {};
+    const andConditions: any[] = [];
+
+    if (city && city.trim() !== '' && city !== 'ALL') {
+      const c = city.trim();
+      andConditions.push({
+        OR: [
+          { ownerCity: { contains: c, mode: 'insensitive' } },
+          { address: { contains: c, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (category && category.trim() !== '' && category !== 'ALL') {
+      andConditions.push({
+        businessCategory: category.trim(),
+      });
+    }
+
+    if (q && q.trim() !== '') {
+      const queryStr = q.trim();
+      andConditions.push({
+        OR: [
+          { name: { contains: queryStr, mode: 'insensitive' } },
+          { address: { contains: queryStr, mode: 'insensitive' } },
+          { ownerCity: { contains: queryStr, mode: 'insensitive' } },
+          { services: { some: { name: { contains: queryStr, mode: 'insensitive' } } } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      whereClause.AND = andConditions;
+    }
+
     let salons = await this.prisma.salon.findMany({
-      include: {
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        whatsappNumber: true,
+        address: true,
+        ownerCity: true,
+        businessCategory: true,
+        homeBookingFee: true,
+        openingTime: true,
+        closingTime: true,
         services: {
           where: { isActive: true },
           select: {
@@ -79,127 +136,100 @@ export class AppController {
           },
           orderBy: { price: 'asc' },
         },
-        staff: {
-          where: { isAvailable: true },
-          select: { id: true, name: true },
+        _count: {
+          select: {
+            staff: { where: { isAvailable: true } },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const hasDemo = salons.some(
-      (s) =>
-        s.name === 'Demo Styling Studio' ||
-        s.whatsappNumber === '+91 99999 88888',
-    );
-
-    if (!hasDemo) {
+    if (salons.length === 0 && isDefaultQuery) {
       try {
-        const created = await this.prisma.salon.create({
-          data: {
-            name: 'Demo Styling Studio',
-            whatsappNumber: '+91 99999 88888',
-            address: '101, Luxury Arcade, Bandra West, Mumbai',
-            ownerCity: 'Mumbai',
-            businessCategory: 'UNISEX_SALON',
-            homeBookingFee: 150.00,
-            isProfileComplete: true,
-            openingTime: '09:00',
-            closingTime: '21:00',
-            aiPrompt: 'Welcome to Demo Styling Studio!',
-          },
-        });
+        const totalCount = await this.prisma.salon.count();
+        if (totalCount === 0) {
+          const created = await this.prisma.salon.create({
+            data: {
+              name: 'Demo Styling Studio',
+              whatsappNumber: '+91 99999 88888',
+              address: '101, Luxury Arcade, Bandra West, Mumbai',
+              ownerCity: 'Mumbai',
+              businessCategory: 'UNISEX_SALON',
+              homeBookingFee: 150.00,
+              isProfileComplete: true,
+              openingTime: '09:00',
+              closingTime: '21:00',
+              aiPrompt: 'Welcome to Demo Styling Studio!',
+            },
+          });
 
-        await this.prisma.staff.createMany({
-          data: [
-            {
-              salonId: created.id,
-              name: 'Rahul (Master Stylist)',
-              isAvailable: true,
-            },
-            {
-              salonId: created.id,
-              name: 'Priya (Nail & Skin Expert)',
-              isAvailable: true,
-            },
-          ],
-        });
+          await this.prisma.staff.createMany({
+            data: [
+              { salonId: created.id, name: 'Rahul (Master Stylist)', isAvailable: true },
+              { salonId: created.id, name: 'Priya (Nail & Skin Expert)', isAvailable: true },
+            ],
+          });
 
-        await this.prisma.service.createMany({
-          data: [
-            {
-              salonId: created.id,
-              name: 'Classic Haircut & Styling',
-              price: 450,
-              durationMins: 45,
-              gender: 'UNISEX',
-              isActive: true,
-            },
-            {
-              salonId: created.id,
-              name: 'Royal Hair Spa & Deep Conditioning',
-              price: 1200,
-              durationMins: 60,
-              gender: 'UNISEX',
-              isActive: true,
-            },
-            {
-              salonId: created.id,
-              name: 'Beard Trimming & Styling',
-              price: 250,
-              durationMins: 30,
-              gender: 'MEN',
-              isActive: true,
-            },
-            {
-              salonId: created.id,
-              name: 'Gel Polish & Nail Art',
-              price: 799,
-              durationMins: 45,
-              gender: 'WOMEN',
-              isActive: true,
-            },
-            {
-              salonId: created.id,
-              name: 'Glitz Facial & Skin Glow',
-              price: 1800,
-              durationMins: 75,
-              gender: 'UNISEX',
-              isActive: true,
-            },
-          ],
-        });
+          await this.prisma.service.createMany({
+            data: [
+              { salonId: created.id, name: 'Classic Haircut & Styling', price: 450, durationMins: 45, gender: 'UNISEX', isActive: true },
+              { salonId: created.id, name: 'Royal Hair Spa & Deep Conditioning', price: 1200, durationMins: 60, gender: 'UNISEX', isActive: true },
+              { salonId: created.id, name: 'Beard Trimming & Styling', price: 250, durationMins: 30, gender: 'MEN', isActive: true },
+              { salonId: created.id, name: 'Gel Polish & Nail Art', price: 799, durationMins: 45, gender: 'WOMEN', isActive: true },
+              { salonId: created.id, name: 'Glitz Facial & Skin Glow', price: 1800, durationMins: 75, gender: 'UNISEX', isActive: true },
+            ],
+          });
 
-        salons = await this.prisma.salon.findMany({
-          include: {
-            services: {
-              where: { isActive: true },
-              select: {
-                id: true,
-                name: true,
-                price: true,
-                durationMins: true,
-                gender: true,
+          salons = await this.prisma.salon.findMany({
+            where: whereClause,
+            select: {
+              id: true,
+              name: true,
+              whatsappNumber: true,
+              address: true,
+              ownerCity: true,
+              businessCategory: true,
+              homeBookingFee: true,
+              openingTime: true,
+              closingTime: true,
+              services: {
+                where: { isActive: true },
+                select: { id: true, name: true, price: true, durationMins: true, gender: true },
+                orderBy: { price: 'asc' },
               },
-              orderBy: { price: 'asc' },
+              _count: {
+                select: { staff: { where: { isAvailable: true } } },
+              },
             },
-            staff: {
-              where: { isAvailable: true },
-              select: { id: true, name: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        });
+            orderBy: { createdAt: 'desc' },
+          });
+        }
       } catch (err) {
         // Fallback gracefully
       }
     }
 
-    // Format & calculate min price and counts
-    let result = salons.map((s) => {
+    let demoCount = 0;
+    const result: any[] = [];
+
+    for (const s of salons) {
+      const isDemo =
+        s.name.toLowerCase().includes('demo styling studio') ||
+        s.name.toLowerCase().includes('elegance salon') ||
+        s.name.toLowerCase().includes('elegance barber') ||
+        s.whatsappNumber === '+91 99999 88888' ||
+        s.whatsappNumber === '+919876543210';
+
+      if (isDemo) {
+        demoCount++;
+        if (demoCount > 1) continue;
+      }
+
       const prices = s.services.map((srv) => Number(srv.price));
       const minPrice = prices.length > 0 ? Math.min(...prices) : 299;
-      return {
+
+      result.push({
         id: s.id,
         name: s.name,
         whatsappNumber: s.whatsappNumber,
@@ -211,56 +241,19 @@ export class AppController {
         closingTime: s.closingTime || '20:00',
         services: s.services,
         serviceCount: s.services.length,
-        staffCount: s.staff.length,
+        staffCount: s._count?.staff || 0,
         minPrice,
         rating: 4.8,
         reviewCount: 42,
+      });
+    }
+
+    if (isDefaultQuery) {
+      this.publicSalonsCache = {
+        data: result,
+        expiresAt: now + 15000,
       };
-    });
-
-    // Apply Filters
-    if (city && city.trim() !== '' && city !== 'ALL') {
-      const targetCity = city.toLowerCase().trim();
-      result = result.filter(
-        (s) =>
-          s.ownerCity.toLowerCase().includes(targetCity) ||
-          s.address.toLowerCase().includes(targetCity),
-      );
     }
-
-    if (category && category.trim() !== '' && category !== 'ALL') {
-      result = result.filter(
-        (s) => s.businessCategory.toUpperCase() === category.toUpperCase(),
-      );
-    }
-
-    if (q && q.trim() !== '') {
-      const queryStr = q.toLowerCase().trim();
-      result = result.filter(
-        (s) =>
-          s.name.toLowerCase().includes(queryStr) ||
-          s.address.toLowerCase().includes(queryStr) ||
-          s.ownerCity.toLowerCase().includes(queryStr) ||
-          s.services.some((srv) => srv.name.toLowerCase().includes(queryStr)),
-      );
-    }
-
-    // Ensure only ONE primary demo salon account is listed, removing any duplicate demo accounts
-    let demoCount = 0;
-    result = result.filter((s) => {
-      const isDemo =
-        s.name.toLowerCase().includes('demo styling studio') ||
-        s.name.toLowerCase().includes('elegance salon') ||
-        s.name.toLowerCase().includes('elegance barber') ||
-        s.whatsappNumber === '+91 99999 88888' ||
-        s.whatsappNumber === '+919876543210';
-
-      if (isDemo) {
-        demoCount++;
-        return demoCount === 1; // Retain ONLY the first demo salon, filter out any extra duplicate demo salons
-      }
-      return true; // Keep all real client salons intact
-    });
 
     return result;
   }

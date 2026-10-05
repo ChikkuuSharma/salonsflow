@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
 import { cn } from "@/lib/utils";
@@ -10,15 +11,25 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false); // Default to light to match homepage
   const [mounted, setMounted] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        router.replace("/login");
+      } else {
+        setAuthorized(true);
+      }
+    }
+  }, [router]);
 
-  if (!mounted) {
+  if (!mounted || !authorized) {
     return (
       <div className="flex h-screen bg-slate-50 text-slate-800 overflow-hidden">
         <div className="flex-1 p-6 flex items-center justify-center">

@@ -15,8 +15,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "SalonsFlow | 24/7 AI WhatsApp Receptionist & Operations for Indian Salons",
-  description: "Deploy a high-fidelity, autonomous Hinglish AI Receptionist directly on your business WhatsApp. Track live bookings, manage stylist payroll commissions, and automate billing checkout with 0% booking commission.",
+  title: "SalonsFlow | The Real-Time Salon Network",
+  description: "Discover salons, compare services, check availability, and book appointments — all in one place. Powered by intelligent salon management and instant messaging automation.",
 };
 
 export default function RootLayout({

@@ -402,30 +402,17 @@ export default function LoginPage() {
 
               <div className="flex flex-col items-center gap-2 pt-2 text-[10px]">
                 {formMode === "login" ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormMode("register");
-                        setError(null);
-                        setSuccessMessage(null);
-                      }}
-                      className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
-                    >
-                      Create New Admin Credentials
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormMode("change-password");
-                        setError(null);
-                        setSuccessMessage(null);
-                      }}
-                      className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
-                    >
-                      Change Admin Password
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormMode("change-password");
+                      setError(null);
+                      setSuccessMessage(null);
+                    }}
+                    className="text-slate-500 hover:text-slate-800 transition-colors cursor-pointer font-bold uppercase tracking-wider underline bg-transparent border-0"
+                  >
+                    Change Admin Password
+                  </button>
                 ) : (
                   <button
                     type="button"

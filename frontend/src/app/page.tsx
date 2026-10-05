@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Bot,
@@ -101,7 +102,31 @@ export default function Home() {
 
   const loadVendorsList = async () => {
     try {
-      setVendorsLoading(true);
+      if (typeof window !== "undefined") {
+        try {
+          const cached = sessionStorage.getItem("salons_marketplace_cache");
+          if (cached) {
+            const data = JSON.parse(cached);
+            if (data && data.length > 0) {
+              const mapped = data.map((v: any, index: number) => ({
+                id: v.id,
+                name: v.name,
+                whatsappNumber: v.whatsappNumber,
+                address: v.address || "Main Street Road",
+                ownerCity: v.ownerCity || "Mumbai",
+                businessCategory: v.businessCategory || "HAIR_SALON",
+                homeBookingFee: v.homeBookingFee !== null && v.homeBookingFee !== undefined ? v.homeBookingFee : 0,
+                rating: (4.5 + (index % 5) * 0.1).toFixed(1),
+                reviewsCount: (80 + (index % 10) * 15).toString()
+              }));
+              setVendors(mapped);
+              setVendorsLoading(false);
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (vendors.length === 0) setVendorsLoading(true);
       const response = await fetch(`${apiUrl}/api/v1/public/salons`);
       if (response.ok) {
         const data = await response.json();
@@ -118,6 +143,11 @@ export default function Home() {
             reviewsCount: (80 + (index % 10) * 15).toString()
           }));
           setVendors(mapped);
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("salons_marketplace_cache", JSON.stringify(data));
+            } catch (e) {}
+          }
           setVendorsLoading(false);
           return;
         }
@@ -125,7 +155,7 @@ export default function Home() {
     } catch (err) {
       console.error("Error loading vendors:", err);
     }
-    setVendors([]);
+    if (vendors.length === 0) setVendors([]);
     setVendorsLoading(false);
   };
 
@@ -224,16 +254,16 @@ export default function Home() {
   // Scenarios data
   const scenarios: Record<"booking" | "voice" | "reschedule", SimulatorScenario> = {
     booking: {
-      title: "Hinglish Booking",
-      description: "AI handles colloquial text instantly",
+      title: "AI Receptionist Booking",
+      description: "AI handles instant messaging queries 24/7",
       icon: MessageSquare,
       calendarHighlightHour: "06:00 PM",
       calendarHighlightService: "Haircut & Shave",
       messages: [
-        { sender: "customer", text: "Bhaiya, Haircut aur shave ke liye aaj shaam 6:00 baje time milega?" },
-        { sender: "ai", text: "Ji haan! Shaam 6:00 PM baje hamare top stylist Rahul aur Amit dono free hain. Kya main aapka slot Rahul ke sath block kar doon?" },
-        { sender: "customer", text: "Haan please, Rahul ke sath lock kar do." },
-        { sender: "ai", text: "Done! Aapka appointment confirm ho gaya hai. 📅 Aaj Shaam 6:00 PM - Haircut & Beard with Rahul. Aapke calendar pe slot send kar diya hai!" }
+        { sender: "customer", text: "Hi! Do you have availability for a Haircut and Beard trim at 6:00 PM today?" },
+        { sender: "ai", text: "Yes! At 6:00 PM both of our top stylists Alex and Sam are available. Shall I reserve your slot with Alex?" },
+        { sender: "customer", text: "Yes please, reserve with Alex." },
+        { sender: "ai", text: "Confirmed! Your appointment is locked for today at 6:00 PM with Alex. We've added it to your calendar!" }
       ]
     },
     voice: {
@@ -318,15 +348,15 @@ export default function Home() {
     setTimeout(() => {
       let aiText = "";
       if (typedText.includes("cancel") || typedText.includes("cancellation") || typedText.includes("change")) {
-        aiText = "Ji bilkul! Main aapka slot cancel/change kar sakti hoon. Kya aap koi aur time ya date select karna chahte hain?";
+        aiText = "Certainly! I can adjust or reschedule your slot. Which new date or time works best for you?";
       } else if (typedText.includes("price") || typedText.includes("charges") || typedText.includes("rate") || typedText.includes("cost") || typedText.includes("rate list")) {
-        aiText = "Ji! Hamare Salon pe Haircut ₹500 se start hota hai aur Deep Tissue Massage ₹1500 ka hai. Kis service ki pricing details chahiye aapko?";
-      } else if (typedText.includes("time") || typedText.includes("slot") || typedText.includes("aaj") || typedText.includes("appointment") || typedText.includes("book")) {
-        aiText = "Haanji, aaj shaam ko 5:00 PM aur 6:00 PM pe slots free hain. Amit aur Rahul dono stylists available hain. Kya main aapka slot book kar doon?";
-      } else if (typedText.includes("hi") || typedText.includes("hello") || typedText.includes("hey") || typedText.includes("bhaiya")) {
-        aiText = "Hello! SalonsFlow AI Autopilot Receptionist me aapka swagat hai. Main aapki kya sahayata kar sakti hoon? Slot book karna hai ya details chahiye?";
+        aiText = "Our Haircuts start at $25 and Deep Tissue Massages are $75. Which service details would you like to view?";
+      } else if (typedText.includes("time") || typedText.includes("slot") || typedText.includes("appointment") || typedText.includes("book")) {
+        aiText = "We have open slots today at 5:00 PM and 6:00 PM with our senior stylists. Shall I reserve a slot for you?";
+      } else if (typedText.includes("hi") || typedText.includes("hello") || typedText.includes("hey")) {
+        aiText = "Hello! Welcome to SalonsFlow AI Autopilot. How can I assist you today? Would you like to check available slots or service prices?";
       } else {
-        aiText = "Ji bilkul! Main samajh gayi. Aapke request ke hisab se hum Ritu ke sath slot block kar sakte hain. Please confirm kijiye ki aap kab aana chahte hain?";
+        aiText = "Understood! I've checked our schedule and we can reserve a slot for you. Please confirm your preferred time.";
       }
       
       setVisibleMessages((prev) => [...prev, { sender: "ai", text: aiText }]);
@@ -548,49 +578,84 @@ export default function Home() {
       <section className="relative pt-20 pb-16 px-6 max-w-7xl mx-auto z-10 w-full">
         <div className="grid lg:grid-cols-12 gap-12 items-center">
           {/* Left Column (Text & CTAs) */}
-          <div className="lg:col-span-7 text-left space-y-8 relative">
-            <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-full px-4.5 py-1.5 text-xs font-bold text-purple-700 shadow-xs">
-              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> Stop Handling Calendars. Hire AI.
-            </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-7 text-left space-y-8 relative"
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100/80 backdrop-blur-md rounded-full px-4.5 py-1.5 text-xs font-bold text-purple-700 shadow-xs animate-shimmer"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-purple-600 animate-pulse" /> Stop Handling Calendars. Hire AI.
+            </motion.div>
             
-            <h1 className="text-4xl sm:text-6xl lg:text-[60px] font-black tracking-tight leading-[1.05] text-slate-800 font-display">
-              The 24/7 AI Receptionist <br />
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="text-4xl sm:text-6xl lg:text-[60px] font-black tracking-tight leading-[1.05] text-slate-800 font-display"
+            >
+              Your Salon. Your Customers. <br />
               <span className="bg-gradient-to-r from-purple-600 via-indigo-500 to-pink-500 bg-clip-text text-transparent">
-                Built for Indian Salons.
+                Your Growth.
               </span>
-            </h1>
+            </motion.h1>
             
-            <p className="text-slate-500 text-sm sm:text-base leading-relaxed font-medium">
-              SalonsFlow deploys an autonomous AI receptionist directly on your official WhatsApp Business number. It books appointments in Hinglish, converts missed calls into sales, details commissions, and updates your register instantly.
-            </p>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.7 }}
+              className="text-slate-500 text-sm sm:text-base leading-relaxed font-medium max-w-2xl"
+            >
+              SalonsFlow deploys a 24/7 autonomous AI receptionist directly on your business line. Automate appointment bookings, convert missed calls into sales, manage stylist payroll, and enable seamless salon discovery and booking worldwide.
+            </motion.p>
             
             {/* Hero CTAs */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-4 w-full max-w-xl pt-4">
-              <Link
-                href="/sign-up"
-                className="group flex items-center justify-center gap-2 h-13 px-8 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-550 hover:to-pink-400 text-white font-bold tracking-wide transition-all shadow-md active:scale-95 duration-200 hover:-translate-y-0.5 text-xs uppercase rounded-xl border-0"
-              >
-                Start Free Trial
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/salons"
-                className="flex items-center justify-center gap-2 h-13 px-6 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-purple-500/40 active:bg-slate-950 rounded-xl font-bold tracking-wide transition-all duration-200 active:scale-95 hover:-translate-y-0.5 text-xs uppercase shadow-md cursor-pointer"
-              >
-                <span className="text-sm">📍</span>
-                Find Nearest Salons & Prices
-              </Link>
-              <Link
-                href="/demo"
-                className="flex items-center justify-center gap-2.5 h-13 px-6 bg-white hover:bg-slate-50 border border-slate-200 active:bg-slate-100 rounded-xl text-slate-700 hover:text-slate-900 font-bold tracking-wide transition-all duration-200 active:scale-95 hover:-translate-y-0.5 text-xs uppercase shadow-xs cursor-pointer"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-purple-600 animate-pulse" />
-                Explore Demo Mode
-              </Link>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.7 }}
+              className="flex flex-col sm:flex-row flex-wrap gap-4 w-full max-w-xl pt-4"
+            >
+              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  href="/sign-up"
+                  className="group flex items-center justify-center gap-2 h-13 px-8 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-550 hover:to-pink-400 text-white font-bold tracking-wide transition-all shadow-lg shadow-purple-500/25 active:scale-95 text-xs uppercase rounded-xl border-0"
+                >
+                  Start Free Trial
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  href="/salons"
+                  className="flex items-center justify-center gap-2 h-13 px-6 bg-slate-900 hover:bg-slate-800 text-purple-300 border border-purple-500/40 active:bg-slate-950 rounded-xl font-bold tracking-wide transition-all shadow-md text-xs uppercase cursor-pointer"
+                >
+                  <span className="text-sm">📍</span>
+                  Find Nearest Salons & Prices
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  href="/demo"
+                  className="flex items-center justify-center gap-2.5 h-13 px-6 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-xl text-slate-700 hover:text-slate-900 font-bold tracking-wide transition-all shadow-xs text-xs uppercase cursor-pointer"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-purple-600 animate-pulse" />
+                  Explore Demo Mode
+                </Link>
+              </motion.div>
+            </motion.div>
 
             {/* AI Lookbook Highlight Box */}
-            <div className="bg-purple-50/50 border border-purple-100 p-4 rounded-2xl flex items-center justify-between gap-4 mt-6 max-w-lg text-left shadow-sm">
+            <motion.div 
+              whileHover={{ scale: 1.015, y: -2 }}
+              transition={{ duration: 0.2 }}
+              className="bg-purple-50/70 border border-purple-100 backdrop-blur-sm p-4 rounded-2xl flex items-center justify-between gap-4 mt-6 max-w-lg text-left shadow-sm hover:shadow-md transition-all"
+            >
               <div className="space-y-0.5">
                 <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest block font-mono">🔥 Free AI Feature Added</span>
                 <span className="text-xs font-black text-slate-800 uppercase block">AI Haircut & Style Advisor</span>
@@ -598,15 +663,19 @@ export default function Home() {
               </div>
               <Link
                 href="/haircut-advisor"
-                className="flex-shrink-0 bg-purple-600 hover:bg-purple-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 hover:-translate-y-0.5 active:scale-95 transition-all shadow shadow-purple-500/10"
+                className="flex-shrink-0 bg-purple-600 hover:bg-purple-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 active:scale-95 transition-all shadow shadow-purple-500/20"
               >
                 <span>Try AI Lab</span>
                 <ArrowRight className="w-3 h-3 text-white" />
               </Link>
-            </div>
+            </motion.div>
 
             {/* Direct Booking Highlight Box */}
-            <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl flex items-center justify-between gap-4 mt-4 max-w-lg text-left shadow-sm">
+            <motion.div 
+              whileHover={{ scale: 1.015, y: -2 }}
+              transition={{ duration: 0.2 }}
+              className="bg-emerald-50/70 border border-emerald-100 backdrop-blur-sm p-4 rounded-2xl flex items-center justify-between gap-4 mt-4 max-w-lg text-left shadow-sm hover:shadow-md transition-all"
+            >
               <div className="space-y-0.5">
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block font-mono">⚡ Direct Client Booking</span>
                 <span className="text-xs font-black text-slate-800 uppercase block">Book Partner Salon or Home Visit</span>
@@ -623,17 +692,17 @@ export default function Home() {
                   setSelectedStaffId("");
                   setShowBookingModal(true);
                 }}
-                className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 hover:-translate-y-0.5 active:scale-95 transition-all shadow border-0 cursor-pointer"
+                className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-[10.5px] font-black uppercase tracking-wider px-5 py-3 rounded-xl flex items-center gap-1 active:scale-95 transition-all shadow border-0 cursor-pointer"
               >
                 <span>Book Appointment</span>
                 <Calendar className="w-3 h-3 text-white" />
               </button>
-            </div>
+            </motion.div>
 
             {/* Quick trust metrics */}
             <div className="pt-8 border-t border-slate-200 flex flex-wrap gap-6 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-purple-650" /> No Card Required
+                <CheckCircle2 className="h-4 w-4 text-purple-600" /> No Card Required
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-pink-500" /> Sandbox Simulator
@@ -642,7 +711,7 @@ export default function Home() {
                 <CheckCircle2 className="h-4 w-4 text-indigo-500" /> Meta Authorized
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Column (Hero Interactive Tabbed Image & Floating Widgets) */}
           <div className="lg:col-span-5 relative flex flex-col items-center justify-center w-full">
@@ -705,10 +774,10 @@ export default function Home() {
             <div className="hidden lg:block absolute -left-10 top-16 bg-white/95 border border-slate-200/80 backdrop-blur-md rounded-2xl p-4 text-left shadow-lg max-w-[180px] z-20 animate-float">
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Hinglish Agent NLP</span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">AI Agent NLP</span>
               </div>
               <p className="text-[9px] text-slate-700 font-semibold leading-relaxed">
-                "Bhaiya, kal shaam 6 baje Rahul ke sath block kar do."
+                "Hi! Can I book a haircut for tomorrow at 6 PM?"
               </p>
             </div>
 
@@ -717,7 +786,7 @@ export default function Home() {
                 <Bot className="h-3.5 w-3.5 text-purple-650 animate-pulse" />
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Revenue Recovered</span>
               </div>
-              <span className="text-lg font-black text-slate-800 font-display block">₹42,800</span>
+              <span className="text-lg font-black text-slate-800 font-display block">$1,450</span>
               <span className="text-[8px] text-purple-600 font-bold uppercase tracking-wider">autonomously saved</span>
             </div>
           </div>
@@ -795,7 +864,7 @@ export default function Home() {
                 type="text"
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="Or try typing yourself (e.g. Bhaiya, 5 PM rate list?)..."
+                placeholder="Or try typing yourself (e.g. Can I book for 5 PM?)..."
                 className="flex-1 bg-[#202c33] border border-zinc-800/50 text-[11px] text-zinc-100 placeholder-zinc-555 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 font-semibold"
               />
               <button
@@ -847,7 +916,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-between gap-6 text-xs">
           <div className="flex items-center gap-2 text-purple-400 font-bold uppercase tracking-widest text-[10px] font-mono">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
-            TRUSTED BY 100+ PREMIER SALONS & SPAS IN INDIA
+            TRUSTED BY PREMIER SALONS & SPAS WORLDWIDE
           </div>
           <div className="flex items-center gap-8 text-slate-350 text-xs font-bold font-display uppercase tracking-wider overflow-x-auto scrollbar-none py-1">
             <span className="flex items-center gap-2 text-white shrink-0"><span className="text-purple-400">✨</span> SV Glam Up Salon</span>
@@ -860,7 +929,13 @@ export default function Home() {
       </section>
 
       {/* Feature Showcase 1: AI Haircut & Style Advisor Lab */}
-      <section className="py-24 border-b border-slate-200 bg-gradient-to-b from-purple-50/60 via-white to-white relative z-10">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 border-b border-slate-200 bg-gradient-to-b from-purple-50/60 via-white to-white relative z-10"
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             {/* Image Preview */}
@@ -914,10 +989,16 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Feature Showcase 2: Full Operations & POS Register (Dark Glassmorphic Section) */}
-      <section className="py-24 bg-slate-950 text-white border-b border-slate-850 relative z-10 overflow-hidden">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 bg-slate-950 text-white border-b border-slate-850 relative z-10 overflow-hidden"
+      >
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 blur-[120px] rounded-full pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-600/10 blur-[120px] rounded-full pointer-events-none"></div>
 
@@ -967,10 +1048,16 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Feature Showcase 3: Before vs After SalonsFlow Transformation Matrix */}
-      <section className="py-24 bg-slate-50/70 border-b border-slate-200 relative z-10">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 bg-slate-50/70 border-b border-slate-200 relative z-10"
+      >
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center space-y-3 mb-16">
             <span className="text-[10px] font-bold text-purple-700 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3.5 py-1.5 rounded-full inline-block">
@@ -1000,7 +1087,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-rose-500 font-bold mt-0.5">✕</span>
-                  <span>Receptionists struggle to type responses in Hindi/Hinglish.</span>
+                  <span>Receptionists struggle to handle phone calls and messaging channels simultaneously.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="text-rose-500 font-bold mt-0.5">✕</span>
@@ -1019,7 +1106,7 @@ export default function Home() {
               <ul className="space-y-4 text-xs text-slate-700 font-semibold">
                 <li className="flex items-start gap-2.5">
                   <Check className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
-                  <span>24/7 AI Receptionist books slots on WhatsApp in Hinglish instantly.</span>
+                  <span>24/7 AI Receptionist handles multi-language bookings on instant messaging.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
@@ -1037,16 +1124,22 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Feature Showcase 4: Verified Salon Partner Testimonials */}
-      <section className="py-24 bg-white border-b border-slate-200 relative z-10">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 bg-white border-b border-slate-200 relative z-10"
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-2xl mx-auto text-center space-y-3 mb-16">
             <span className="text-[10px] font-bold text-purple-700 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3.5 py-1.5 rounded-full inline-block">
               CLIENT SUCCESS STORIES
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-800 font-display tracking-tight">Loved by Salon Owners Across India</h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800 font-display tracking-tight">Loved by Salon Owners & Spas Worldwide</h2>
             <p className="text-slate-500 text-xs font-semibold leading-relaxed">
               Read how partner salons scale revenues and automate receptionist desk operations.
             </p>
@@ -1056,23 +1149,23 @@ export default function Home() {
             {[
               {
                 salon: "SV Glam Up Salon",
-                city: "Delhi NCR",
-                owner: "Sunita Verma",
+                city: "New York",
+                owner: "Sarah Vance",
                 metric: "+42% Monthly Revenue",
-                quote: "Before SalonsFlow, we were losing 5 to 10 clients daily because my phone was busy while I was giving facials. Now the AI handles all WhatsApp bookings automatically!",
+                quote: "Before SalonsFlow, we were losing 5 to 10 clients daily because my phone was busy while I was giving facials. Now the AI handles all customer bookings automatically!",
                 img: "/salon-interior-showcase.png"
               },
               {
                 salon: "Royal Barber Lounge",
-                city: "Mumbai",
-                owner: "Vikram Malhotra",
+                city: "London",
+                owner: "Victor Miller",
                 metric: "0 Missed Calls",
-                quote: "The Hinglish voice note booking is magic! My male clients just send a voice message saying 'bhaiya kal 6 baje Rahul ko rkna', and SalonsFlow locks the slot.",
+                quote: "The audio voice note booking is magic! Clients just send a voice message reserving a slot, and SalonsFlow locks it in real time.",
                 img: "/ai-dashboard-analytics.png"
               },
               {
                 salon: "Velvet Touch Spa",
-                city: "Bengaluru",
+                city: "Sydney",
                 owner: "Priya Nair",
                 metric: "+68 Google Reviews",
                 quote: "The commission ledger and Google Review booster saved us hours of accounting every month. Our Google rating jumped from 4.1 to 4.9 stars in 30 days!",
@@ -1110,10 +1203,17 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Solutions / Categories Section */}
-      <section id="solutions" className="py-24 border-t border-slate-200 bg-white relative z-10">
+      <motion.section 
+        id="solutions" 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 border-t border-slate-200 bg-white relative z-10"
+      >
         <div className="max-w-6xl mx-auto px-6 text-center">
           <div className="max-w-xl mx-auto mb-16 space-y-3">
             <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">
@@ -1144,10 +1244,17 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Feature Sections */}
-      <section id="features" className="py-24 max-w-7xl mx-auto px-6 z-10 relative">
+      <motion.section 
+        id="features" 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 max-w-7xl mx-auto px-6 z-10 relative"
+      >
         <div className="max-w-2xl mx-auto text-center mb-16 space-y-3">
           <span className="text-[10px] font-bold text-purple-650 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">
             Core Modules
@@ -1181,10 +1288,17 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* ROI Calculator Section */}
-      <section id="roi" className="py-24 border-t border-slate-200 bg-slate-100/30 relative z-10">
+      <motion.section 
+        id="roi" 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 border-t border-slate-200 bg-slate-100/30 relative z-10"
+      >
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center space-y-3 mb-12">
             <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">
@@ -1264,10 +1378,17 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Interactive Pricing Section on Homepage */}
-      <section id="pricing" className="py-24 border-t border-slate-200 bg-white relative z-10">
+      <motion.section 
+        id="pricing" 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 border-t border-slate-200 bg-white relative z-10"
+      >
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center space-y-4 mb-16">
             <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">
@@ -1304,26 +1425,27 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-800">₹{billingCycle === "annual" ? "2,399" : "2,999"}</span>
+                  <span className="text-4xl font-black text-slate-800">$29</span>
                   <span className="text-slate-400 text-xs font-bold font-sans">/ month</span>
+                  <span className="text-[10px] text-slate-400 block ml-2 font-medium">(or ₹2,399 / mo)</span>
                 </div>
 
                 <ul className="space-y-3.5 text-xs text-slate-600 font-semibold border-t border-slate-100 pt-6">
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-purple-600 shrink-0" />
-                    <span>24/7 AI WhatsApp Receptionist (Hinglish/Hindi)</span>
+                    <span>24/7 Multi-Language Conversational AI Receptionist</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-purple-600 shrink-0" />
-                    <span>Offline POS Digital Billing Terminal</span>
+                    <span>Digital POS Billing & Register</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-purple-600 shrink-0" />
-                    <span>Inbound Missed Call Welcome Menus</span>
+                    <span>Inbound Missed Call & Web Welcome Alerts</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-purple-600 shrink-0" />
-                    <span>Basic Partner Calendar & Roster Setup</span>
+                    <span>Calendar & Smart Booking Schedule</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-purple-600 shrink-0" />
@@ -1355,8 +1477,9 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-white">₹{billingCycle === "annual" ? "3,999" : "4,999"}</span>
+                  <span className="text-4xl font-black text-white">$45</span>
                   <span className="text-purple-400 text-xs font-bold font-sans">/ month</span>
+                  <span className="text-[10px] text-slate-400 block ml-2 font-medium">(or ₹3,999 / mo)</span>
                 </div>
 
                 <ul className="space-y-3.5 text-xs text-slate-350 font-semibold border-t border-zinc-800 pt-6">
@@ -1398,10 +1521,16 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Competitive Positioning Section */}
-      <section className="py-24 max-w-5xl mx-auto px-6 z-10 relative">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 max-w-5xl mx-auto px-6 z-10 relative"
+      >
         <div className="text-center space-y-3 mb-16">
           <h2 className="text-3xl font-black tracking-tight text-slate-855 font-display">Why SalonsFlow Outperforms</h2>
           <p className="text-slate-500 text-xs font-semibold leading-relaxed">
@@ -1445,10 +1574,17 @@ export default function Home() {
             </tbody>
           </table>
         </div>
-      </section>
+      </motion.section>
 
       {/* FAQ Grid */}
-      <section id="faq" className="py-24 border-t border-slate-200 max-w-4xl mx-auto px-6 z-10 relative">
+      <motion.section 
+        id="faq" 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 border-t border-slate-200 max-w-4xl mx-auto px-6 z-10 relative"
+      >
         <div className="text-center space-y-3 mb-16">
           <h2 className="text-3xl font-black text-slate-800 font-display">Frequently Asked Questions</h2>
           <p className="text-slate-500 text-xs font-semibold leading-relaxed font-sans">
@@ -1491,10 +1627,16 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Inline Lead Capture Form */}
-      <section className="py-24 border-t border-slate-200 bg-slate-100/30 relative z-10">
+      <motion.section 
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="py-24 border-t border-slate-200 bg-slate-100/30 relative z-10"
+      >
         <div className="max-w-xl mx-auto px-6 text-center space-y-8">
           <div className="space-y-3">
             <h2 className="text-3xl font-black text-slate-800 font-display">Start Missed Call Recovery Today</h2>
@@ -1577,7 +1719,7 @@ export default function Home() {
             )}
           </form>
         </div>
-      </section>
+      </motion.section>
 
       {/* Footer */}
       <footer className="border-t border-slate-200 py-12 bg-white px-6">
@@ -1594,7 +1736,7 @@ export default function Home() {
             </div>
           </div>
           
-          <p>© 2026 SalonsFlow Platform Operating System. Built for Indian Salons.</p>
+          <p>© 2026 SalonsFlow Platform Operating System. Built for Salons & Spas Worldwide.</p>
           
           <div className="flex items-center gap-4 font-bold text-slate-500">
             <a href="#features" className="hover:text-slate-800 transition-colors">Features</a>
@@ -2072,6 +2214,27 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Floating Interactive WhatsApp AI Receptionist Widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 50, scale: 0.8 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.8, duration: 0.6, type: "spring" }}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-3 cursor-pointer group"
+        onClick={() => setDemoModalOpen(true)}
+      >
+        <div className="hidden sm:flex flex-col text-right bg-slate-900/90 text-white border border-purple-500/40 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-2xl hover:border-purple-400 transition-all">
+          <div className="flex items-center gap-1.5 justify-end">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">24/7 AI Receptionist</span>
+          </div>
+          <span className="text-[11px] font-bold text-slate-100">Try Live Hinglish Bot Demo</span>
+        </div>
+        <div className="relative bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 p-3.5 rounded-2xl shadow-2xl text-white group-hover:scale-110 transition-transform duration-300 glow-purple">
+          <MessageSquare className="w-6 h-6 text-white animate-bounce" />
+          <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+        </div>
+      </motion.div>
 
     </div>
   );

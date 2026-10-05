@@ -13,7 +13,11 @@ import {
   Layers,
   AlertTriangle,
   Users,
-  CheckSquare
+  CheckSquare,
+  Lock,
+  Key,
+  ShieldCheck,
+  X
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
@@ -22,8 +26,59 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [checkingExpirations, setCheckingExpirations] = useState(false);
 
-  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token") : "dev-bypass-token";
+  // Change Admin Password Modal States
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [changeAdminId, setChangeAdminId] = useState("admin");
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
+  const token = typeof window !== "undefined" ? (localStorage.getItem("auth_token") || "dev-bypass-token-superadmin-admin") : "dev-bypass-token-superadmin-admin";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeAdminId || !oldPassword || !newPassword) return;
+    setPasswordLoading(true);
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    try {
+      const activeToken = localStorage.getItem("auth_token") || "dev-bypass-token-superadmin-admin";
+      const res = await fetch(`${apiUrl}/api/v1/auth/super-admin/change-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${activeToken}`,
+        },
+        body: JSON.stringify({
+          adminId: changeAdminId,
+          oldPassword,
+          newPassword,
+        }),
+      });
+
+      if (res.ok) {
+        setPasswordSuccess("Super Admin password updated successfully!");
+        setOldPassword("");
+        setNewPassword("");
+        setTimeout(() => {
+          setShowPasswordModal(false);
+          setPasswordSuccess(null);
+        }, 1500);
+      } else {
+        const errData = await res.json();
+        setPasswordError(errData.message || "Failed to update super admin password. Verify current password.");
+      }
+    } catch (err) {
+      console.error(err);
+      setPasswordError("Failed to connect to authentication server.");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const loadStats = async () => {
     setLoading(true);
@@ -167,6 +222,17 @@ export default function AdminDashboardPage() {
         </div>
         <div className="flex gap-3">
           <button
+            onClick={() => {
+              setShowPasswordModal(true);
+              setPasswordError(null);
+              setPasswordSuccess(null);
+            }}
+            className="flex items-center gap-2 px-4.5 py-2.5 bg-purple-50 border border-purple-200 hover:bg-purple-100 rounded-xl transition-all font-bold text-xs text-purple-700 shadow-sm cursor-pointer"
+          >
+            <Key className="h-3.5 w-3.5 text-purple-600" />
+            Change Admin Password
+          </button>
+          <button
             onClick={runExpirationCheck}
             disabled={checkingExpirations}
             className="flex items-center gap-2 px-4.5 py-2.5 bg-red-50 border border-red-200 hover:bg-red-100 disabled:opacity-50 rounded-xl transition-all font-bold text-xs text-red-600"
@@ -277,6 +343,99 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Change Super Admin Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-6 relative animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2 text-slate-800">
+                <Key className="h-5 w-5 text-purple-600" />
+                <h3 className="font-bold text-base font-display">Update Super Admin Password</h3>
+              </div>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer border-0"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {passwordError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800 font-semibold">
+                {passwordError}
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-800 font-semibold flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-purple-600 shrink-0" />
+                <span>{passwordSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePasswordSubmit} className="space-y-4 text-left">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Super Admin ID</label>
+                <input
+                  type="text"
+                  required
+                  value={changeAdminId}
+                  onChange={(e) => setChangeAdminId(e.target.value)}
+                  placeholder="admin"
+                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Current Super Admin Password *</label>
+                <input
+                  type="password"
+                  required
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Enter current password to verify"
+                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">New Super Admin Password *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all border-0 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-md border-0 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {passwordLoading ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
+                  ) : (
+                    <span>Update Password</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

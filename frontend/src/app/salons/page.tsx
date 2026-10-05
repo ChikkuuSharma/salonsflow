@@ -24,10 +24,19 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { TopNav } from "@/components/layout/TopNav";
+import { formatCurrency } from "@/lib/currency";
 
 export default function SalonsMarketplacePage() {
-  const [salons, setSalons] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [salons, setSalons] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("salons_marketplace_cache");
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(salons.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   // Filters
@@ -51,9 +60,9 @@ export default function SalonsMarketplacePage() {
   };
   const apiUrl = getApiUrl();
 
-  const fetchSalons = async () => {
+  const fetchSalons = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading && salons.length === 0) setLoading(true);
       setError(null);
       const params = new URLSearchParams();
       if (searchQuery.trim()) params.append("q", searchQuery.trim());
@@ -64,16 +73,24 @@ export default function SalonsMarketplacePage() {
       if (!res.ok) throw new Error("Failed to load salons list.");
       const data = await res.json();
       setSalons(data);
+
+      if (typeof window !== "undefined" && selectedCity === "ALL" && selectedCategory === "ALL" && !searchQuery.trim()) {
+        try {
+          sessionStorage.setItem("salons_marketplace_cache", JSON.stringify(data));
+        } catch (e) {}
+      }
     } catch (err: any) {
       console.error(err);
-      setError("Unable to connect to salon database. Please verify backend service.");
+      if (salons.length === 0) {
+        setError("Unable to connect to salon database. Please verify backend service.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSalons();
+    fetchSalons(salons.length === 0);
   }, [selectedCity, selectedCategory]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -106,13 +123,14 @@ export default function SalonsMarketplacePage() {
 
   const citiesList = [
     { label: "All Cities", value: "ALL" },
+    { label: "New York", value: "New York" },
+    { label: "London", value: "London" },
+    { label: "Dubai", value: "Dubai" },
+    { label: "Sydney", value: "Sydney" },
+    { label: "Toronto", value: "Toronto" },
     { label: "Mumbai", value: "Mumbai" },
     { label: "Delhi / NCR", value: "Delhi" },
     { label: "Bengaluru", value: "Bengaluru" },
-    { label: "Pune", value: "Pune" },
-    { label: "Hyderabad", value: "Hyderabad" },
-    { label: "Chennai", value: "Chennai" },
-    { label: "Kolkata", value: "Kolkata" },
   ];
 
   const categoryList = [
@@ -258,7 +276,7 @@ export default function SalonsMarketplacePage() {
           <div className="my-12 p-6 bg-rose-950/30 border border-rose-800/60 rounded-2xl text-center max-w-xl mx-auto">
             <p className="text-rose-300 font-semibold text-sm">{error}</p>
             <button
-              onClick={fetchSalons}
+              onClick={() => fetchSalons()}
               className="mt-4 px-4 py-2 bg-rose-900/50 hover:bg-rose-800 text-white text-xs font-bold rounded-xl border border-rose-700/50 transition-all"
             >
               Try Reloading
@@ -342,7 +360,9 @@ export default function SalonsMarketplacePage() {
 
                     <div className="text-right">
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider block">Starts At</span>
-                      <span className="font-extrabold text-emerald-400 text-sm">₹{salon.minPrice || 299}</span>
+                      <span className="font-extrabold text-emerald-400 text-sm">
+                        {formatCurrency(salon.minPrice || 25, salon.currencySymbol || (["Mumbai", "Delhi", "Bengaluru"].includes(salon.ownerCity) ? "₹" : "$"))}
+                      </span>
                     </div>
                   </div>
 
@@ -354,7 +374,7 @@ export default function SalonsMarketplacePage() {
                           key={srv.id}
                           className="text-[10px] font-semibold bg-slate-950/80 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-md"
                         >
-                          {srv.name} • <span className="text-emerald-400">₹{srv.price}</span>
+                          {srv.name} • <span className="text-emerald-400">{formatCurrency(srv.price, salon.currencySymbol || (["Mumbai", "Delhi", "Bengaluru"].includes(salon.ownerCity) ? "₹" : "$"))}</span>
                         </span>
                       ))}
                       {salon.services.length > 3 && (
@@ -466,7 +486,9 @@ export default function SalonsMarketplacePage() {
 
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="text-lg font-black text-emerald-400">₹{service.price}</span>
+                        <span className="text-lg font-black text-emerald-400">
+                          {formatCurrency(service.price, inspectSalon.currencySymbol || (["Mumbai", "Delhi", "Bengaluru"].includes(inspectSalon.ownerCity) ? "₹" : "$"))}
+                        </span>
                       </div>
                       <Link
                         href={`/book?salonId=${inspectSalon.id}&serviceId=${service.id}`}

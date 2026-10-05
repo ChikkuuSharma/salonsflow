@@ -3,34 +3,39 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, X, ArrowLeft, ShieldCheck, HelpCircle, Sparkles, Award } from "lucide-react";
+import { Check, X, ArrowLeft, ShieldCheck, HelpCircle, Sparkles, Globe, DollarSign } from "lucide-react";
+import { formatCurrency } from "@/lib/currency";
 
 export default function PricingPage() {
   const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "quarterly" | "annual">("annual");
+  const [currencyRegion, setCurrencyRegion] = useState<"USD" | "INR">("USD");
+
+  const isUSD = currencyRegion === "USD";
+  const currencySymbol = isUSD ? "$" : "₹";
 
   const plans = [
     {
       name: "Basic Plan",
-      description: "Core AI WhatsApp Receptionist, POS Checkout register, and Client Directory.",
-      monthlyPrice: 2999,
-      quarterlyPrice: 2699,
-      annualPrice: 2399,
+      description: "Core AI Receptionist, POS Checkout Register, and Client Directory.",
+      monthlyPrice: isUSD ? 39 : 2999,
+      quarterlyPrice: isUSD ? 35 : 2699,
+      annualPrice: isUSD ? 29 : 2399,
       features: [
-        "Core AI WhatsApp Receptionist (Hinglish/Hindi)",
-        "Offline POS Digital Billing Terminal",
-        "GST-Ready Invoice Designer",
-        "Inbound Missed Call Welcome Alerts",
-        "Basic Calendar & Booking Schedule",
+        "24/7 Multi-Language Conversational AI Receptionist",
+        "Digital POS Billing & Register",
+        "Tax & VAT Compliant Invoice Designer",
+        "Inbound Missed Call & Web Welcome Alerts",
+        "Calendar & Smart Booking Schedule",
         "Employee Shift Roster Setup",
         "Staff Commissions Ledger",
-        "100 Printed/Digital Invoices per month",
+        "100 Digital/Printed Invoices per month",
       ],
       notIncluded: [
-        "AI Rebooking Recommendation Campaigns",
-        "Auto Google Maps Reviews Collection",
-        "Whisper Audio Voice Note Transcription & Booking",
-        "Franchise Chain Sync & Advanced Analytics",
+        "AI Rebooking Lifecycle Campaigns",
+        "Automated Google Reviews Collection",
+        "Whisper Voice Note Booking & AI Transcriptions",
+        "Multi-Branch Chain Sync & Advanced Analytics",
       ],
       cta: "Get Started Now",
       popular: false,
@@ -38,17 +43,17 @@ export default function PricingPage() {
     {
       name: "Pro Autopilot",
       description: "Complete AI receptionist autopilot, rebooking campaigns, and review engines.",
-      monthlyPrice: 4999,
-      quarterlyPrice: 4499,
-      annualPrice: 3999,
+      monthlyPrice: isUSD ? 59 : 4999,
+      quarterlyPrice: isUSD ? 52 : 4499,
+      annualPrice: isUSD ? 45 : 3999,
       features: [
         "Everything in Basic plan",
         "AI Rebooking Recommendation Lifecycles",
         "Auto Google Review Campaigns",
-        "Whisper Audio Voice Note Booking",
-        "Stylist Payroll & Franchise Chain Sync",
-        "WhatsApp Promotional Broadcasts",
-        "UPI & Card Terminal Link Integration",
+        "Whisper Voice Note & Audio Booking",
+        "Stylist Payroll & Multi-Branch Sync",
+        "Promotional WhatsApp & Messaging Broadcasts",
+        "Instant Card & Online Payment Terminal Links",
         "Unlimited Digital Invoices & Customers",
       ],
       notIncluded: [],
@@ -102,7 +107,7 @@ export default function PricingPage() {
         {/* Page Title & Toggle */}
         <div className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 rounded-full px-4.5 py-1.5 text-xs font-bold text-purple-700 shadow-xs">
-            <Sparkles className="h-3.5 w-3.5 text-purple-650" /> Subscription Plans
+            <Sparkles className="h-3.5 w-3.5 text-purple-650" /> Global SaaS Subscription Plans
           </div>
           
           <h1 className="text-4xl sm:text-6xl font-black text-slate-800 tracking-tight leading-[1.05] font-display">
@@ -112,54 +117,80 @@ export default function PricingPage() {
             </span>
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm max-w-xl mx-auto font-semibold leading-relaxed">
-            Stop paying 10% to 15% booking commissions to aggregators. SalonsFlow gives you flat-rate pricing to scale bookings without paying extra on growth.
+            Stop paying 10% to 15% booking commissions to marketplace aggregators. SalonsFlow provides flat-rate pricing to scale your salon business without penalty on growth.
           </p>
 
-          {/* Billing switcher switch */}
-          <div className="inline-flex items-center bg-slate-100 border border-slate-200 rounded-full p-1 shadow-sm">
-            <button
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-4 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                billingCycle === "monthly"
-                  ? "bg-white text-slate-800 shadow-sm border border-slate-200"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle("quarterly")}
-              className={`px-4 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-1 cursor-pointer ${
-                billingCycle === "quarterly"
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-950"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              3 Months
-              <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-tight ${
-                billingCycle === "quarterly" ? "bg-white text-purple-700" : "bg-purple-50 text-purple-700"
-              }`}>Save 10%</span>
-            </button>
-            <button
-              onClick={() => setBillingCycle("annual")}
-              className={`px-4 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
-                billingCycle === "annual"
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-950"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Annual
-              <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-tight ${
-                billingCycle === "annual" ? "bg-white text-purple-700" : "bg-purple-50 text-purple-700"
-              }`}>Save 20%</span>
-            </button>
+          {/* Region & Billing Switcher */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            {/* Currency Region Selector */}
+            <div className="inline-flex items-center bg-slate-200/80 p-1 rounded-full text-xs font-bold shadow-inner">
+              <button
+                onClick={() => setCurrencyRegion("USD")}
+                className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
+                  currencyRegion === "USD" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Globe className="h-3.5 w-3.5 text-purple-600" />
+                Global (USD $)
+              </button>
+              <button
+                onClick={() => setCurrencyRegion("INR")}
+                className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
+                  currencyRegion === "INR" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>🇮🇳</span>
+                India (INR ₹)
+              </button>
+            </div>
+
+            {/* Billing switcher switch */}
+            <div className="inline-flex items-center bg-slate-100 border border-slate-200 rounded-full p-1 shadow-sm">
+              <button
+                onClick={() => setBillingCycle("monthly")}
+                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                  billingCycle === "monthly"
+                    ? "bg-white text-slate-800 shadow-sm border border-slate-200"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCycle("quarterly")}
+                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-1 cursor-pointer ${
+                  billingCycle === "quarterly"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-950"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                3 Months
+                <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-tight ${
+                  billingCycle === "quarterly" ? "bg-white text-purple-700" : "bg-purple-50 text-purple-700"
+                }`}>Save 10%</span>
+              </button>
+              <button
+                onClick={() => setBillingCycle("annual")}
+                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                  billingCycle === "annual"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-950"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Annual
+                <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-tight ${
+                  billingCycle === "annual" ? "bg-white text-purple-700" : "bg-purple-50 text-purple-700"
+                }`}>Save 20%</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Pricing Cards Grid */}
         <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
           {plans.map((plan, i) => {
-            const price = billingCycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
+            const rawPrice = billingCycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
+            const formattedPrice = formatCurrency(rawPrice, currencySymbol);
             return (
               <div
                 key={i}
@@ -183,7 +214,7 @@ export default function PricingPage() {
 
                   <div className="flex items-baseline gap-2 py-5 border-y border-slate-150 text-left">
                     <span className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-slate-800 to-slate-900 bg-clip-text text-transparent font-display">
-                      ₹{price}
+                      {formattedPrice}
                     </span>
                     <span className="text-slate-400 text-xs font-bold">/ month</span>
                     {billingCycle === "annual" && (
@@ -236,7 +267,7 @@ export default function PricingPage() {
 
         {/* Feature Matrix Breakdown */}
         <div className="pt-12 border-t border-slate-200 max-w-5xl mx-auto space-y-8">
-          <h2 className="text-2xl font-black text-center font-display text-slate-800">Detailed Feature matrix</h2>
+          <h2 className="text-2xl font-black text-center font-display text-slate-800">Detailed Feature Matrix</h2>
           <div className="overflow-x-auto border border-slate-200 rounded-3xl bg-white shadow-sm">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -248,17 +279,17 @@ export default function PricingPage() {
               </thead>
               <tbody className="divide-y divide-slate-200 text-slate-650 font-medium">
                 {[
-                  { name: "3 Months (Quarterly) Billing Cycle Option", b: true, p: true },
-                  { name: "24/7 AI WhatsApp Receptionist (Hinglish NLP)", b: true, p: true },
-                  { name: "Inbound Missed Call automated welcomes", b: true, p: true },
-                  { name: "Offline POS Digital Billing terminals", b: true, p: true },
-                  { name: "Stylist shift roster payroll ledger", b: true, p: true },
-                  { name: "GSTIN tax compliant invoicing ledger", b: true, p: true },
-                  { name: "UPI & Card Payment terminal link", b: false, p: true },
-                  { name: "Google Reviews maps auto campaigns", b: false, p: true },
+                  { name: "Flexible Billing Cycle Options (Monthly, Quarterly, Annual)", b: true, p: true },
+                  { name: "24/7 AI Multi-Language Receptionist Engine", b: true, p: true },
+                  { name: "Inbound Missed Call & Web Welcome Alerts", b: true, p: true },
+                  { name: "POS Digital Billing & Terminal Register", b: true, p: true },
+                  { name: "Stylist Shift Roster & Payroll Ledger", b: true, p: true },
+                  { name: "Tax & VAT Compliant Invoicing Ledger", b: true, p: true },
+                  { name: "Instant Card & Online Payment Terminal Links", b: false, p: true },
+                  { name: "Google Reviews Maps Auto Campaigns", b: false, p: true },
                   { name: "AI Rebooking Recommendation Lifecycles", b: false, p: true },
                   { name: "Whisper Audio Voice Note Transcriptions", b: false, p: true },
-                  { name: "WhatsApp Promotional broadcasts", b: false, p: true },
+                  { name: "Promotional Messaging Broadcasts", b: false, p: true },
                 ].map((row, idx) => (
                   <tr key={idx} className="hover:bg-slate-50 transition-colors">
                     <td className="p-5 font-semibold text-slate-700">{row.name}</td>
@@ -281,12 +312,12 @@ export default function PricingPage() {
           <div className="grid gap-6 md:grid-cols-2">
             {[
               {
-                q: "Is there any setup fee for the WhatsApp Business API?",
-                a: "No setup fees. We help you setup your official WABA line on your Meta profile for free. You only pay standard Meta message volume charges.",
+                q: "Is there any setup fee for the AI Instant Messaging API?",
+                a: "No setup fees. We assist you in linking your official business line for free. You only pay standard message volume rates.",
               },
               {
-                q: "Do I need a GST registration to bill with POS?",
-                a: "No. GST settings are fully optional. If unregistered, you can legally configure flat tax invoicing templates under PAN formats.",
+                q: "Do I need a Tax / VAT registration to bill with POS?",
+                a: "No. Tax settings are fully optional and customizable based on your local business registration guidelines.",
               },
               {
                 q: "What booking commission do you charge?",
@@ -323,7 +354,7 @@ export default function PricingPage() {
               Salons<span className="text-purple-650">Flow</span>
             </span>
           </div>
-          <p>© 2026 SalonsFlow Platform Operating System. Built for Indian Salons.</p>
+          <p>© 2026 SalonsFlow Platform Operating System. Built for Salons & Spas Worldwide.</p>
           <div className="flex items-center gap-4 font-bold text-slate-500">
             <Link href="/" className="hover:text-slate-800 transition-colors">Home</Link>
             <Link href="/pricing" className="text-purple-600">Pricing</Link>

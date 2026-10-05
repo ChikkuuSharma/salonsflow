@@ -25,10 +25,10 @@ export class ClerkAuthGuard implements CanActivate {
 
     if (token && token.startsWith('dev-bypass-token')) {
       try {
-        let targetRole: 'SUPER_ADMIN' | 'OWNER' | 'MANAGER' | 'RECEPTIONIST' = 'SUPER_ADMIN';
-        let clerkId = 'dev-bypass-user-id';
-        let email = 'dev@salonflow.com';
-        let name = 'Devender Sharma';
+        let targetRole: 'SUPER_ADMIN' | 'OWNER' | 'MANAGER' | 'RECEPTIONIST' = 'OWNER';
+        let clerkId = 'dev-bypass-user-owner-default';
+        let email = 'owner-default@salonflow.com';
+        let name = 'Default Salon Owner';
         let targetSalonId: string | null = null;
 
         if (token === 'dev-bypass-token-owner') {

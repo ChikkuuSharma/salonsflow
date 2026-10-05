@@ -1871,11 +1871,11 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     if (this.gemini) {
       try {
         const model = this.gemini.getGenerativeModel({ model: this.geminiModelName });
-        const prompt = `You are the Business Intelligence AI for SalonFlow, a premium CRM and operations software for Indian Salons.
+        const prompt = `You are the Business Intelligence AI for SalonFlow, a premium CRM and operations software for salons and spas worldwide.
         Write a single, short, action-oriented, friendly growth recommendation (max 2 sentences) for the salon owner based on these metrics:
         ${metricsSummary}
         
-        Do not use markdown syntax. Do not wrap in quotes. Write in direct, friendly Indian business English.`;
+        Do not use markdown syntax. Do not wrap in quotes. Write in direct, friendly, professional international business English.`;
 
         const result = await model.generateContent({
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -1892,11 +1892,11 @@ Output ONLY the category name. Do not include markdown or punctuation.`;
     }
 
     try {
-      const prompt = `You are the Business Intelligence AI for SalonFlow, a premium CRM and operations software for Indian Salons.
+      const prompt = `You are the Business Intelligence AI for SalonFlow, a premium CRM and operations software for salons and spas worldwide.
 Write a single, short, action-oriented, friendly growth recommendation (max 2 sentences) for the salon owner based on these metrics:
 ${metricsSummary}
 
-Do not use markdown syntax. Do not wrap in quotes. Write in direct, friendly Indian business English.`;
+Do not use markdown syntax. Do not wrap in quotes. Write in direct, friendly, professional international business English.`;
 
       const response = await this.openai!.chat.completions.create({
         model: 'gpt-4o-mini',

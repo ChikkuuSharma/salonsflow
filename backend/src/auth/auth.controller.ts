@@ -1,6 +1,7 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Req, UseGuards, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { AppService } from '../app.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ClerkAuthGuard } from './clerk-auth.guard';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -36,9 +37,19 @@ export class AuthController {
 
   @Post('super-admin/register')
   async superAdminRegister(@Body() body: any) {
-    const { adminId, password } = body;
+    const { adminId, password, setupKey } = body;
     if (!adminId || !password) {
       throw new UnauthorizedException('Admin ID and Password are required.');
+    }
+
+    const adminCount = await this.prisma.adminCredential.count();
+    const envSecret = process.env.SUPER_ADMIN_SETUP_SECRET;
+
+    // If super admin accounts already exist, block public self-registration
+    if (adminCount > 0) {
+      if (!envSecret || setupKey !== envSecret) {
+        throw new UnauthorizedException('Public Super Admin registration is disabled. Please contact system administrator.');
+      }
     }
     
     const existing = await this.prisma.adminCredential.findUnique({
@@ -54,33 +65,35 @@ export class AuthController {
     return { success: true };
   }
 
+  @UseGuards(ClerkAuthGuard)
   @Post('super-admin/change-password')
-  async superAdminChangePassword(@Body() body: any) {
+  async superAdminChangePassword(@Req() req: any, @Body() body: any) {
     const { adminId, oldPassword, newPassword } = body;
     if (!adminId || !oldPassword || !newPassword) {
       throw new UnauthorizedException('Admin ID, Old Password, and New Password are required.');
     }
 
-    let cred = await this.prisma.adminCredential.findUnique({
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      throw new ForbiddenException('Super Admin authentication is required to update admin credentials.');
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.trim().length < 6) {
+      throw new BadRequestException('New password must be at least 6 characters long.');
+    }
+
+    const cred = await this.prisma.adminCredential.findUnique({
       where: { adminId },
     });
 
-    // Bootstrap default admin in database on first run if missing
-    if (!cred && adminId === 'admin') {
-      cred = await this.prisma.adminCredential.create({
-        data: { adminId: 'admin', password: 'admin123' },
-      });
-    }
-
     if (!cred || cred.password !== oldPassword) {
-      throw new UnauthorizedException('Invalid old admin credentials.');
+      throw new UnauthorizedException('Current super admin password is incorrect. Verify old password before updating.');
     }
 
     await this.prisma.adminCredential.update({
       where: { adminId },
       data: { password: newPassword },
     });
-    return { success: true };
+    return { success: true, message: 'Super admin password updated successfully.' };
   }
 
   @Post('owner/login')
